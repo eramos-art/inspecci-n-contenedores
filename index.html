@@ -72,6 +72,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .btn-next{background:#1a3a5c;color:white;box-shadow:0 4px 12px rgba(26,58,92,0.25)}
 .btn-next:active{opacity:0.85}
 .btn-submit-final{width:100%;padding:14px;background:#059669;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px;font-family:'Segoe UI',system-ui,sans-serif;box-shadow:0 4px 12px rgba(5,150,105,0.3);-webkit-tap-highlight-color:transparent}
+.btn-download{width:100%;padding:14px;background:#1a3a5c;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;font-family:'Segoe UI',system-ui,sans-serif;box-shadow:0 4px 12px rgba(26,58,92,0.25);-webkit-tap-highlight-color:transparent}
 .success-banner{background:#ECFDF5;border:1.5px solid #6EE7B7;border-radius:14px;padding:20px;text-align:center;margin-top:12px}
 .success-banner h3{font-size:17px;font-weight:700;color:#065F46;margin-bottom:6px}
 .success-banner p{font-size:13px;color:#047857;line-height:1.5}
@@ -91,6 +92,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .summary-table td{padding:9px 0;border-bottom:1px solid #F1F5F9}
 .summary-table td:first-child{color:#64748B;width:45%}
 .summary-table td:last-child{font-weight:600;color:#1a2332}
+/* Login banner */
+.login-banner{background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.login-banner p{font-size:13px;color:#92400E;flex:1;line-height:1.5}
+.btn-login{padding:9px 18px;background:#0078D4;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Segoe UI',system-ui,sans-serif;white-space:nowrap}
+.onedrive-status{font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:10px;display:none}
+.onedrive-status.connected{background:#ECFDF5;color:#065F46;border:1px solid #6EE7B7;display:block}
+.onedrive-status.error{background:#FEF2F2;color:#991B1B;border:1px solid #FCA5A5;display:block}
 </style>
 </head>
 <body>
@@ -104,7 +112,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     </div>
   </div>
 
-  <!-- PASO 1: DATOS -->
+  <!-- PASO 1 -->
   <div class="step-page active" id="page0">
     <div class="tip-box"><div class="tip-icon">💡</div><div class="tip-text">Empieza ingresando tus datos. Tu nombre aparecerá en el reporte final como inspector responsable.</div></div>
     <div class="card">
@@ -141,7 +149,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     </div>
   </div>
 
-  <!-- PASO 2: FOTOS EXTERIORES -->
+  <!-- PASO 2 -->
   <div class="step-page" id="page1">
     <div class="tip-box"><div class="tip-icon">📷</div><div class="tip-text">Toma las 6 fotos obligatorias del exterior siguiendo el orden numerado. Puedes agregar fotos adicionales si necesitas documentar más detalles.</div></div>
     <div class="card">
@@ -160,7 +168,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     </div>
   </div>
 
-  <!-- PASO 3: APERTURA E INVENTARIO -->
+  <!-- PASO 3 -->
   <div class="step-page" id="page2">
     <div class="tip-box"><div class="tip-icon">📷</div><div class="tip-text">Al abrir el contenedor toma las fotos del interior ANTES de tocar nada. Esto es evidencia del estado original de la carga.</div></div>
     <div class="card">
@@ -194,7 +202,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     </div>
   </div>
 
-  <!-- PASO 4: OBSERVACIONES Y DESCARGA -->
+  <!-- PASO 4 -->
   <div class="step-page" id="page3">
     <div class="tip-box"><div class="tip-icon">📋</div><div class="tip-text">Registra cada novedad con foto. Agrega todas las observaciones y fotos que necesites: cajas dañadas, productos en mal estado, irregularidades, etc.</div></div>
     <div class="card">
@@ -222,7 +230,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     </div>
   </div>
 
-  <!-- PASO 5: FIRMAS -->
+  <!-- PASO 5 -->
   <div class="step-page" id="page4">
     <div class="tip-box"><div class="tip-icon">✍️</div><div class="tip-text">Firma con el dedo (en móvil) o con el mouse. La firma queda grabada junto con el nombre, cargo y hora exacta en el reporte.</div></div>
     <div class="card">
@@ -247,17 +255,32 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     </div>
   </div>
 
-  <!-- PASO 6: RESUMEN -->
+  <!-- PASO 6: RESUMEN Y ENVÍO -->
   <div class="step-page" id="page5">
-    <div class="tip-box"><div class="tip-icon">☁️</div><div class="tip-text">Revisa el resumen antes de enviar. Todos los datos, fotos y firmas quedarán guardados en el reporte.</div></div>
-    <div class="card" id="summaryCard"></div>
-    <div class="success-banner" id="successBanner" style="display:none">
-      <div style="font-size:40px;margin-bottom:8px">✅</div>
-      <h3>¡Reporte enviado correctamente!</h3>
-      <p>El reporte de inspección fue guardado con todas las fotos y firmas digitales.</p>
-      <button class="cloud-btn" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+    <div class="tip-box"><div class="tip-icon">☁️</div><div class="tip-text">Revisa el resumen y conecta con tu cuenta Microsoft para subir el reporte automáticamente a OneDrive.</div></div>
+
+    <!-- Panel de login OneDrive -->
+    <div class="card" id="loginCard">
+      <div class="section-title">Conexión con OneDrive</div>
+      <div class="onedrive-status" id="onedriveStatus"></div>
+      <div id="loginBanner" class="login-banner">
+        <span style="font-size:28px">☁️</span>
+        <p>Conecta tu cuenta Microsoft para guardar el reporte directamente en OneDrive de tu empresa.</p>
+        <button class="btn-login" onclick="doLogin()">Iniciar sesión</button>
+      </div>
+      <div id="loggedUser" style="display:none;font-size:13px;color:#065F46;background:#ECFDF5;border-radius:8px;padding:10px 12px;border:1px solid #6EE7B7">
+        ✅ Sesión iniciada como <strong id="loggedName"></strong>
+        <button onclick="doLogout()" style="margin-left:12px;background:none;border:none;color:#94A3B8;cursor:pointer;font-size:12px">Cerrar sesión</button>
+      </div>
     </div>
+
+    <div class="card" id="summaryCard"></div>
+
+    <div class="success-banner" id="successBanner" style="display:none"></div>
+
+    <!-- Botón principal: sube a OneDrive si hay token, sino solo descarga -->
     <button class="btn-submit-final" id="submitBtn" onclick="submitReport()">☁️ Enviar reporte a la nube</button>
+    <button class="btn-download" id="downloadBtn" onclick="onlyDownload()" style="display:none">⬇️ Solo descargar reporte (sin nube)</button>
   </div>
 
   <div class="nav-row">
@@ -269,312 +292,382 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 <input type="file" accept="image/*" capture="environment" id="hiddenFile" style="display:none">
 
 <script>
-const STEPS=[
-  {icon:'👤',label:'Paso 1 de 6',title:'Datos del responsable'},
-  {icon:'📦',label:'Paso 2 de 6',title:'Fotos exteriores y códigos'},
-  {icon:'📋',label:'Paso 3 de 6',title:'Apertura e inventario'},
-  {icon:'🔍',label:'Paso 4 de 6',title:'Observaciones y descarga'},
-  {icon:'✍️',label:'Paso 5 de 6',title:'Firmas digitales'},
-  {icon:'☁️',label:'Paso 6 de 6',title:'Resumen y envío'}
-];
-let currentStep=0;
+// ── CONFIGURACIÓN ONEDRIVE ──────────────────────────────────────────
+const MSAL_CLIENT_ID = 'a790330a-9f1e-4828-81a9-2cd015cceaeb';
+const MSAL_TENANT   = 'b1eec072-c248-43f0-884f-16bf82db7e27';
+const REDIRECT_URI  = 'https://eramos-art.github.io/inspecci-n-contenedores/';
+const SCOPES        = ['Files.ReadWrite', 'User.Read'];
+const FOLDER_NAME   = 'Inspecciones_Contenedores';
 
-const EXT_SLOTS=[
-  {num:'1',label:'Lateral derecho del contenedor'},
-  {num:'2',label:'Lateral izquierdo del contenedor'},
-  {num:'3',label:'Lado frontal del vehículo'},
-  {num:'4',label:'Lado posterior del contenedor'},
-  {num:'5',label:'Número de contenedor'},
-  {num:'6',label:'Número de precinto'}
+let msalToken = null;
+
+// ── PASOS ───────────────────────────────────────────────────────────
+const STEPS = [
+  {icon:'👤', label:'Paso 1 de 6', title:'Datos del responsable'},
+  {icon:'📦', label:'Paso 2 de 6', title:'Fotos exteriores y códigos'},
+  {icon:'📋', label:'Paso 3 de 6', title:'Apertura e inventario'},
+  {icon:'🔍', label:'Paso 4 de 6', title:'Observaciones y descarga'},
+  {icon:'✍️', label:'Paso 5 de 6', title:'Firmas digitales'},
+  {icon:'☁️', label:'Paso 6 de 6', title:'Resumen y envío'}
 ];
-const AP_SLOTS=[
-  {num:'1',label:'Vista general interior'},
-  {num:'2',label:'Carga lado izquierdo'},
-  {num:'3',label:'Carga lado derecho'},
-  {num:'4',label:'Estado del piso'},
-  {num:'5',label:'Estado del techo'},
-  {num:'6',label:'Primera fila de cajas'}
+let currentStep = 0;
+
+const EXT_SLOTS = [
+  {num:'1', label:'Lateral derecho del contenedor'},
+  {num:'2', label:'Lateral izquierdo del contenedor'},
+  {num:'3', label:'Lado frontal del vehículo'},
+  {num:'4', label:'Lado posterior del contenedor'},
+  {num:'5', label:'Número de contenedor'},
+  {num:'6', label:'Número de precinto'}
+];
+const AP_SLOTS = [
+  {num:'1', label:'Vista general interior'},
+  {num:'2', label:'Carga lado izquierdo'},
+  {num:'3', label:'Carga lado derecho'},
+  {num:'4', label:'Estado del piso'},
+  {num:'5', label:'Estado del techo'},
+  {num:'6', label:'Primera fila de cajas'}
 ];
 
-const photoStore={};
-let obsCount=0;
-let extraCounters={ext:0,ap:0,desc:0,def:0};
-let pendingTarget=null;
+const photoStore = {};
+let obsCount = 0;
+let extraCounters = {ext:0, ap:0, desc:0, def:0};
+let pendingTarget = null;
 
-function makeSlot(ns,key,num,label,removable){
-  const s=document.createElement('div');
-  s.className='photo-slot';
-  s.dataset.ns=ns;s.dataset.key=key;
-  if(num){const n=document.createElement('span');n.className='slot-num';n.textContent=num+'°';s.appendChild(n);}
-  const icon=document.createElement('span');icon.className='slot-icon';icon.textContent='📷';s.appendChild(icon);
-  const lbl=document.createElement('span');lbl.className='slot-label';lbl.textContent=label||'Foto extra';s.appendChild(lbl);
-  const rm=document.createElement('button');rm.className='rm-btn';rm.textContent='×';
-  rm.onclick=(e)=>{e.stopPropagation();removeSlotPhoto(ns,key,s,removable);};s.appendChild(rm);
-  s.addEventListener('click',(e)=>{if(e.target===rm)return;openPicker(ns,key,s);});
+// ── FOTOS ───────────────────────────────────────────────────────────
+function makeSlot(ns, key, num, label, removable) {
+  const s = document.createElement('div');
+  s.className = 'photo-slot';
+  s.dataset.ns = ns; s.dataset.key = key;
+  if (num) { const n = document.createElement('span'); n.className = 'slot-num'; n.textContent = num + '°'; s.appendChild(n); }
+  const icon = document.createElement('span'); icon.className = 'slot-icon'; icon.textContent = '📷'; s.appendChild(icon);
+  const lbl = document.createElement('span'); lbl.className = 'slot-label'; lbl.textContent = label || 'Foto extra'; s.appendChild(lbl);
+  const rm = document.createElement('button'); rm.className = 'rm-btn'; rm.textContent = '×';
+  rm.onclick = (e) => { e.stopPropagation(); removeSlotPhoto(ns, key, s, removable); }; s.appendChild(rm);
+  s.addEventListener('click', (e) => { if (e.target === rm) return; openPicker(ns, key, s); });
   return s;
 }
 
-function openPicker(ns,key,slot){
-  pendingTarget={ns,key,slot};
-  const fi=document.getElementById('hiddenFile');
-  fi.onchange=(e)=>{if(e.target.files[0])readFile(e.target.files[0]);fi.value='';};
+function openPicker(ns, key, slot) {
+  pendingTarget = {ns, key, slot};
+  const fi = document.getElementById('hiddenFile');
+  fi.onchange = (e) => { if (e.target.files[0]) readFile(e.target.files[0]); fi.value = ''; };
   fi.click();
 }
 
-function readFile(file){
-  const reader=new FileReader();
-  reader.onload=(e)=>{
-    const {ns,key,slot}=pendingTarget;
-    photoStore[ns+':'+key]=e.target.result;
-    let img=slot.querySelector('img');
-    if(!img){img=document.createElement('img');slot.insertBefore(img,slot.firstChild);}
-    img.src=e.target.result;
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const {ns, key, slot} = pendingTarget;
+    photoStore[ns + ':' + key] = e.target.result;
+    let img = slot.querySelector('img');
+    if (!img) { img = document.createElement('img'); slot.insertBefore(img, slot.firstChild); }
+    img.src = e.target.result;
     slot.classList.add('has-photo');
-    let chk=slot.querySelector('.check-badge');
-    if(!chk){chk=document.createElement('div');chk.className='check-badge';chk.textContent='✓';slot.appendChild(chk);}
+    let chk = slot.querySelector('.check-badge');
+    if (!chk) { chk = document.createElement('div'); chk.className = 'check-badge'; chk.textContent = '✓'; slot.appendChild(chk); }
     updateCounts();
   };
   reader.readAsDataURL(file);
 }
 
-function removeSlotPhoto(ns,key,slot,removable){
-  delete photoStore[ns+':'+key];
-  const img=slot.querySelector('img');if(img)img.remove();
-  const chk=slot.querySelector('.check-badge');if(chk)chk.remove();
+function removeSlotPhoto(ns, key, slot, removable) {
+  delete photoStore[ns + ':' + key];
+  const img = slot.querySelector('img'); if (img) img.remove();
+  const chk = slot.querySelector('.check-badge'); if (chk) chk.remove();
   slot.classList.remove('has-photo');
-  if(removable&&slot.parentElement)slot.parentElement.removeChild(slot);
+  if (removable && slot.parentElement) slot.parentElement.removeChild(slot);
   updateCounts();
 }
 
-function buildGrid(containerId,ns,slots){
-  const g=document.getElementById(containerId);g.innerHTML='';
-  slots.forEach((s,i)=>{g.appendChild(makeSlot(ns,String(i),s.num,s.label,false));});
+function buildGrid(containerId, ns, slots) {
+  const g = document.getElementById(containerId); g.innerHTML = '';
+  slots.forEach((s, i) => { g.appendChild(makeSlot(ns, String(i), s.num, s.label, false)); });
 }
 
-function addExtraPhoto(ns,sectionId,counterId,simple){
-  extraCounters[ns]=(extraCounters[ns]||0)+1;
-  const key='x'+extraCounters[ns];
-  const label='Foto extra '+extraCounters[ns];
-  const section=document.getElementById(sectionId);
-  let grid=section.querySelector('.extra-grid');
-  if(!grid){
-    const div=document.createElement('div');div.className='photo-extra-divider';div.innerHTML='<span>Fotos adicionales</span>';section.appendChild(div);
-    grid=document.createElement('div');grid.className='photo-grid extra-grid';section.appendChild(grid);
+function addExtraPhoto(ns, sectionId, counterId, simple) {
+  extraCounters[ns] = (extraCounters[ns] || 0) + 1;
+  const key = 'x' + extraCounters[ns];
+  const label = 'Foto extra ' + extraCounters[ns];
+  const section = document.getElementById(sectionId);
+  let grid = section.querySelector('.extra-grid');
+  if (!grid) {
+    const div = document.createElement('div'); div.className = 'photo-extra-divider'; div.innerHTML = '<span>Fotos adicionales</span>'; section.appendChild(div);
+    grid = document.createElement('div'); grid.className = 'photo-grid extra-grid'; section.appendChild(grid);
   }
-  const slot=makeSlot(ns,key,null,label,true);
+  const slot = makeSlot(ns, key, null, label, true);
   grid.appendChild(slot);
   updateCounts();
-  setTimeout(()=>slot.scrollIntoView({behavior:'smooth',block:'center'}),100);
+  setTimeout(() => slot.scrollIntoView({behavior:'smooth', block:'center'}), 100);
 }
 
-function updateCounts(){
-  function countFixed(ns,total){let c=0;for(let i=0;i<total;i++){if(photoStore[ns+':'+i])c++;}return c;}
-  function countExtra(ns){return Object.keys(photoStore).filter(k=>k.startsWith(ns+':x')).length;}
-  const ec=document.getElementById('extCount');const ee=document.getElementById('extExtra');
-  if(ec)ec.textContent=countFixed('ext',6);if(ee)ee.textContent=countExtra('ext');
-  const ac=document.getElementById('apCount');const ae=document.getElementById('apExtra');
-  if(ac)ac.textContent=countFixed('ap',6);if(ae)ae.textContent=countExtra('ap');
-  const dc=document.getElementById('descCount');if(dc)dc.textContent=Object.keys(photoStore).filter(k=>k.startsWith('desc:')).length;
-  const dfc=document.getElementById('defCount');if(dfc)dfc.textContent=Object.keys(photoStore).filter(k=>k.startsWith('def:')).length;
+function updateCounts() {
+  function countFixed(ns, total) { let c = 0; for (let i = 0; i < total; i++) { if (photoStore[ns + ':' + i]) c++; } return c; }
+  function countExtra(ns) { return Object.keys(photoStore).filter(k => k.startsWith(ns + ':x')).length; }
+  const ec = document.getElementById('extCount'); const ee = document.getElementById('extExtra');
+  if (ec) ec.textContent = countFixed('ext', 6); if (ee) ee.textContent = countExtra('ext');
+  const ac = document.getElementById('apCount'); const ae = document.getElementById('apExtra');
+  if (ac) ac.textContent = countFixed('ap', 6); if (ae) ae.textContent = countExtra('ap');
+  const dc = document.getElementById('descCount'); if (dc) dc.textContent = Object.keys(photoStore).filter(k => k.startsWith('desc:')).length;
+  const dfc = document.getElementById('defCount'); if (dfc) dfc.textContent = Object.keys(photoStore).filter(k => k.startsWith('def:')).length;
 }
 
-function addInventRow(){
-  const tb=document.getElementById('inventBody');
-  const tr=document.createElement('tr');
-  tr.innerHTML='<td><input type="text" placeholder="Escanear"></td><td><input type="number" min="0" placeholder="0"></td><td><input type="number" min="0" placeholder="0"></td><td><input type="text" placeholder="Ref."></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';
+// ── INVENTARIO Y SERIES ─────────────────────────────────────────────
+function addInventRow() {
+  const tb = document.getElementById('inventBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td><input type="text" placeholder="Escanear"></td><td><input type="number" min="0" placeholder="0"></td><td><input type="number" min="0" placeholder="0"></td><td><input type="text" placeholder="Ref."></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';
   tb.appendChild(tr);
 }
-function removeRow(btn){const rows=document.getElementById('inventBody').querySelectorAll('tr');if(rows.length>1)btn.closest('tr').remove();}
-function addSeries(){
-  const list=document.getElementById('seriesList');const n=list.querySelectorAll('.grid2').length+1;
-  const d=document.createElement('div');d.className='grid2';d.style.marginBottom='8px';
-  d.innerHTML='<div class="field"><label>Serie '+(n*2-1)+'</label><div class="barcode-wrap"><input type="text" placeholder="Escanear"><span class="scan-icon">⬛</span></div></div><div class="field"><label>Serie '+(n*2)+'</label><div class="barcode-wrap"><input type="text" placeholder="Escanear"><span class="scan-icon">⬛</span></div></div>';
+function removeRow(btn) { const rows = document.getElementById('inventBody').querySelectorAll('tr'); if (rows.length > 1) btn.closest('tr').remove(); }
+function addSeries() {
+  const list = document.getElementById('seriesList'); const n = list.querySelectorAll('.grid2').length + 1;
+  const d = document.createElement('div'); d.className = 'grid2'; d.style.marginBottom = '8px';
+  d.innerHTML = '<div class="field"><label>Serie ' + (n * 2 - 1) + '</label><div class="barcode-wrap"><input type="text" placeholder="Escanear"><span class="scan-icon">⬛</span></div></div><div class="field"><label>Serie ' + (n * 2) + '</label><div class="barcode-wrap"><input type="text" placeholder="Escanear"><span class="scan-icon">⬛</span></div></div>';
   list.appendChild(d);
 }
 
-function addObs(){
-  obsCount++;const id=obsCount;
-  const list=document.getElementById('obsList');
-  const div=document.createElement('div');div.className='obs-row';div.id='obs-'+id;
-  div.innerHTML='<div class="obs-thumb" id="oth'+id+'" title="Tocar para agregar foto">📷</div><div class="obs-fields"><input class="obs-input" type="text" placeholder="Descripción (ej: caja húmeda en fila 3)"><select class="obs-select"><option value="">Tipo de novedad...</option><option>Caja defectuosa</option><option>Producto dañado</option><option>Producto faltante</option><option>Humedad</option><option>Contaminación</option><option>Error de etiqueta</option><option>Golpe / abolladura</option><option>Otro</option></select></div><button class="btn-rm" onclick="document.getElementById(\'obs-'+id+'\').remove()">×</button>';
+// ── OBSERVACIONES ───────────────────────────────────────────────────
+function addObs() {
+  obsCount++; const id = obsCount;
+  const list = document.getElementById('obsList');
+  const div = document.createElement('div'); div.className = 'obs-row'; div.id = 'obs-' + id;
+  div.innerHTML = '<div class="obs-thumb" id="oth' + id + '" title="Tocar para agregar foto">📷</div><div class="obs-fields"><input class="obs-input" type="text" placeholder="Descripción (ej: caja húmeda en fila 3)"><select class="obs-select"><option value="">Tipo de novedad...</option><option>Caja defectuosa</option><option>Producto dañado</option><option>Producto faltante</option><option>Humedad</option><option>Contaminación</option><option>Error de etiqueta</option><option>Golpe / abolladura</option><option>Otro</option></select></div><button class="btn-rm" onclick="document.getElementById(\'obs-' + id + '\').remove()">×</button>';
   list.appendChild(div);
-  document.getElementById('oth'+id).addEventListener('click',()=>{
-    const fi=document.getElementById('hiddenFile');
-    fi.onchange=(e)=>{
-      if(e.target.files[0]){const reader=new FileReader();reader.onload=(ev)=>{const th=document.getElementById('oth'+id);if(th){th.innerHTML='<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';th.style.border='1.5px solid #10B981';}photoStore['obs:'+id]=ev.target.result;};reader.readAsDataURL(e.target.files[0]);}
-      fi.value='';
-    };fi.click();
+  document.getElementById('oth' + id).addEventListener('click', () => {
+    const fi = document.getElementById('hiddenFile');
+    fi.onchange = (e) => {
+      if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const th = document.getElementById('oth' + id);
+          if (th) { th.innerHTML = '<img src="' + ev.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">'; th.style.border = '1.5px solid #10B981'; }
+          photoStore['obs:' + id] = ev.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      }
+      fi.value = '';
+    }; fi.click();
   });
 }
 
-function setupSig(cid,sid){
-  const c=document.getElementById(cid);if(!c)return;
-  const ctx=c.getContext('2d');
-  function resize(){c.width=c.offsetWidth||600;}
-  resize();window.addEventListener('resize',resize);
-  let drawing=false;
-  function pos(e){const r=c.getBoundingClientRect();const scaleX=c.width/r.width;const scaleY=c.height/r.height;if(e.touches)return{x:(e.touches[0].clientX-r.left)*scaleX,y:(e.touches[0].clientY-r.top)*scaleY};return{x:(e.clientX-r.left)*scaleX,y:(e.clientY-r.top)*scaleY};}
-  function start(e){e.preventDefault();drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);}
-  function draw(e){e.preventDefault();if(!drawing)return;const p=pos(e);ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#1a2332';ctx.lineTo(p.x,p.y);ctx.stroke();const st=document.getElementById(sid);st.textContent='✅ Firmado a las '+new Date().toLocaleTimeString();st.className='sig-status signed';}
-  function stop(){drawing=false;}
-  c.addEventListener('mousedown',start);c.addEventListener('mousemove',draw);c.addEventListener('mouseup',stop);c.addEventListener('mouseleave',stop);
-  c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',draw,{passive:false});c.addEventListener('touchend',stop);
+// ── FIRMAS ──────────────────────────────────────────────────────────
+function setupSig(cid, sid) {
+  const c = document.getElementById(cid); if (!c) return;
+  const ctx = c.getContext('2d');
+  function resize() { c.width = c.offsetWidth || 600; }
+  resize(); window.addEventListener('resize', resize);
+  let drawing = false;
+  function pos(e) { const r = c.getBoundingClientRect(); const scaleX = c.width / r.width; const scaleY = c.height / r.height; if (e.touches) return {x:(e.touches[0].clientX - r.left) * scaleX, y:(e.touches[0].clientY - r.top) * scaleY}; return {x:(e.clientX - r.left) * scaleX, y:(e.clientY - r.top) * scaleY}; }
+  function start(e) { e.preventDefault(); drawing = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+  function draw(e) { e.preventDefault(); if (!drawing) return; const p = pos(e); ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a2332'; ctx.lineTo(p.x, p.y); ctx.stroke(); const st = document.getElementById(sid); st.textContent = '✅ Firmado a las ' + new Date().toLocaleTimeString(); st.className = 'sig-status signed'; }
+  function stop() { drawing = false; }
+  c.addEventListener('mousedown', start); c.addEventListener('mousemove', draw); c.addEventListener('mouseup', stop); c.addEventListener('mouseleave', stop);
+  c.addEventListener('touchstart', start, {passive:false}); c.addEventListener('touchmove', draw, {passive:false}); c.addEventListener('touchend', stop);
 }
-function clearSig(cid,sid){const c=document.getElementById(cid);c.getContext('2d').clearRect(0,0,c.width,c.height);const s=document.getElementById(sid);s.textContent='Sin firma aún — dibuja tu firma arriba';s.className='sig-status';}
+function clearSig(cid, sid) { const c = document.getElementById(cid); c.getContext('2d').clearRect(0, 0, c.width, c.height); const s = document.getElementById(sid); s.textContent = 'Sin firma aún — dibuja tu firma arriba'; s.className = 'sig-status'; }
 
-function updatePill(){
-  const name=document.getElementById('inspNombre').value.trim();
-  const role=document.getElementById('inspCargo').value.trim();
-  const ini=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()||'--';
-  document.getElementById('pillAvatar').textContent=ini;
-  document.getElementById('pillName').textContent=name||'Sin nombre';
-  document.getElementById('pillRole').textContent=role||'Sin cargo';
-}
-
-function buildProgress(){
-  const bar=document.getElementById('progressBar');bar.innerHTML='';
-  STEPS.forEach((_,i)=>{const d=document.createElement('div');d.className='step-dot'+(i<currentStep?' done':i===currentStep?' active':'');bar.appendChild(d);});
+// ── PILL ─────────────────────────────────────────────────────────────
+function updatePill() {
+  const name = document.getElementById('inspNombre').value.trim();
+  const role = document.getElementById('inspCargo').value.trim();
+  const ini = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() || '--';
+  document.getElementById('pillAvatar').textContent = ini;
+  document.getElementById('pillName').textContent = name || 'Sin nombre';
+  document.getElementById('pillRole').textContent = role || 'Sin cargo';
 }
 
-function buildSummary(){
-  const total=Object.keys(photoStore).length;
-  const obs=document.getElementById('obsList').querySelectorAll('.obs-row').length;
-  const almF=document.getElementById('statusAlm').classList.contains('signed')?'✅ Firmado':'❌ Sin firmar';
-  const calF=document.getElementById('statusCal').classList.contains('signed')?'✅ Firmado':'❌ Sin firmar';
-  document.getElementById('summaryCard').innerHTML='<div class="section-title">Resumen del reporte</div><table class="summary-table"><tr><td>File</td><td>'+(document.getElementById('fileNum').value||'—')+'</td></tr><tr><td>Fecha</td><td>'+(document.getElementById('fecha').value||'—')+'</td></tr><tr><td>Almacén</td><td>'+(document.getElementById('almacen').value||'—')+'</td></tr><tr><td>Contenedor</td><td style="font-family:monospace">'+(document.getElementById('contenedor').value||'—')+'</td></tr><tr><td>Precinto</td><td style="font-family:monospace">'+(document.getElementById('precinto').value||'—')+'</td></tr><tr><td>Inspector</td><td>'+(document.getElementById('inspNombre').value||'—')+'</td></tr><tr><td>Total de fotos</td><td style="color:#059669">'+total+' foto(s)</td></tr><tr><td>Observaciones</td><td>'+obs+' registrada(s)</td></tr><tr><td>Firma almacén</td><td>'+almF+'</td></tr><tr><td>Firma calidad</td><td>'+calF+'</td></tr></table>';
+// ── PROGRESO Y NAVEGACIÓN ────────────────────────────────────────────
+function buildProgress() {
+  const bar = document.getElementById('progressBar'); bar.innerHTML = '';
+  STEPS.forEach((_, i) => { const d = document.createElement('div'); d.className = 'step-dot' + (i < currentStep ? ' done' : i === currentStep ? ' active' : ''); bar.appendChild(d); });
 }
 
-function nextStep(){
-  if(currentStep<STEPS.length-1){document.getElementById('page'+currentStep).classList.remove('active');currentStep++;document.getElementById('page'+currentStep).classList.add('active');updateNav();if(currentStep===5)buildSummary();window.scrollTo({top:0,behavior:'smooth'});}
+function buildSummary() {
+  const total = Object.keys(photoStore).length;
+  const obs = document.getElementById('obsList').querySelectorAll('.obs-row').length;
+  const almF = document.getElementById('statusAlm').classList.contains('signed') ? '✅ Firmado' : '❌ Sin firmar';
+  const calF = document.getElementById('statusCal').classList.contains('signed') ? '✅ Firmado' : '❌ Sin firmar';
+  document.getElementById('summaryCard').innerHTML = '<div class="section-title">Resumen del reporte</div><table class="summary-table"><tr><td>File</td><td>' + (document.getElementById('fileNum').value || '—') + '</td></tr><tr><td>Fecha</td><td>' + (document.getElementById('fecha').value || '—') + '</td></tr><tr><td>Almacén</td><td>' + (document.getElementById('almacen').value || '—') + '</td></tr><tr><td>Contenedor</td><td style="font-family:monospace">' + (document.getElementById('contenedor').value || '—') + '</td></tr><tr><td>Precinto</td><td style="font-family:monospace">' + (document.getElementById('precinto').value || '—') + '</td></tr><tr><td>Inspector</td><td>' + (document.getElementById('inspNombre').value || '—') + '</td></tr><tr><td>Total de fotos</td><td style="color:#059669">' + total + ' foto(s)</td></tr><tr><td>Observaciones</td><td>' + obs + ' registrada(s)</td></tr><tr><td>Firma almacén</td><td>' + almF + '</td></tr><tr><td>Firma calidad</td><td>' + calF + '</td></tr></table>';
 }
-function prevStep(){
-  if(currentStep>0){document.getElementById('page'+currentStep).classList.remove('active');currentStep--;document.getElementById('page'+currentStep).classList.add('active');updateNav();window.scrollTo({top:0,behavior:'smooth'});}
+
+function nextStep() {
+  if (currentStep < STEPS.length - 1) {
+    document.getElementById('page' + currentStep).classList.remove('active');
+    currentStep++;
+    document.getElementById('page' + currentStep).classList.add('active');
+    updateNav();
+    if (currentStep === 5) buildSummary();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
 }
-function updateNav(){
-  const S=STEPS[currentStep];
-  document.getElementById('hdrIcon').textContent=S.icon;
-  document.getElementById('hdrLabel').textContent=S.label;
-  document.getElementById('hdrTitle').textContent=S.title;
-  document.getElementById('btnBack').style.display=currentStep>0?'block':'none';
-  const nn=document.getElementById('btnNext');
-  if(currentStep===STEPS.length-1){nn.style.display='none';}
-  else{nn.style.display='block';nn.textContent=currentStep===STEPS.length-2?'Ver resumen →':'Siguiente →';}
+function prevStep() {
+  if (currentStep > 0) {
+    document.getElementById('page' + currentStep).classList.remove('active');
+    currentStep--;
+    document.getElementById('page' + currentStep).classList.add('active');
+    updateNav();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+}
+function updateNav() {
+  const S = STEPS[currentStep];
+  document.getElementById('hdrIcon').textContent = S.icon;
+  document.getElementById('hdrLabel').textContent = S.label;
+  document.getElementById('hdrTitle').textContent = S.title;
+  document.getElementById('btnBack').style.display = currentStep > 0 ? 'block' : 'none';
+  const nn = document.getElementById('btnNext');
+  if (currentStep === STEPS.length - 1) { nn.style.display = 'none'; }
+  else { nn.style.display = 'block'; nn.textContent = currentStep === STEPS.length - 2 ? 'Ver resumen →' : 'Siguiente →'; }
   buildProgress();
 }
-// ── ONEDRIVE / MICROSOFT GRAPH CONFIG ──────────────────────────────
-const MSAL_CLIENT_ID = 'a790330a-9f1e-4828-81a9-2cd015cceaeb';
-const MSAL_TENANT   = 'b1eec072-c248-43f0-884f-16bf82db7e27';
-const REDIRECT_URI  = 'https://eramos-art.github.io/inspecci-n-contenedores/';
-const SCOPES        = ['Files.ReadWrite','User.Read'];
-const FOLDER_NAME   = 'Inspecciones_Contenedores';
 
-let msalToken = null;
-
-function getMsalAuthUrl(){
-  const state = btoa(JSON.stringify({ts:Date.now()}));
-  sessionStorage.setItem('msal_state', state);
+// ── ONEDRIVE AUTH ────────────────────────────────────────────────────
+function getMsalAuthUrl() {
   const params = new URLSearchParams({
     client_id: MSAL_CLIENT_ID,
     response_type: 'token',
     redirect_uri: REDIRECT_URI,
     scope: SCOPES.join(' '),
-    response_mode: 'fragment',
-    state
+    response_mode: 'fragment'
   });
-  return `https://login.microsoftonline.com/${MSAL_TENANT}/oauth2/v2.0/authorize?${params}`;
+  return 'https://login.microsoftonline.com/' + MSAL_TENANT + '/oauth2/v2.0/authorize?' + params;
 }
 
-function parseMsalToken(){
-  const hash = window.location.hash.substring(1);
-  if(!hash) return null;
-  const params = new URLSearchParams(hash);
-  if(params.get('access_token')){
-    history.replaceState(null,'',window.location.pathname);
-    return params.get('access_token');
+async function doLogin() {
+  try {
+    const token = await loginPopup();
+    msalToken = token;
+    // Obtener nombre del usuario
+    const me = await graphRequest('GET', '/me');
+    document.getElementById('loggedName').textContent = me.displayName || me.userPrincipalName;
+    document.getElementById('loginBanner').style.display = 'none';
+    document.getElementById('loggedUser').style.display = 'block';
+    document.getElementById('submitBtn').textContent = '☁️ Subir reporte a OneDrive';
+    document.getElementById('downloadBtn').style.display = 'block';
+    setStatus('connected', '✅ Conectado a OneDrive — el reporte se guardará en: ' + FOLDER_NAME);
+  } catch(e) {
+    setStatus('error', '❌ Error de login: ' + e.message);
   }
-  return null;
 }
 
-async function graphRequest(method, path, body, isBlob){
-  const res = await fetch('https://graph.microsoft.com/v1.0'+path,{
-    method,
-    headers:{
-      'Authorization':'Bearer '+msalToken,
-      ...(body && !isBlob ? {'Content-Type':'application/json'} : {})
-    },
-    body: body ? (isBlob ? body : JSON.stringify(body)) : undefined
+function doLogout() {
+  msalToken = null;
+  document.getElementById('loginBanner').style.display = 'flex';
+  document.getElementById('loggedUser').style.display = 'none';
+  document.getElementById('submitBtn').textContent = '☁️ Enviar reporte a la nube';
+  document.getElementById('downloadBtn').style.display = 'none';
+  setStatus('', '');
+}
+
+function setStatus(type, msg) {
+  const el = document.getElementById('onedriveStatus');
+  el.className = 'onedrive-status' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  if (!type) el.style.display = 'none';
+}
+
+async function loginPopup() {
+  return new Promise((resolve, reject) => {
+    const url = getMsalAuthUrl();
+    const popup = window.open(url, 'mslogin', 'width=500,height=650,left=100,top=100');
+    if (!popup) { reject(new Error('No se pudo abrir la ventana de login. Permite los popups para este sitio.')); return; }
+    const timer = setInterval(() => {
+      try {
+        if (popup.closed) { clearInterval(timer); reject(new Error('Ventana cerrada sin completar el login.')); return; }
+        const hash = popup.location.hash;
+        if (hash && hash.includes('access_token')) {
+          clearInterval(timer);
+          popup.close();
+          const params = new URLSearchParams(hash.substring(1));
+          resolve(params.get('access_token'));
+        }
+      } catch (e) { /* cross-origin, esperar */ }
+    }, 300);
+    setTimeout(() => { clearInterval(timer); if (!popup.closed) popup.close(); reject(new Error('Tiempo de espera agotado.')); }, 120000);
   });
-  if(!res.ok){const e=await res.text();throw new Error(e);}
-  return isBlob ? res : res.json();
 }
 
-function b64toBlob(b64, mime){
+async function graphRequest(method, path, body) {
+  const res = await fetch('https://graph.microsoft.com/v1.0' + path, {
+    method,
+    headers: {
+      'Authorization': 'Bearer ' + msalToken,
+      ...(body ? {'Content-Type': 'application/json'} : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) { const e = await res.text(); throw new Error(e); }
+  return res.json();
+}
+
+function b64toBlob(b64, mime) {
   const bytes = atob(b64.split(',')[1]);
   const arr = new Uint8Array(bytes.length);
-  for(let i=0;i<bytes.length;i++) arr[i]=bytes.charCodeAt(i);
-  return new Blob([arr],{type:mime});
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return new Blob([arr], {type: mime});
 }
 
-async function uploadToOneDrive(){
+// ── SUBIR A ONEDRIVE ─────────────────────────────────────────────────
+async function uploadToOneDrive() {
   const btn = document.getElementById('submitBtn');
   btn.textContent = '⏳ Conectando con OneDrive...';
   btn.disabled = true;
 
   try {
-    // 1. Ensure folder exists
+    // 1. Crear o encontrar carpeta raíz
     let folderId;
     try {
-      const f = await graphRequest('GET',`/me/drive/root:/${FOLDER_NAME}`);
+      const f = await graphRequest('GET', '/me/drive/root:/' + FOLDER_NAME);
       folderId = f.id;
     } catch {
-      const f = await graphRequest('POST','/me/drive/root/children',{
-        name: FOLDER_NAME, folder:{}, '@microsoft.graph.conflictBehavior':'rename'
+      const f = await graphRequest('POST', '/me/drive/root/children', {
+        name: FOLDER_NAME, folder: {}, '@microsoft.graph.conflictBehavior': 'rename'
       });
       folderId = f.id;
     }
 
-    // 2. Build report name
-    const fileVal = document.getElementById('fileNum').value || 'SIN-FILE';
-    const fecha   = document.getElementById('fecha').value || new Date().toISOString().split('T')[0];
-    const inspector = document.getElementById('inspNombre').value || 'inspector';
-    const reportName = `Reporte_${fileVal}_${fecha}_${inspector.replace(/\s+/g,'_')}`;
-    const subFolder  = await graphRequest('POST',`/me/drive/items/${folderId}/children`,{
-      name: reportName, folder:{}, '@microsoft.graph.conflictBehavior':'rename'
+    // 2. Nombre de la subcarpeta del reporte
+    const fileVal    = document.getElementById('fileNum').value || 'SIN-FILE';
+    const fecha      = document.getElementById('fecha').value || new Date().toISOString().split('T')[0];
+    const inspector  = document.getElementById('inspNombre').value || 'inspector';
+    const reportName = 'Reporte_' + fileVal + '_' + fecha + '_' + inspector.replace(/\s+/g, '_');
+    const subFolder  = await graphRequest('POST', '/me/drive/items/' + folderId + '/children', {
+      name: reportName, folder: {}, '@microsoft.graph.conflictBehavior': 'rename'
     });
     const subId = subFolder.id;
 
-    // 3. Upload photos
-    btn.textContent = '⏳ Subiendo fotos...';
+    // 3. Subir fotos
+    btn.textContent = '⏳ Subiendo fotos (' + Object.keys(photoStore).length + ')...';
     let photoIndex = 1;
-    for(const [key, dataUrl] of Object.entries(photoStore)){
+    for (const [key, dataUrl] of Object.entries(photoStore)) {
       const blob = b64toBlob(dataUrl, 'image/jpeg');
-      const name = `foto_${String(photoIndex).padStart(2,'0')}_${key.replace(':','_')}.jpg`;
-      await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${subId}:/${name}:/content`,{
-        method:'PUT',
-        headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/jpeg'},
+      const name = 'foto_' + String(photoIndex).padStart(2, '0') + '_' + key.replace(':', '_') + '.jpg';
+      await fetch('https://graph.microsoft.com/v1.0/me/drive/items/' + subId + ':/' + name + ':/content', {
+        method: 'PUT',
+        headers: {'Authorization': 'Bearer ' + msalToken, 'Content-Type': 'image/jpeg'},
         body: blob
       });
       photoIndex++;
     }
 
-    // 4. Upload signatures
+    // 4. Subir firmas
     btn.textContent = '⏳ Subiendo firmas...';
-    for(const [cid,name] of [['sigAlmacen','firma_almacen.png'],['sigCalidad','firma_calidad.png']]){
+    for (const [cid, name] of [['sigAlmacen', 'firma_almacen.png'], ['sigCalidad', 'firma_calidad.png']]) {
       const c = document.getElementById(cid);
-      const dataUrl = c.toDataURL('image/png');
-      const blob = b64toBlob(dataUrl,'image/png');
-      await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${subId}:/${name}:/content`,{
-        method:'PUT',
-        headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/png'},
+      const blob = b64toBlob(c.toDataURL('image/png'), 'image/png');
+      await fetch('https://graph.microsoft.com/v1.0/me/drive/items/' + subId + ':/' + name + ':/content', {
+        method: 'PUT',
+        headers: {'Authorization': 'Bearer ' + msalToken, 'Content-Type': 'image/png'},
         body: blob
       });
     }
 
-    // 5. Build and upload JSON summary
+    // 5. Subir JSON con los datos
     btn.textContent = '⏳ Guardando datos del reporte...';
-    const obs = [...document.getElementById('obsList').querySelectorAll('.obs-row')].map(r=>{
+    const obs = [...document.getElementById('obsList').querySelectorAll('.obs-row')].map(r => {
       const inputs = r.querySelectorAll('input,select');
-      return {descripcion: inputs[0]?.value||'', tipo: inputs[1]?.value||''};
+      return {descripcion: inputs[0]?.value || '', tipo: inputs[1]?.value || ''};
     });
     const summary = {
       file: document.getElementById('fileNum').value,
@@ -597,278 +690,141 @@ async function uploadToOneDrive(){
       totalFotos: Object.keys(photoStore).length,
       fechaEnvio: new Date().toISOString()
     };
-    const jsonBlob = new Blob([JSON.stringify(summary,null,2)],{type:'application/json'});
-    await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${subId}:/datos_reporte.json:/content`,{
-      method:'PUT',
-      headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'application/json'},
+    const jsonBlob = new Blob([JSON.stringify(summary, null, 2)], {type: 'application/json'});
+    await fetch('https://graph.microsoft.com/v1.0/me/drive/items/' + subId + ':/datos_reporte.json:/content', {
+      method: 'PUT',
+      headers: {'Authorization': 'Bearer ' + msalToken, 'Content-Type': 'application/json'},
       body: jsonBlob
     });
 
-    // 6. Success
-    document.getElementById('successBanner').style.display='block';
-    document.getElementById('successBanner').innerHTML=`
-      <div style="font-size:40px;margin-bottom:8px">✅</div>
-      <h3>¡Reporte guardado en OneDrive!</h3>
-      <p>Carpeta: <strong>${FOLDER_NAME} / ${reportName}</strong></p>
-      <p style="margin-top:6px">Se guardaron <strong>${Object.keys(photoStore).length} fotos</strong>, las firmas y todos los datos.</p>
-      <p style="margin-top:6px;font-size:12px;opacity:0.8">Puedes verlo desde tu OneDrive corporativo.</p>
-    `;
-    btn.style.display='none';
+    // 6. También generar reporte HTML local
+    generateReport();
 
-  } catch(err){
-    btn.textContent = 'Reintentar envío';
+    // 7. Éxito
+    document.getElementById('successBanner').style.display = 'block';
+    document.getElementById('successBanner').innerHTML =
+      '<div style="font-size:40px;margin-bottom:8px">✅</div>' +
+      '<h3>¡Reporte guardado en OneDrive!</h3>' +
+      '<p>Carpeta: <strong>' + FOLDER_NAME + ' / ' + reportName + '</strong></p>' +
+      '<p style="margin-top:6px">Se guardaron <strong>' + Object.keys(photoStore).length + ' fotos</strong>, las firmas y todos los datos.</p>' +
+      '<p style="margin-top:6px;font-size:12px;opacity:0.8">También se descargó una copia HTML en tu dispositivo.</p>';
+    btn.style.display = 'none';
+    document.getElementById('downloadBtn').style.display = 'none';
+
+  } catch (err) {
+    btn.textContent = '☁️ Reintentar subida';
     btn.disabled = false;
-    alert('Error al guardar en OneDrive:\n'+err.message+'\n\nAsegúrate de haber iniciado sesión correctamente.');
+    setStatus('error', '❌ Error al guardar: ' + err.message);
   }
 }
 
-async function loginPopup(){
-  return new Promise((resolve, reject)=>{
-    const url = getMsalAuthUrl();
-    const popup = window.open(url,'mslogin','width=500,height=650,left=100,top=100');
-    if(!popup){ reject(new Error('No se pudo abrir ventana de login. Permite popups en tu navegador.')); return; }
-    const timer = setInterval(()=>{
-      try {
-        if(popup.closed){ clearInterval(timer); reject(new Error('Ventana cerrada sin completar login.')); return; }
-        const hash = popup.location.hash;
-        if(hash && hash.includes('access_token')){
-          clearInterval(timer);
-          popup.close();
-          const params = new URLSearchParams(hash.substring(1));
-          resolve(params.get('access_token'));
-        }
-      } catch(e){ /* cross-origin, esperar */ }
-    }, 300);
-    setTimeout(()=>{ clearInterval(timer); if(!popup.closed) popup.close(); reject(new Error('Tiempo de espera agotado.')); }, 120000);
-  });
+// ── SOLO DESCARGAR (sin nube) ────────────────────────────────────────
+function onlyDownload() {
+  generateReport();
+  document.getElementById('successBanner').style.display = 'block';
+  document.getElementById('successBanner').innerHTML =
+    '<div style="font-size:40px;margin-bottom:8px">⬇️</div>' +
+    '<h3>Reporte descargado</h3>' +
+    '<p>El archivo HTML se guardó en tu carpeta de Descargas.</p>';
 }
 
-function generateReport(){
-  const fecha = document.getElementById('fecha').value || '—';
-  const fileNum = document.getElementById('fileNum').value || '—';
-  const almacen = document.getElementById('almacen').value || '—';
-  const contenedor = document.getElementById('contenedor').value || '—';
-  const precinto = document.getElementById('precinto').value || '—';
-  const placa = document.getElementById('placa').value || '—';
-  const tamano = document.getElementById('tamano').value || '—';
-  const horaInicio = document.getElementById('horaInicio').value || '—';
-  const horaFin = document.getElementById('horaFin').value || '—';
-  const inspector = document.getElementById('inspNombre').value || '—';
-  const cargoInsp = document.getElementById('inspCargo').value || '—';
-  const obsGenerales = document.getElementById('obsGenerales').value || '—';
-  const firmaAlmNombre = document.getElementById('firmaAlmNombre').value || '—';
+// ── SUBMIT PRINCIPAL ─────────────────────────────────────────────────
+async function submitReport() {
+  const inspector = document.getElementById('inspNombre').value.trim();
+  if (!inspector) { alert('Por favor ingresa el nombre del inspector antes de guardar.'); return; }
+
+  if (msalToken) {
+    // Hay sesión → subir a OneDrive
+    await uploadToOneDrive();
+  } else {
+    // Sin sesión → solo descarga local
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = '⏳ Generando reporte...';
+    btn.disabled = true;
+    setTimeout(() => {
+      generateReport();
+      const fileVal = document.getElementById('fileNum').value || 'FILE';
+      const fecha   = document.getElementById('fecha').value || '';
+      document.getElementById('successBanner').style.display = 'block';
+      document.getElementById('successBanner').innerHTML =
+        '<div style="font-size:40px;margin-bottom:8px">✅</div>' +
+        '<h3>¡Reporte generado!</h3>' +
+        '<p>El reporte se descargó en tu dispositivo.</p>' +
+        '<p style="margin-top:8px;font-size:13px;color:#047857">📁 Archivo: <strong>Reporte_Inspeccion_' + fileVal + '_' + fecha + '.html</strong></p>' +
+        '<p style="margin-top:8px;font-size:12px;color:#065F46">💡 Para subirlo automáticamente a OneDrive, inicia sesión con tu cuenta Microsoft arriba.</p>';
+      btn.style.display = 'none';
+    }, 400);
+  }
+}
+
+// ── GENERAR REPORTE HTML ─────────────────────────────────────────────
+function generateReport() {
+  const fecha         = document.getElementById('fecha').value || '—';
+  const fileNum       = document.getElementById('fileNum').value || '—';
+  const almacen       = document.getElementById('almacen').value || '—';
+  const contenedor    = document.getElementById('contenedor').value || '—';
+  const precinto      = document.getElementById('precinto').value || '—';
+  const placa         = document.getElementById('placa').value || '—';
+  const tamano        = document.getElementById('tamano').value || '—';
+  const horaInicio    = document.getElementById('horaInicio').value || '—';
+  const horaFin       = document.getElementById('horaFin').value || '—';
+  const inspector     = document.getElementById('inspNombre').value || '—';
+  const cargoInsp     = document.getElementById('inspCargo').value || '—';
+  const obsGenerales  = document.getElementById('obsGenerales').value || '—';
+  const firmaAlmNombre= document.getElementById('firmaAlmNombre').value || '—';
   const firmaAlmCargo = document.getElementById('firmaAlmCargo').value || '—';
-  const firmaCalNombre = document.getElementById('firmaCalNombre').value || '—';
+  const firmaCalNombre= document.getElementById('firmaCalNombre').value || '—';
   const firmaCalCargo = document.getElementById('firmaCalCargo').value || '—';
-  const completo = document.querySelector('input[name="completo"]:checked')?.value || '—';
-  const totalFotos = Object.keys(photoStore).length;
+  const completo      = document.querySelector('input[name="completo"]:checked')?.value || '—';
+  const totalFotos    = Object.keys(photoStore).length;
+  const sigAlm        = document.getElementById('sigAlmacen').toDataURL('image/png');
+  const sigCal        = document.getElementById('sigCalidad').toDataURL('image/png');
 
-  // Firmas
-  const sigAlm = document.getElementById('sigAlmacen').toDataURL('image/png');
-  const sigCal = document.getElementById('sigCalidad').toDataURL('image/png');
-
-  // Observaciones
   let obsHTML = '';
-  document.querySelectorAll('.obs-row').forEach((row,i)=>{
-    const desc = row.querySelector('input')?.value || '—';
-    const tipo = row.querySelector('select')?.value || '—';
+  document.querySelectorAll('.obs-row').forEach((row, i) => {
+    const desc  = row.querySelector('input')?.value || '—';
+    const tipo  = row.querySelector('select')?.value || '—';
     const thumb = row.querySelector('.obs-thumb img');
-    const fotoHTML = thumb ? `<img src="${thumb.src}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;margin-top:4px">` : '';
-    obsHTML += `<tr><td style="padding:6px 8px;border:1px solid #E2E8F0">${i+1}</td><td style="padding:6px 8px;border:1px solid #E2E8F0">${tipo}</td><td style="padding:6px 8px;border:1px solid #E2E8F0">${desc}</td><td style="padding:6px 8px;border:1px solid #E2E8F0">${fotoHTML}</td></tr>`;
+    const fotoHTML = thumb ? '<img src="' + thumb.src + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;margin-top:4px">' : '';
+    obsHTML += '<tr><td style="padding:6px 8px;border:1px solid #E2E8F0">' + (i+1) + '</td><td style="padding:6px 8px;border:1px solid #E2E8F0">' + tipo + '</td><td style="padding:6px 8px;border:1px solid #E2E8F0">' + desc + '</td><td style="padding:6px 8px;border:1px solid #E2E8F0">' + fotoHTML + '</td></tr>';
   });
 
-  // Fotos exteriores
-  let fotosExtHTML = '';
   const extLabels = ['Lateral derecho','Lateral izquierdo','Frontal vehículo','Posterior contenedor','N° contenedor','N° precinto'];
-  extLabels.forEach((label,i)=>{
-    const foto = photoStore['ext:'+i];
-    if(foto) fotosExtHTML += `<div style="display:inline-block;margin:6px;text-align:center"><img src="${foto}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0"><br><span style="font-size:11px;color:#64748B">${label}</span></div>`;
-  });
+  let fotosExtHTML = '';
+  extLabels.forEach((label, i) => { const foto = photoStore['ext:' + i]; if (foto) fotosExtHTML += '<div style="display:inline-block;margin:6px;text-align:center"><img src="' + foto + '" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0"><br><span style="font-size:11px;color:#64748B">' + label + '</span></div>'; });
 
-  // Fotos apertura
-  let fotosApHTML = '';
   const apLabels = ['Vista general','Lado izquierdo','Lado derecho','Piso','Techo','Primera fila'];
-  apLabels.forEach((label,i)=>{
-    const foto = photoStore['ap:'+i];
-    if(foto) fotosApHTML += `<div style="display:inline-block;margin:6px;text-align:center"><img src="${foto}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0"><br><span style="font-size:11px;color:#64748B">${label}</span></div>`;
-  });
+  let fotosApHTML = '';
+  apLabels.forEach((label, i) => { const foto = photoStore['ap:' + i]; if (foto) fotosApHTML += '<div style="display:inline-block;margin:6px;text-align:center"><img src="' + foto + '" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0"><br><span style="font-size:11px;color:#64748B">' + label + '</span></div>'; });
 
-  // Fotos extras
   let fotosExtrasHTML = '';
-  Object.keys(photoStore).forEach(key=>{
-    if(key.includes(':x')){
-      fotosExtrasHTML += `<div style="display:inline-block;margin:6px"><img src="${photoStore[key]}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0"></div>`;
-    }
-  });
+  Object.keys(photoStore).forEach(key => { if (key.includes(':x')) fotosExtrasHTML += '<div style="display:inline-block;margin:6px"><img src="' + photoStore[key] + '" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0"></div>'; });
 
-  // Inventario
   let inventHTML = '';
-  document.querySelectorAll('#inventBody tr').forEach(row=>{
+  document.querySelectorAll('#inventBody tr').forEach(row => {
     const cells = row.querySelectorAll('input');
-    if(cells.length) inventHTML += `<tr><td style="padding:6px 8px;border:1px solid #E2E8F0;font-family:monospace">${cells[0]?.value||'—'}</td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center">${cells[1]?.value||'—'}</td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center">${cells[2]?.value||'—'}</td><td style="padding:6px 8px;border:1px solid #E2E8F0">${cells[3]?.value||'—'}</td></tr>`;
+    if (cells.length) inventHTML += '<tr><td style="padding:6px 8px;border:1px solid #E2E8F0;font-family:monospace">' + (cells[0]?.value||'—') + '</td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center">' + (cells[1]?.value||'—') + '</td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center">' + (cells[2]?.value||'—') + '</td><td style="padding:6px 8px;border:1px solid #E2E8F0">' + (cells[3]?.value||'—') + '</td></tr>';
   });
 
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Reporte Inspección ${fileNum} - ${fecha}</title>
-<style>
-  body{font-family:'Segoe UI',system-ui,sans-serif;color:#1a2332;margin:0;padding:20px;background:#F0F4F8}
-  .report{max-width:800px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-  .report-header{background:#1a3a5c;color:white;padding:24px 28px;display:flex;align-items:center;gap:16px}
-  .report-header h1{font-size:20px;margin:0}
-  .report-header p{font-size:13px;opacity:0.7;margin:4px 0 0}
-  .section{padding:20px 28px;border-bottom:1px solid #F1F5F9}
-  .section h2{font-size:12px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 14px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .field-item{background:#F8FAFC;border-radius:8px;padding:10px 12px}
-  .field-item .lbl{font-size:11px;color:#94A3B8;margin-bottom:3px}
-  .field-item .val{font-size:14px;font-weight:600;color:#1a2332}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th{background:#F8FAFC;padding:8px;text-align:left;font-size:11px;font-weight:600;color:#64748B;border:1px solid #E2E8F0}
-  .sig-box{border:1px solid #E2E8F0;border-radius:8px;padding:12px;text-align:center}
-  .sig-box img{max-width:200px;height:80px;object-fit:contain}
-  .sig-box p{font-size:13px;font-weight:600;margin:8px 0 2px}
-  .sig-box span{font-size:12px;color:#64748B}
-  .badge{display:inline-block;background:#EAF3DE;color:#27500A;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600}
-  @media print{body{background:white;padding:0}.report{box-shadow:none}}
-</style>
-</head>
-<body>
-<div class="report">
-  <div class="report-header">
-    <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📦</div>
-    <div>
-      <h1>Reporte de Inspección de Contenedor</h1>
-      <p>File: ${fileNum} &nbsp;|&nbsp; Fecha: ${fecha} &nbsp;|&nbsp; Inspector: ${inspector}</p>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Datos generales</h2>
-    <div class="grid">
-      <div class="field-item"><div class="lbl">Número de File</div><div class="val">${fileNum}</div></div>
-      <div class="field-item"><div class="lbl">Fecha</div><div class="val">${fecha}</div></div>
-      <div class="field-item"><div class="lbl">Almacén de descarga</div><div class="val">${almacen}</div></div>
-      <div class="field-item"><div class="lbl">Tamaño contenedor</div><div class="val">${tamano}</div></div>
-      <div class="field-item"><div class="lbl">Hora inicio</div><div class="val">${horaInicio}</div></div>
-      <div class="field-item"><div class="lbl">Hora final</div><div class="val">${horaFin}</div></div>
-      <div class="field-item"><div class="lbl">Placa del vehículo</div><div class="val">${placa}</div></div>
-      <div class="field-item"><div class="lbl">Completó descarga</div><div class="val">${completo}</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Datos del contenedor</h2>
-    <div class="grid">
-      <div class="field-item"><div class="lbl">Número de contenedor</div><div class="val" style="font-family:monospace">${contenedor}</div></div>
-      <div class="field-item"><div class="lbl">Número de precinto</div><div class="val" style="font-family:monospace">${precinto}</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Inspector responsable</h2>
-    <div class="grid">
-      <div class="field-item"><div class="lbl">Nombre</div><div class="val">${inspector}</div></div>
-      <div class="field-item"><div class="lbl">Cargo</div><div class="val">${cargoInsp}</div></div>
-    </div>
-  </div>
-
-  ${inventHTML ? `<div class="section">
-    <h2>Inventario de carga</h2>
-    <table><thead><tr><th>Código</th><th>Cant. unidades</th><th>Cajas master</th><th>Muestra</th></tr></thead>
-    <tbody>${inventHTML}</tbody></table>
-  </div>` : ''}
-
-  ${fotosExtHTML ? `<div class="section">
-    <h2>Fotos exteriores del contenedor</h2>
-    <div>${fotosExtHTML}</div>
-  </div>` : ''}
-
-  ${fotosApHTML ? `<div class="section">
-    <h2>Fotos apertura del contenedor</h2>
-    <div>${fotosApHTML}</div>
-  </div>` : ''}
-
-  ${fotosExtrasHTML ? `<div class="section">
-    <h2>Fotos adicionales</h2>
-    <div>${fotosExtrasHTML}</div>
-  </div>` : ''}
-
-  ${obsHTML ? `<div class="section">
-    <h2>Observaciones durante la descarga</h2>
-    <table><thead><tr><th>#</th><th>Tipo</th><th>Descripción</th><th>Foto</th></tr></thead>
-    <tbody>${obsHTML}</tbody></table>
-  </div>` : ''}
-
-  <div class="section">
-    <h2>Observaciones generales del inspector</h2>
-    <div style="background:#F8FAFC;border-radius:8px;padding:12px;font-size:14px;line-height:1.6">${obsGenerales}</div>
-  </div>
-
-  <div class="section">
-    <h2>Firmas digitales</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div class="sig-box">
-        <img src="${sigAlm}" alt="Firma almacén">
-        <p>${firmaAlmNombre}</p>
-        <span>${firmaAlmCargo}</span>
-      </div>
-      <div class="sig-box">
-        <img src="${sigCal}" alt="Firma calidad">
-        <p>${firmaCalNombre}</p>
-        <span>${firmaCalCargo}</span>
-      </div>
-    </div>
-  </div>
-
-  <div style="padding:16px 28px;background:#F8FAFC;display:flex;justify-content:space-between;align-items:center">
-    <span style="font-size:12px;color:#94A3B8">Total de fotos: ${totalFotos} | Generado: ${new Date().toLocaleString()}</span>
-    <span class="badge">✅ Reporte completado</span>
-  </div>
-</div>
-<script>window.onload=()=>window.print();</script>
-</body>
-</html>`;
+  const html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte Inspección ' + fileNum + ' - ' + fecha + '</title><style>body{font-family:Segoe UI,system-ui,sans-serif;color:#1a2332;margin:0;padding:20px;background:#F0F4F8}.report{max-width:800px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)}.report-header{background:#1a3a5c;color:white;padding:24px 28px;display:flex;align-items:center;gap:16px}.report-header h1{font-size:20px;margin:0}.report-header p{font-size:13px;opacity:.7;margin:4px 0 0}.section{padding:20px 28px;border-bottom:1px solid #F1F5F9}.section h2{font-size:12px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin:0 0 14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field-item{background:#F8FAFC;border-radius:8px;padding:10px 12px}.field-item .lbl{font-size:11px;color:#94A3B8;margin-bottom:3px}.field-item .val{font-size:14px;font-weight:600;color:#1a2332}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#F8FAFC;padding:8px;text-align:left;font-size:11px;font-weight:600;color:#64748B;border:1px solid #E2E8F0}.sig-box{border:1px solid #E2E8F0;border-radius:8px;padding:12px;text-align:center}.sig-box img{max-width:200px;height:80px;object-fit:contain}.sig-box p{font-size:13px;font-weight:600;margin:8px 0 2px}.sig-box span{font-size:12px;color:#64748B}.badge{display:inline-block;background:#EAF3DE;color:#27500A;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600}@media print{body{background:white;padding:0}.report{box-shadow:none}}</style></head><body><div class="report"><div class="report-header"><div style="width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📦</div><div><h1>Reporte de Inspección de Contenedor</h1><p>File: ' + fileNum + ' &nbsp;|&nbsp; Fecha: ' + fecha + ' &nbsp;|&nbsp; Inspector: ' + inspector + '</p></div></div><div class="section"><h2>Datos generales</h2><div class="grid"><div class="field-item"><div class="lbl">Número de File</div><div class="val">' + fileNum + '</div></div><div class="field-item"><div class="lbl">Fecha</div><div class="val">' + fecha + '</div></div><div class="field-item"><div class="lbl">Almacén de descarga</div><div class="val">' + almacen + '</div></div><div class="field-item"><div class="lbl">Tamaño contenedor</div><div class="val">' + tamano + '</div></div><div class="field-item"><div class="lbl">Hora inicio</div><div class="val">' + horaInicio + '</div></div><div class="field-item"><div class="lbl">Hora final</div><div class="val">' + horaFin + '</div></div><div class="field-item"><div class="lbl">Placa del vehículo</div><div class="val">' + placa + '</div></div><div class="field-item"><div class="lbl">Completó descarga</div><div class="val">' + completo + '</div></div></div></div><div class="section"><h2>Datos del contenedor</h2><div class="grid"><div class="field-item"><div class="lbl">Número de contenedor</div><div class="val" style="font-family:monospace">' + contenedor + '</div></div><div class="field-item"><div class="lbl">Número de precinto</div><div class="val" style="font-family:monospace">' + precinto + '</div></div></div></div><div class="section"><h2>Inspector responsable</h2><div class="grid"><div class="field-item"><div class="lbl">Nombre</div><div class="val">' + inspector + '</div></div><div class="field-item"><div class="lbl">Cargo</div><div class="val">' + cargoInsp + '</div></div></div></div>' + (inventHTML ? '<div class="section"><h2>Inventario de carga</h2><table><thead><tr><th>Código</th><th>Cant. unidades</th><th>Cajas master</th><th>Muestra</th></tr></thead><tbody>' + inventHTML + '</tbody></table></div>' : '') + (fotosExtHTML ? '<div class="section"><h2>Fotos exteriores del contenedor</h2><div>' + fotosExtHTML + '</div></div>' : '') + (fotosApHTML ? '<div class="section"><h2>Fotos apertura del contenedor</h2><div>' + fotosApHTML + '</div></div>' : '') + (fotosExtrasHTML ? '<div class="section"><h2>Fotos adicionales</h2><div>' + fotosExtrasHTML + '</div></div>' : '') + (obsHTML ? '<div class="section"><h2>Observaciones durante la descarga</h2><table><thead><tr><th>#</th><th>Tipo</th><th>Descripción</th><th>Foto</th></tr></thead><tbody>' + obsHTML + '</tbody></table></div>' : '') + '<div class="section"><h2>Observaciones generales del inspector</h2><div style="background:#F8FAFC;border-radius:8px;padding:12px;font-size:14px;line-height:1.6">' + obsGenerales + '</div></div><div class="section"><h2>Firmas digitales</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div class="sig-box"><img src="' + sigAlm + '" alt="Firma almacén"><p>' + firmaAlmNombre + '</p><span>' + firmaAlmCargo + '</span></div><div class="sig-box"><img src="' + sigCal + '" alt="Firma calidad"><p>' + firmaCalNombre + '</p><span>' + firmaCalCargo + '</span></div></div></div><div style="padding:16px 28px;background:#F8FAFC;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:#94A3B8">Total de fotos: ' + totalFotos + ' | Generado: ' + new Date().toLocaleString() + '</span><span class="badge">✅ Reporte completado</span></div></div><script>window.onload=()=>window.print();<\/script></body></html>';
 
   const blob = new Blob([html], {type:'text/html'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Reporte_Inspeccion_${fileNum}_${fecha}.html`.replace(/\s+/g,'_');
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = ('Reporte_Inspeccion_' + fileNum + '_' + fecha + '.html').replace(/\s+/g, '_');
   a.click();
   URL.revokeObjectURL(url);
 }
 
-async function submitReport(){
-  const inspector = document.getElementById('inspNombre').value.trim();
-  if(!inspector){ alert('Por favor ingresa el nombre del inspector antes de guardar.'); return; }
-  const btn = document.getElementById('submitBtn');
-  btn.textContent = '⏳ Generando reporte...';
-  btn.disabled = true;
-  setTimeout(()=>{
-    generateReport();
-    document.getElementById('successBanner').style.display='block';
-    document.getElementById('successBanner').innerHTML=`
-      <div style="font-size:40px;margin-bottom:8px">✅</div>
-      <h3>¡Reporte generado!</h3>
-      <p>El reporte se descargó en tu dispositivo. Guárdalo en tu carpeta de OneDrive para tenerlo en la nube.</p>
-      <p style="margin-top:8px;font-size:13px;color:#047857">📁 Busca el archivo <strong>Reporte_Inspeccion_${document.getElementById('fileNum').value||'FILE'}_${document.getElementById('fecha').value}.html</strong> en tu carpeta de Descargas</p>
-    `;
-    btn.style.display='none';
-  }, 500);
-}
-
-window.addEventListener('load', ()=>{});
-
-// Init
-document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
-buildGrid('extGrid','ext',EXT_SLOTS);
-buildGrid('apGrid','ap',AP_SLOTS);
-buildProgress();updateNav();
-setupSig('sigAlmacen','statusAlm');
-setupSig('sigCalidad','statusCal');
+// ── INIT ─────────────────────────────────────────────────────────────
+document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+buildGrid('extGrid', 'ext', EXT_SLOTS);
+buildGrid('apGrid', 'ap', AP_SLOTS);
+buildProgress();
+updateNav();
+setupSig('sigAlmacen', 'statusAlm');
+setupSig('sigCalidad', 'statusCal');
 </script>
 </body>
 </html>
