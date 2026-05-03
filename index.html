@@ -303,10 +303,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
         <button onclick="doLogout()" style="margin-left:12px;background:none;border:none;color:#94A3B8;cursor:pointer;font-size:12px">Cerrar sesión</button>
       </div>
     </div>
-    <div class="card">
-      <div class="section-title">Estado final de la descarga</div>
+    <div class="card" id="summaryCard"></div>
+
+    <div class="card" style="border:2px solid #E2E8F0">
+      <div class="section-title">¿Se completó la descarga?</div>
       <div class="field" style="margin-bottom:14px">
-        <label>¿Se completó la descarga?</label>
         <div class="radio-row">
           <label class="radio-opt"><input type="radio" name="completo" value="SI" onchange="toggleAvance()"> ✅ Sí — descarga completa</label>
           <label class="radio-opt"><input type="radio" name="completo" value="NO" onchange="toggleAvance()"> ⏸ No — descarga parcial</label>
@@ -326,7 +327,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
             <input id="horaParada" type="time">
           </div>
         </div>
-        <div class="field" style="margin-bottom:4px">
+        <div class="field" style="margin-bottom:10px">
           <label>Motivo de parada</label>
           <select id="motivoParada">
             <option value="">Seleccionar...</option>
@@ -339,17 +340,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
             <option>Otro</option>
           </select>
         </div>
-        <div class="field" style="margin-top:10px">
+        <div class="field" style="margin-bottom:10px">
           <label>Observación de parada</label>
-          <textarea id="obsParada" rows="2" placeholder="Detalla hasta dónde se descargó y qué queda pendiente..." style="resize:vertical;width:100%;font-size:14px;padding:10px;border:1.5px solid #E2E8F0;border-radius:10px;background:#FFF7ED;color:#1a2332;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.5"></textarea>
+          <textarea id="obsParada" rows="3" placeholder="Detalla hasta dónde se descargó y qué queda pendiente para el próximo turno..." style="resize:vertical;width:100%;font-size:14px;padding:10px;border:1.5px solid #FED7AA;border-radius:10px;background:#FFF7ED;color:#1a2332;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.5"></textarea>
         </div>
-        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12px;color:#92400E">
-          ⚠️ Al guardar este reporte quedará registrado como <strong>descarga parcial</strong>. El inspector deberá continuar en el próximo turno.
+        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:10px 12px;font-size:12px;color:#92400E">
+          ⚠️ Quedará registrado como <strong>descarga parcial</strong>. El inspector deberá continuar en el próximo turno.
         </div>
       </div>
     </div>
 
-    <div class="card" id="summaryCard"></div>
     <div class="success-banner" id="successBanner" style="display:none"></div>
     <button class="btn-submit-final" id="submitBtn" onclick="submitReport()">☁️ Enviar reporte a la nube</button>
     <button class="btn-download" id="downloadBtn" onclick="onlyDownload()" style="display:none">⬇️ Solo descargar reporte (sin nube)</button>
