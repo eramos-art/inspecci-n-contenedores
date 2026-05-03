@@ -7,9 +7,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Inspección">
 <title>Inspección de Contenedores</title>
-<link rel="manifest" href="/inspecci-n-contenedores/manifest.json">
-<meta name="theme-color" content="#1a3a5c">
-<link rel="apple-touch-icon" href="/inspecci-n-contenedores/icon-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a2332;min-height:100vh}
@@ -87,9 +84,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .invent-table td input{font-size:13px;padding:6px 8px;border:1px solid #E2E8F0;border-radius:7px;background:white;color:#1a2332;width:100%;font-family:'Segoe UI',system-ui,sans-serif}
 .step-page{display:none}
 .step-page.active{display:block}
-.radio-row{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
-.radio-opt{display:flex;align-items:center;gap:7px;font-size:14px;color:#1a2332;cursor:pointer}
-.radio-opt input{width:18px;height:18px;accent-color:#1a3a5c}
+.radio-row{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+.radio-opt{display:none}
+.btn-opcion{flex:1;min-width:120px;padding:12px 10px;border:2.5px solid #E2E8F0;border-radius:12px;background:#F8FAFC;color:#475569;font-size:14px;font-weight:600;cursor:pointer;text-align:center;font-family:'Segoe UI',system-ui,sans-serif;transition:all 0.2s;-webkit-tap-highlight-color:transparent;user-select:none}
+.btn-opcion:active{transform:scale(0.97)}
+.btn-opcion.selected-si{border-color:#059669;background:#ECFDF5;color:#065F46}
+.btn-opcion.selected-no{border-color:#F59E0B;background:#FFF7ED;color:#92400E}
+.btn-opcion.selected-aceptado{border-color:#059669;background:#ECFDF5;color:#065F46}
+.btn-opcion.selected-tolerado{border-color:#F59E0B;background:#FFF7ED;color:#92400E}
+.btn-opcion.selected-rechazado{border-color:#EF4444;background:#FEF2F2;color:#991B1B}
 .summary-table{width:100%;font-size:13px;border-collapse:collapse}
 .summary-table td{padding:9px 0;border-bottom:1px solid #F1F5F9}
 .summary-table td:first-child{color:#64748B;width:45%}
@@ -165,9 +168,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
       <div class="field" style="margin-bottom:12px">
         <label>Condición</label>
         <div class="radio-row">
-          <label class="radio-opt"><input type="radio" name="estadoCont" value="Aceptado"> ✅ Aceptado</label>
-          <label class="radio-opt"><input type="radio" name="estadoCont" value="Tolerado"> ⚠️ Tolerado</label>
-          <label class="radio-opt"><input type="radio" name="estadoCont" value="Rechazado"> ❌ Rechazado</label>
+          <input type="radio" name="estadoCont" id="estAcept" value="Aceptado" class="radio-opt">
+          <input type="radio" name="estadoCont" id="estTol" value="Tolerado" class="radio-opt">
+          <input type="radio" name="estadoCont" id="estRech" value="Rechazado" class="radio-opt">
+          <button type="button" class="btn-opcion" id="btnAcept" onclick="selectOpcion('estadoCont','Aceptado',this,'selected-aceptado')">✅ Aceptado</button>
+          <button type="button" class="btn-opcion" id="btnTol" onclick="selectOpcion('estadoCont','Tolerado',this,'selected-tolerado')">⚠️ Tolerado</button>
+          <button type="button" class="btn-opcion" id="btnRech" onclick="selectOpcion('estadoCont','Rechazado',this,'selected-rechazado')">❌ Rechazado</button>
         </div>
       </div>
       <div class="field" style="margin-bottom:12px">
@@ -312,8 +318,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
       <div class="section-title">¿Se completó la descarga?</div>
       <div class="field" style="margin-bottom:14px">
         <div class="radio-row">
-          <label class="radio-opt"><input type="radio" name="completo" value="SI" onchange="toggleAvance()"> ✅ Sí — descarga completa</label>
-          <label class="radio-opt"><input type="radio" name="completo" value="NO" onchange="toggleAvance()"> ⏸ No — descarga parcial</label>
+          <input type="radio" name="completo" id="compSI" value="SI" class="radio-opt">
+          <input type="radio" name="completo" id="compNO" value="NO" class="radio-opt">
+          <button type="button" class="btn-opcion" id="btnCompSI" onclick="selectOpcion('completo','SI',this,'selected-si');toggleAvance()">✅ Sí — descarga completa</button>
+          <button type="button" class="btn-opcion" id="btnCompNO" onclick="selectOpcion('completo','NO',this,'selected-no');toggleAvance()">⏸ No — descarga parcial</button>
         </div>
       </div>
       <div id="avanceSection" style="display:none">
@@ -634,6 +642,35 @@ function updatePill(){
   document.getElementById('pillRole').textContent=role||'Sin cargo';
 }
 
+// ── BOTONES DE OPCIÓN (reemplazan radio buttons) ───────────────────
+function selectOpcion(name, value, btn, selectedClass){
+  // Marcar radio hidden
+  const radio=document.querySelector('input[name="'+name+'"][value="'+value+'"]');
+  if(radio) radio.checked=true;
+  // Quitar selección de todos los botones del grupo
+  const allBtns=btn.closest('.radio-row').querySelectorAll('.btn-opcion');
+  allBtns.forEach(b=>{b.className='btn-opcion';});
+  // Marcar este botón
+  btn.classList.add(selectedClass);
+  saveProgress();
+}
+
+function restoreOpcionBtn(name, value){
+  if(!value) return;
+  const radio=document.querySelector('input[name="'+name+'"][value="'+value+'"]');
+  if(radio) radio.checked=true;
+  // Buscar el botón correspondiente y marcarlo
+  const allBtns=document.querySelectorAll('.btn-opcion');
+  allBtns.forEach(btn=>{
+    const onclick=btn.getAttribute('onclick')||'';
+    if(onclick.includes("'"+name+"'") && onclick.includes("'"+value+"'")){
+      // Determinar clase según valor
+      const clsMap={SI:'selected-si',NO:'selected-no',Aceptado:'selected-aceptado',Tolerado:'selected-tolerado',Rechazado:'selected-rechazado'};
+      btn.classList.add(clsMap[value]||'selected-si');
+    }
+  });
+}
+
 // ── TOGGLE AVANCE ──────────────────────────────────────────────────
 function toggleAvance(){
   const completo=document.querySelector('input[name="completo"]:checked')?.value;
@@ -794,8 +831,8 @@ function restoreProgress(){
 
     // Restaurar AUTOMÁTICAMENTE sin preguntar
     Object.entries(data.fields||{}).forEach(([id,val])=>{
-      if(id==='completo'){const r=document.querySelector('input[name="completo"][value="'+val+'"]');if(r){r.checked=true;toggleAvance();}return;}
-      if(id==='estadoCont'){const r=document.querySelector('input[name="estadoCont"][value="'+val+'"]');if(r)r.checked=true;return;}
+      if(id==='completo'){restoreOpcionBtn('completo',val);toggleAvance();return;}
+      if(id==='estadoCont'){restoreOpcionBtn('estadoCont',val);return;}
       const el=document.getElementById(id);if(el)el.value=val;
     });
     updatePill();
