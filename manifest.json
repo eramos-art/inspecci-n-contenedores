@@ -1,0 +1,22 @@
+{
+  "name": "Inspección de Contenedores",
+  "short_name": "Inspección",
+  "description": "App de inspección y descarga de contenedores",
+  "start_url": "/inspecci-n-contenedores/",
+  "display": "standalone",
+  "background_color": "#F0F4F8",
+  "theme_color": "#1a3a5c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
