@@ -67,10 +67,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .check-lbl-es{font-size:13px;color:#1a2332;font-weight:500}
 .check-lbl-en{font-size:10px;color:#94A3B8;margin-top:1px;font-style:italic}
 .check-btns{display:flex;gap:6px;flex-shrink:0}
-.cb-si{padding:5px 12px;background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
-.cb-no{padding:5px 12px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
+.cb-si{padding:5px 10px;background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
+.cb-no{padding:5px 10px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
+.cb-na{padding:5px 10px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
 .cb-si.selected{background:#059669;color:white;border-color:#059669}
 .cb-no.selected{background:#EF4444;color:white;border-color:#EF4444}
+.cb-na.selected{background:#6B7280;color:white;border-color:#6B7280}
 /* OBS OBSERVACIONES */
 .obs-row{display:flex;gap:8px;margin-bottom:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px}
 .obs-thumb{width:48px;height:48px;border-radius:8px;background:#E2E8F0;overflow:hidden;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;border:1.5px dashed #CBD5E1;-webkit-tap-highlight-color:transparent}
@@ -178,15 +180,47 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
       </div>
       <div class="field">
         <label>Responsable almacén / Warehouse responsible</label>
-        <input id="respAlmacen" type="text" placeholder="Nombre del responsable">
+        <select id="respAlmacenSel" onchange="toggleRespOtro()">
+          <option value="">Seleccionar...</option>
+          <option>Jefe de almacén</option>
+          <option>Supervisor de almacén</option>
+          <option>Auxiliar de almacén</option>
+          <option>Responsable de turno</option>
+          <option>Otros</option>
+        </select>
+      </div>
+      <div class="field" id="respAlmacenOtroField" style="display:none">
+        <label>Especificar cargo / Specify role</label>
+        <input id="respAlmacen" type="text" placeholder="Cargo del responsable">
+      </div>
+      <div class="field">
+        <label>Nombre del responsable / Name</label>
+        <input id="respAlmacenNom" type="text" placeholder="Nombre completo">
       </div>
     </div>
     <div class="card">
       <div class="section-title">Datos generales / General information</div>
       <div class="grid2">
-        <div class="field"><label>N° File / File number ⚠️</label><input id="fileNum" type="text" placeholder="M26-000"></div>
-        <div class="field"><label>N° OC / Purchase order ⚠️</label><input id="numOC" type="text" placeholder="4200000000"></div>
-        <div class="field"><label>Proveedor / Supplier ⚠️</label><input id="proveedor" type="text" placeholder="Nombre del proveedor"></div>
+        <div class="field"><label>FILE ⚠️</label><input id="fileNum" type="text" placeholder="M26-000"></div>
+        <div class="field"><label>N° OC Principal ⚠️</label><input id="numOC" type="text" placeholder="4200000000"></div>
+      </div>
+      <div style="margin-top:8px;margin-bottom:8px;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:12px;padding:12px">
+        <div style="font-size:11px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">OC Adicionales / Additional POs</div>
+        <div id="ocAdicionalesList"></div>
+        <button class="btn-add" onclick="addOCRow()" style="margin-top:4px">+ Agregar OC adicional / Add PO</button>
+      </div>
+      <div class="grid2">
+        <div class="field" style="grid-column:1/-1">
+          <label>Proveedor principal / Main Supplier ⚠️</label>
+          <input id="proveedor" type="text" placeholder="Nombre del proveedor principal">
+        </div>
+      </div>
+      <div style="margin-top:0;margin-bottom:8px;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:12px;padding:12px">
+        <div style="font-size:11px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Proveedores adicionales / Additional Suppliers</div>
+        <div id="proveedoresAdicionalesList"></div>
+        <button class="btn-add" onclick="addProveedorRow()" style="margin-top:4px">+ Agregar proveedor / Add supplier</button>
+      </div>
+      <div class="grid2">
         <div class="field"><label>Fecha / Date</label><input id="fecha" type="date"></div>
         <div class="field"><label>Almacén / Unloading location ⚠️</label>
           <select id="almacen">
@@ -207,7 +241,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
           </select>
         </div>
         <div class="field"><label>Hora inicio / Start time</label><input id="horaInicio" type="time"></div>
-        <div class="field"><label>Hora fin / End time</label><input id="horaFin" type="time"></div>
         <div class="field"><label>Placa / Plate number</label><input id="placa" type="text" placeholder="ABC-123"></div>
         <div class="field"><label>N° estibadores / Dockers</label><input id="estibadores" type="number" min="0" placeholder="Ej: 4"></div>
       </div>
@@ -266,9 +299,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
       <div class="section-title">Productos recibidos / Received products</div>
       <div style="overflow-x:auto">
         <table class="invent-table">
-          <thead><tr><th>Código / Code ⬛</th><th>Descripción</th><th>Cant.</th><th>Uds/caja</th><th></th></tr></thead>
+          <thead><tr>
+            <th style="min-width:130px">Código ⬛</th>
+            <th style="min-width:70px">Cant. Lote</th>
+            <th style="min-width:70px">Unid/caja</th>
+            <th style="min-width:80px">Muestra QC</th>
+            <th style="width:28px"></th>
+          </tr></thead>
           <tbody id="inventBody">
-            <tr><td><input type="text" placeholder="Escanear" onkeydown="inventNext(event,this,0)"></td><td><input type="text" placeholder="Descripción" onkeydown="inventNext(event,this,1)"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,2)"></td><td><input type="text" placeholder="1X1" onkeydown="inventNext(event,this,3)"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td></tr>
+            <tr>
+              <td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" style="min-width:120px;font-family:monospace;font-size:13px"></td>
+              <td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,1)" style="max-width:65px"></td>
+              <td><input type="text" placeholder="Ej: 12" onkeydown="inventNext(event,this,2)" style="max-width:65px"></td>
+              <td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,3)" style="max-width:70px"></td>
+              <td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -306,84 +351,136 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 
   <!-- ═══ PASO 5: GRADO 1 ═══ -->
   <div class="step-page" id="page4">
-    <div class="tip-box"><div class="tip-icon">📊</div><div class="tip-text">Grado 1 — Tolerable (Grade 1 — Tolerable). Pistola o teclado: al completar cada código salta automáticamente al siguiente.</div></div>
-    <div class="card">
-      <div class="section-title">Detalle de daños Grado 1 / Grade 1 damage detail</div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Código de producto / Product code</label>
-        <div class="barcode-wrap"><input id="g1ProductCode" type="text" placeholder="Escanear código de producto"><span class="scan-icon">⬛</span></div>
-      </div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Tipo de daño / Type of damage</label>
-        <select id="g1TipoDano">
-          <option value="">Seleccionar... / Select...</option>
-          <option>Caja rota / Broken box</option>
-          <option>Caja húmeda / Wet box</option>
-          <option>Caja aplastada / Crushed box</option>
-          <option>Producto dañado / Damaged product</option>
-          <option>Golpe / Impact damage</option>
-          <option>Etiqueta incorrecta / Wrong label</option>
-          <option>Otro / Other</option>
-        </select>
-      </div>
-    </div>
-    <div class="grado-section">
-      <div class="grado-header-1">📦 Series Grado 1 — Tolerable &nbsp;/&nbsp; Grade 1 Serial Numbers</div>
-      <div class="grado-body" id="g1Body">
-        <div class="serie-input-row">
-          <input type="text" class="serie-input g1-input" placeholder="Escanear serie / Scan serial" onkeydown="serieNext(event,this,'g1-input')">
-          <button class="serie-del" onclick="delSerie(this)">×</button>
+    <div class="tip-box"><div class="tip-icon">📊</div><div class="tip-text">Registra cada código de producto por separado. Por cada código puedes indicar si es Grado 1 o Grado 2. Usa el botón <strong>"+ Otro código"</strong> para agregar más.</div></div>
+    <div id="g1CodigosContainer">
+      <div class="card g1-codigo-block" data-idx="0">
+        <div class="section-title">Código #1 / Code #1 &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
+        <div class="field" style="margin-bottom:10px">
+          <label>Código de producto / Product code</label>
+          <div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código"><span class="scan-icon">⬛</span></div>
+        </div>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="field">
+            <label>Grado / Grade</label>
+            <select class="g1-grado-select">
+              <option value="">Seleccionar...</option>
+              <option value="G1">G1 — Tolerable</option>
+              <option value="G2">G2 — Rechazado</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tipo de daño / Damage type</label>
+            <select class="g1-tipo-select">
+              <option value="">Seleccionar...</option>
+              <option>Caja rota / Broken box</option>
+              <option>Caja húmeda / Wet box</option>
+              <option>Caja aplastada / Crushed box</option>
+              <option>Producto dañado / Damaged product</option>
+              <option>Golpe / Impact damage</option>
+              <option>Etiqueta incorrecta / Wrong label</option>
+              <option>Otro / Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="field">
+            <label>Cantidad / Qty</label>
+            <input class="g1-qty-input" type="number" min="0" placeholder="0">
+          </div>
+          <div class="field">
+            <label>Uds. internas / Internal units <span style="font-size:10px;color:#94A3B8">(Ej: piezas dentro de cada caja)</span></label>
+            <input class="g1-uds-input" type="number" min="0" placeholder="0">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>Detalle insumos / Detail <span style="font-size:10px;color:#94A3B8">(Ej: "5000 piezas pequeñas por caja master")</span></label>
+          <input class="g1-detail-input" type="text" placeholder="Descripción del contenido...">
+        </div>
+        <div class="grado-section">
+          <div class="grado-header-1">📦 Números de serie G1 / Serial numbers</div>
+          <div class="grado-body g1-series-body">
+            <div class="serie-input-row">
+              <input type="text" class="serie-input g1-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g1-input')">
+              <button class="serie-del" onclick="delSerie(this)">×</button>
+            </div>
+          </div>
+          <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
+            <button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button>
+          </div>
         </div>
       </div>
-      <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
-        <button class="btn-add" style="margin-top:0" onclick="addSerieRow('g1Body','g1-input')">+ Agregar serie G1 / Add G1 serial</button>
-      </div>
     </div>
-    <div class="field" style="margin-top:4px">
-      <label>Cantidad G1 / G1 Qty</label>
-      <input id="g1Qty" type="number" min="0" placeholder="0" style="max-width:120px">
-    </div>
+    <button onclick="addG1Block()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;font-size:14px;font-weight:700;background:#EBF4FF;border:2px dashed #378ADD;color:#1E40AF;border-radius:12px;cursor:pointer;margin-bottom:12px;font-family:inherit">📦 + Agregar otro código de producto</button>
+
+    <!-- Campos legacy para compatibilidad con reporte -->
+    <input type="hidden" id="g1ProductCode"><input type="hidden" id="g1TipoDano"><input type="hidden" id="g1Qty">
   </div>
 
   <!-- ═══ PASO 6: GRADO 2 ═══ -->
   <div class="step-page" id="page5">
-    <div class="tip-box"><div class="tip-icon">🔴</div><div class="tip-text">Grado 2 — Rechazado (Grade 2 — Rejected). Pistola o teclado: al completar cada código salta automáticamente al siguiente.</div></div>
-    <div class="card">
-      <div class="section-title">Detalle de daños Grado 2 / Grade 2 damage detail</div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Código de producto / Product code</label>
-        <div class="barcode-wrap"><input id="g2ProductCode" type="text" placeholder="Escanear código de producto"><span class="scan-icon">⬛</span></div>
-      </div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Tipo de daño / Type of damage</label>
-        <select id="g2TipoDano">
-          <option value="">Seleccionar... / Select...</option>
-          <option>Caja rota / Broken box</option>
-          <option>Caja húmeda / Wet box</option>
-          <option>Caja aplastada / Crushed box</option>
-          <option>Producto dañado / Damaged product</option>
-          <option>Golpe / Impact damage</option>
-          <option>Etiqueta incorrecta / Wrong label</option>
-          <option>Otro / Other</option>
-        </select>
-      </div>
-    </div>
-    <div class="grado-section">
-      <div class="grado-header-2">🔴 Series Grado 2 — Rechazado &nbsp;/&nbsp; Grade 2 Serial Numbers</div>
-      <div class="grado-body" id="g2Body">
-        <div class="serie-input-row">
-          <input type="text" class="serie-input g2-input" placeholder="Escanear serie / Scan serial" onkeydown="serieNext(event,this,'g2-input')">
-          <button class="serie-del" onclick="delSerie(this)">×</button>
+    <div class="tip-box"><div class="tip-icon">🔴</div><div class="tip-text">Registra los códigos con daño Grado 2 (Rechazado). Por cada código indica el tipo de daño, cantidad y números de serie. Usa <strong>"+ Otro código"</strong> para agregar más.</div></div>
+    <div id="g2CodigosContainer">
+      <div class="card g2-codigo-block" data-idx="0">
+        <div class="section-title">Código #1 / Code #1 &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
+        <div class="field" style="margin-bottom:10px">
+          <label>Código de producto / Product code</label>
+          <div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código"><span class="scan-icon">⬛</span></div>
+        </div>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="field">
+            <label>Grado / Grade</label>
+            <select class="g2-grado-select">
+              <option value="">Seleccionar...</option>
+              <option value="G1">G1 — Tolerable</option>
+              <option value="G2" selected>G2 — Rechazado</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tipo de daño / Damage type</label>
+            <select class="g2-tipo-select">
+              <option value="">Seleccionar...</option>
+              <option>Caja rota / Broken box</option>
+              <option>Caja húmeda / Wet box</option>
+              <option>Caja aplastada / Crushed box</option>
+              <option>Producto dañado / Damaged product</option>
+              <option>Golpe / Impact damage</option>
+              <option>Etiqueta incorrecta / Wrong label</option>
+              <option>Otro / Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="field">
+            <label>Cantidad / Qty</label>
+            <input class="g2-qty-input" type="number" min="0" placeholder="0">
+          </div>
+          <div class="field">
+            <label>Uds. internas / Internal units <span style="font-size:10px;color:#94A3B8">(Ej: piezas dentro de caja master)</span></label>
+            <input class="g2-uds-input" type="number" min="0" placeholder="0">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>Detalle insumos / Detail <span style="font-size:10px;color:#94A3B8">(Ej: "5000 piezas pequeñas por caja master")</span></label>
+          <input class="g2-detail-input" type="text" placeholder="Descripción del contenido...">
+        </div>
+        <div class="grado-section">
+          <div class="grado-header-2">🔴 Números de serie G2 / Serial numbers</div>
+          <div class="grado-body g2-series-body">
+            <div class="serie-input-row">
+              <input type="text" class="serie-input g2-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g2-input')">
+              <button class="serie-del" onclick="delSerie(this)">×</button>
+            </div>
+          </div>
+          <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
+            <button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button>
+          </div>
         </div>
       </div>
-      <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
-        <button class="btn-add" style="margin-top:0" onclick="addSerieRow('g2Body','g2-input')">+ Agregar serie G2 / Add G2 serial</button>
-      </div>
     </div>
-    <div class="field" style="margin-top:4px">
-      <label>Cantidad G2 / G2 Qty</label>
-      <input id="g2Qty" type="number" min="0" placeholder="0" style="max-width:120px">
-    </div>
+    <button onclick="addG2Block()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;font-size:14px;font-weight:700;background:#FEF9EC;border:2px dashed #F59E0B;color:#92400E;border-radius:12px;cursor:pointer;margin-bottom:12px;font-family:inherit">🔴 + Agregar otro código de producto</button>
+
+    <!-- Campos legacy para compatibilidad con reporte -->
+    <input type="hidden" id="g2ProductCode"><input type="hidden" id="g2TipoDano"><input type="hidden" id="g2Qty">
   </div>
 
   <!-- ═══ PASO 7: FIRMAS Y ENVÍO ═══ -->
@@ -427,6 +524,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
       <div class="sig-status" id="statusCal">Sin firma aún — dibuja tu firma arriba</div>
     </div>
 
+    <!-- HORA FIN -->
+    <div class="card">
+      <div class="section-title">Hora de finalización / End time</div>
+      <div class="field" style="max-width:200px">
+        <label>Hora fin / End time</label>
+        <input id="horaFin" type="time">
+      </div>
+    </div>
+
     <!-- ESTADO FINAL DESCARGA -->
     <div class="card" style="border:2px solid #E2E8F0">
       <div class="section-title">¿Se completó la descarga? / Was unloading completed?</div>
@@ -460,6 +566,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
           <label>Observación de parada / Stop observation</label>
           <textarea id="obsParada" rows="2" placeholder="Detalla hasta dónde se descargó... / Detail how far unloading reached..." style="resize:vertical;width:100%;font-size:13px;padding:10px;border:1.5px solid #FED7AA;border-radius:10px;background:#FFF7ED;color:#1a2332;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.5"></textarea>
         </div>
+      </div>
+    </div>
+
+    <!-- ESTADO DEL CONTENEDOR - AL FINAL -->
+    <div class="card" style="border:2px solid #334155">
+      <div class="section-title">Estado del contenedor / Container condition ⚠️</div>
+      <div class="tip-text" style="font-size:12px;color:#475569;margin-bottom:12px">Veredicto final tras la inspección completa / Final verdict after full inspection</div>
+      <div class="radio-row">
+        <input type="radio" name="estadoCont" value="Aceptado" class="radio-opt">
+        <input type="radio" name="estadoCont" value="Tolerado" class="radio-opt">
+        <input type="radio" name="estadoCont" value="Rechazado" class="radio-opt">
+        <button type="button" class="btn-opcion" id="btnEstAcep" onclick="selectOpcion('estadoCont','Aceptado',this,'selected-aceptado')">✅ Aceptado</button>
+        <button type="button" class="btn-opcion" id="btnEstTol" onclick="selectOpcion('estadoCont','Tolerado',this,'selected-tolerado')">⚠️ Tolerado</button>
+        <button type="button" class="btn-opcion" id="btnEstRech" onclick="selectOpcion('estadoCont','Rechazado',this,'selected-rechazado')" style="border-color:#EF4444;color:#991B1B">🔴 Rechazado</button>
       </div>
     </div>
 
@@ -570,8 +690,9 @@ function buildChecklist(items,store,containerId){
     row.className='check-row';
     row.innerHTML=`<div><div class="check-lbl-es">${item.es}</div><div class="check-lbl-en">${item.en}</div></div>
     <div class="check-btns">
-      <button class="cb-si${store[i]==='SI'?' selected':''}" onclick="setCheck(${i},'SI','${containerId}')">Sí</button>
-      <button class="cb-no${store[i]==='NO'?' selected':''}" onclick="setCheck(${i},'NO','${containerId}')">No</button>
+      <button class="cb-si${store[i]==='SI'?' selected':''}" onclick="setCheck(${i},'SI','${containerId}')">✔ Cumple</button>
+      <button class="cb-no${store[i]==='NO'?' selected':''}" onclick="setCheck(${i},'NO','${containerId}')">✘ No cumple</button>
+      <button class="cb-na${store[i]==='NA'?' selected':''}" onclick="setCheck(${i},'NA','${containerId}')">N/A</button>
     </div>`;
     c.appendChild(row);
   });
@@ -580,11 +701,11 @@ function buildChecklist(items,store,containerId){
 function setCheck(idx,val,containerId){
   const store=containerId==='checklistExt'?checklistExt:checklistInt;
   store[idx]=val;
-  // Actualizar botones visualmente
   const rows=document.getElementById(containerId).querySelectorAll('.check-row');
   const btns=rows[idx].querySelectorAll('button');
   btns[0].className='cb-si'+(val==='SI'?' selected':'');
   btns[1].className='cb-no'+(val==='NO'?' selected':'');
+  btns[2].className='cb-na'+(val==='NA'?' selected':'');
   saveProgress();
 }
 
@@ -674,7 +795,7 @@ function inventNext(event,input,colIdx){
 }
 function addInventRow(){
   const tb=document.getElementById('inventBody');const tr=document.createElement('tr');
-  tr.innerHTML='<td><input type="text" placeholder="Escanear" onkeydown="inventNext(event,this,0)"></td><td><input type="text" placeholder="Descripción" onkeydown="inventNext(event,this,1)"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,2)"></td><td><input type="text" placeholder="1X1" onkeydown="inventNext(event,this,3)"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';
+  tr.innerHTML='<td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" style="min-width:120px;font-family:monospace;font-size:13px"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,1)" style="max-width:65px"></td><td><input type="text" placeholder="Ej: 12" onkeydown="inventNext(event,this,2)" style="max-width:65px"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,3)" style="max-width:70px"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';
   tb.appendChild(tr);
 }
 function removeRow(btn){const rows=document.getElementById('inventBody').querySelectorAll('tr');if(rows.length>1)btn.closest('tr').remove();}
@@ -706,6 +827,99 @@ function addSerieRow(bodyId,cls){
 function delSerie(btn){
   const body=btn.closest('.grado-body');
   if(body.querySelectorAll('.serie-input-row').length>1)btn.closest('.serie-input-row').remove();
+}
+
+// ══════════════════════════════════════════════
+// MÚLTIPLES CÓDIGOS G1/G2
+// ══════════════════════════════════════════════
+function addSerieToBlock(btn,cls){
+  const body=btn.closest('.card').querySelector('.grado-body');
+  const row=document.createElement('div');row.className='serie-input-row';
+  row.innerHTML=`<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" onkeydown="serieNext(event,this,'${cls}')"><button class="serie-del" onclick="delSerie(this)">×</button>`;
+  body.appendChild(row);
+  body.querySelector('input:last-of-type').focus();
+}
+let g1BlockCount=1,g2BlockCount=1;
+function addG1Block(){
+  g1BlockCount++;
+  const container=document.getElementById('g1CodigosContainer');
+  const div=document.createElement('div');div.className='card g1-codigo-block';div.dataset.idx=g1BlockCount;
+  div.innerHTML=`<div class="section-title">Código #${g1BlockCount} / Code #${g1BlockCount} &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
+  <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código"><span class="scan-icon">⬛</span></div></div>
+  <div class="grid2" style="margin-bottom:10px">
+    <div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1">G1 — Tolerable</option><option value="G2">G2 — Rechazado</option></select></div>
+    <div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option>Caja rota / Broken box</option><option>Caja húmeda / Wet box</option><option>Caja aplastada / Crushed box</option><option>Producto dañado / Damaged product</option><option>Golpe / Impact damage</option><option>Etiqueta incorrecta / Wrong label</option><option>Otro / Other</option></select></div>
+  </div>
+  <div class="grid2" style="margin-bottom:10px">
+    <div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0"></div>
+    <div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0"></div>
+  </div>
+  <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..."></div>
+  <div class="grado-section">
+    <div class="grado-header-1">📦 Números de serie G1 / Serial numbers</div>
+    <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g1-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
+    <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div>
+  </div>`;
+  container.appendChild(div);div.querySelector('.g1-code-input').focus();
+}
+function removeG1Block(btn){
+  const blocks=document.querySelectorAll('.g1-codigo-block');if(blocks.length>1)btn.closest('.g1-codigo-block').remove();
+}
+function addG2Block(){
+  g2BlockCount++;
+  const container=document.getElementById('g2CodigosContainer');
+  const div=document.createElement('div');div.className='card g2-codigo-block';div.dataset.idx=g2BlockCount;
+  div.innerHTML=`<div class="section-title">Código #${g2BlockCount} / Code #${g2BlockCount} &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
+  <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código"><span class="scan-icon">⬛</span></div></div>
+  <div class="grid2" style="margin-bottom:10px">
+    <div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1">G1 — Tolerable</option><option value="G2" selected>G2 — Rechazado</option></select></div>
+    <div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option>Caja rota / Broken box</option><option>Caja húmeda / Wet box</option><option>Caja aplastada / Crushed box</option><option>Producto dañado / Damaged product</option><option>Golpe / Impact damage</option><option>Etiqueta incorrecta / Wrong label</option><option>Otro / Other</option></select></div>
+  </div>
+  <div class="grid2" style="margin-bottom:10px">
+    <div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0"></div>
+    <div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0"></div>
+  </div>
+  <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..."></div>
+  <div class="grado-section">
+    <div class="grado-header-2">🔴 Números de serie G2 / Serial numbers</div>
+    <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g2-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
+    <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div>
+  </div>`;
+  container.appendChild(div);div.querySelector('.g2-code-input').focus();
+}
+function removeG2Block(btn){
+  const blocks=document.querySelectorAll('.g2-codigo-block');if(blocks.length>1)btn.closest('.g2-codigo-block').remove();
+}
+
+// ══════════════════════════════════════════════
+// OC ADICIONALES
+// ══════════════════════════════════════════════
+let ocCount=0;
+function addOCRow(){
+  ocCount++;
+  const list=document.getElementById('ocAdicionalesList');
+  const div=document.createElement('div');div.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px';
+  div.innerHTML=`<input type="text" placeholder="N° OC adicional" class="oc-adicional" style="flex:1;font-size:14px;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:10px;background:#F8FAFC;color:#1a2332"><button onclick="this.parentElement.remove();saveProgress()" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 6px;line-height:1">×</button>`;
+  list.appendChild(div);div.querySelector('input').focus();
+}
+
+let provCount=0;
+function addProveedorRow(){
+  provCount++;
+  const list=document.getElementById('proveedoresAdicionalesList');
+  const div=document.createElement('div');div.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px';
+  div.innerHTML=`<input type="text" placeholder="Nombre del proveedor adicional" class="proveedor-adicional" style="flex:1;font-size:14px;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:10px;background:#F8FAFC;color:#1a2332"><button onclick="this.parentElement.remove();saveProgress()" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 6px;line-height:1">×</button>`;
+  list.appendChild(div);div.querySelector('input').focus();
+}
+
+// ══════════════════════════════════════════════
+// RESPONSABLE ALMACÉN TOGGLE
+// ══════════════════════════════════════════════
+function toggleRespOtro(){
+  const sel=document.getElementById('respAlmacenSel');
+  const otroField=document.getElementById('respAlmacenOtroField');
+  if(otroField)otroField.style.display=sel.value==='Otros'?'flex':'none';
+  saveProgress();
 }
 
 // ══════════════════════════════════════════════
@@ -871,10 +1085,16 @@ function updateNav(){
 // ══════════════════════════════════════════════
 // AUTOSAVE
 // ══════════════════════════════════════════════
-const SAVE_KEY='insp_draft_v4';
+const SAVE_KEY='insp_draft_v5';
+let _saveTimer=null;
 function saveProgress(){
+  if(_saveTimer)clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(_doSave,600);
+}
+function _doSave(){
   try{
-    const fields=['inspNombre','inspCargo','respAlmacen','fileNum','numOC','fecha','almacen','tamano',
+    const fields=['inspNombre','inspCargo','respAlmacen','respAlmacenSel','respAlmacenNom',
+                  'fileNum','numOC','fecha','almacen','tamano',
                   'horaInicio','horaFin','placa','estibadores','proveedor','obsGenerales',
                   'obsEstadoCont','obsInterna','firmaAlmNombre','firmaAlmCargo',
                   'firmaCalNombre','firmaCalCargo','precinto','contenedor',
@@ -887,11 +1107,20 @@ function saveProgress(){
     const rc=document.querySelector('input[name="completo"]:checked');if(rc)data.fields['completo']=rc.value;
     const re=document.querySelector('input[name="estadoCont"]:checked');if(re)data.fields['estadoCont']=re.value;
     data.inventario=[];
-    document.querySelectorAll('#inventBody tr').forEach(row=>{const cells=row.querySelectorAll('input');if(cells.length)data.inventario.push([...cells].map(c=>c.value));});
+    document.querySelectorAll('#inventBody tr').forEach(row=>{const cells=row.querySelectorAll('input');if(cells.length>=4)data.inventario.push([...cells].map(c=>c.value));});
     data.seriesG1=[...document.querySelectorAll('.g1-input')].map(i=>i.value);
     data.seriesG2=[...document.querySelectorAll('.g2-input')].map(i=>i.value);
     data.observaciones=[];
     document.querySelectorAll('.obs-row').forEach(row=>{data.observaciones.push({inp:row.querySelector('input')?.value||'',sel:row.querySelector('select')?.value||'',foto:row.querySelector('.obs-thumb img')?.src||''});});
+    // Save OC adicionales
+    data.ocAdicionales=[...document.querySelectorAll('.oc-adicional')].map(i=>i.value);
+    // Save proveedores adicionales
+    data.proveedoresAdicionales=[...document.querySelectorAll('.proveedor-adicional')].map(i=>i.value);
+    // Save G1/G2 multi-code blocks
+    data.g1Bloques=[];
+    document.querySelectorAll('.g1-codigo-block').forEach(bl=>{data.g1Bloques.push({codigo:bl.querySelector('.g1-code-input')?.value||'',grado:bl.querySelector('.g1-grado-select')?.value||'',tipo:bl.querySelector('.g1-tipo-select')?.value||'',qty:bl.querySelector('.g1-qty-input')?.value||'',uds:bl.querySelector('.g1-uds-input')?.value||'',detail:bl.querySelector('.g1-detail-input')?.value||'',series:[...bl.querySelectorAll('.g1-input')].map(i=>i.value)});});
+    data.g2Bloques=[];
+    document.querySelectorAll('.g2-codigo-block').forEach(bl=>{data.g2Bloques.push({codigo:bl.querySelector('.g2-code-input')?.value||'',grado:bl.querySelector('.g2-grado-select')?.value||'',tipo:bl.querySelector('.g2-tipo-select')?.value||'',qty:bl.querySelector('.g2-qty-input')?.value||'',uds:bl.querySelector('.g2-uds-input')?.value||'',detail:bl.querySelector('.g2-detail-input')?.value||'',series:[...bl.querySelectorAll('.g2-input')].map(i=>i.value)});});
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){}
 }
@@ -905,8 +1134,8 @@ function restoreProgress(){
     Object.entries(data.fields||{}).forEach(([id,val])=>{
       if(id==='completo'){restoreOpcionBtn('completo',val);toggleAvance();return;}
       if(id==='estadoCont'){
-        // FIX: restaurar también el radio hidden
         const r=document.querySelector('input[name="estadoCont"][value="'+val+'"]');if(r)r.checked=true;
+        restoreOpcionBtn('estadoCont',val);
         return;
       }
       const el=document.getElementById(id);if(el)el.value=val;
@@ -920,6 +1149,18 @@ function restoreProgress(){
     // Fotos
     Object.assign(photoStore,data.photos||{});
     buildGrid('extGrid','ext',EXT_SLOTS);buildGrid('apGrid','ap',AP_SLOTS);
+    // Recrear slots de fotos extras
+    Object.keys(photoStore).filter(k=>k.includes(':x')).forEach(key=>{
+      const[ns,k]=key.split(':');
+      const sectionMap={ext:'extExtraSection',ap:'apExtraSection',desc:'descExtraSection',def:'defExtraSection',estadocont:'estadoContSection'};
+      const sectionId=sectionMap[ns];
+      if(sectionId&&!document.querySelector('[data-ns="'+ns+'"][data-key="'+k+'"]')){
+        extraCounters[ns]=(extraCounters[ns]||0)+1;
+        const section=document.getElementById(sectionId);
+        if(section){let grid=section.querySelector('.extra-grid');if(!grid){const div=document.createElement('div');div.className='photo-extra-divider';div.innerHTML='<span>Fotos adicionales</span>';section.appendChild(div);grid=document.createElement('div');grid.className='photo-grid extra-grid';section.appendChild(grid);}
+        const slot=makeSlot(ns,k,null,'Foto extra',true);grid.appendChild(slot);}
+      }
+    });
     Object.keys(photoStore).forEach(key=>{
       const[ns,k]=key.split(':');
       const slot=document.querySelector('[data-ns="'+ns+'"][data-key="'+k+'"]');
@@ -927,7 +1168,7 @@ function restoreProgress(){
     });
     // Inventario
     const tb=document.getElementById('inventBody');tb.innerHTML='';
-    (data.inventario||[]).forEach(row=>{const tr=document.createElement('tr');tr.innerHTML='<td><input type="text" placeholder="Escanear" onkeydown="inventNext(event,this,0)" value="'+(row[0]||'')+'"></td><td><input type="text" placeholder="Descripción" onkeydown="inventNext(event,this,1)" value="'+(row[1]||'')+'"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,2)" value="'+(row[2]||'')+'"></td><td><input type="text" placeholder="1X1" onkeydown="inventNext(event,this,3)" value="'+(row[3]||'')+'"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';tb.appendChild(tr);});
+    (data.inventario||[]).forEach(row=>{const tr=document.createElement('tr');tr.innerHTML='<td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" style="min-width:120px;font-family:monospace;font-size:13px" value="'+(row[0]||'')+'"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,1)" style="max-width:65px" value="'+(row[1]||row[2]||'')+'"></td><td><input type="text" placeholder="Ej: 12" onkeydown="inventNext(event,this,2)" style="max-width:65px" value="'+(row[2]||row[3]||'')+'"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,3)" style="max-width:70px" value="'+(row[3]||row[4]||'')+'"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';tb.appendChild(tr);});
     if(!tb.children.length)addInventRow();
     // Series G1
     const g1b=document.getElementById('g1Body');g1b.innerHTML='';
@@ -940,6 +1181,49 @@ function restoreProgress(){
     // Observaciones
     (data.observaciones||[]).forEach(obs=>{addObs();const rows=document.querySelectorAll('.obs-row');const row=rows[rows.length-1];if(row){const inp=row.querySelector('input');if(inp)inp.value=obs.inp;const sel=row.querySelector('select');if(sel)sel.value=obs.sel;if(obs.foto){const th=row.querySelector('.obs-thumb');if(th){th.innerHTML='<img src="'+obs.foto+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';th.style.border='1.5px solid #10B981';}}}});
     updateCounts();
+    // Restaurar OC adicionales
+    if(data.ocAdicionales&&data.ocAdicionales.length){
+      data.ocAdicionales.forEach(v=>{if(!v)return;ocCount++;const list=document.getElementById('ocAdicionalesList');const div=document.createElement('div');div.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px';div.innerHTML=`<input type="text" class="oc-adicional" style="flex:1;font-size:14px;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:10px;background:#F8FAFC;color:#1a2332" value="${v}"><button onclick="this.parentElement.remove();saveProgress()" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 6px;line-height:1">×</button>`;list.appendChild(div);});
+    }
+    // Restaurar proveedores adicionales
+    if(data.proveedoresAdicionales&&data.proveedoresAdicionales.length){
+      data.proveedoresAdicionales.forEach(v=>{if(!v)return;provCount++;const list=document.getElementById('proveedoresAdicionalesList');const div=document.createElement('div');div.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px';div.innerHTML=`<input type="text" class="proveedor-adicional" style="flex:1;font-size:14px;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:10px;background:#F8FAFC;color:#1a2332" value="${v}"><button onclick="this.parentElement.remove();saveProgress()" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 6px;line-height:1">×</button>`;list.appendChild(div);});
+    }
+    // Restaurar campo respAlmacenSel
+    const raSel=document.getElementById('respAlmacenSel');
+    if(raSel&&data.fields['respAlmacenSel']){raSel.value=data.fields['respAlmacenSel'];toggleRespOtro();}
+    // Restaurar G1 bloques
+    if(data.g1Bloques&&data.g1Bloques.length){
+      const cont=document.getElementById('g1CodigosContainer');cont.innerHTML='';g1BlockCount=0;
+      data.g1Bloques.forEach((bl,bi)=>{
+        g1BlockCount++;const div=document.createElement('div');div.className='card g1-codigo-block';div.dataset.idx=g1BlockCount;
+        div.innerHTML=`<div class="section-title">Código #${g1BlockCount} / Code #${g1BlockCount} &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
+        <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" value="${bl.codigo||''}"><span class="scan-icon">⬛</span></div></div>
+        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
+        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
+        <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
+        <div class="grado-section"><div class="grado-header-1">📦 Números de serie G1 / Serial numbers</div><div class="grado-body g1-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div></div>`;
+        cont.appendChild(div);
+        const seriesBody=div.querySelector('.g1-series-body');
+        (bl.series&&bl.series.length?bl.series:['']).forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g1-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g1-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+      });
+    }
+    // Restaurar G2 bloques
+    if(data.g2Bloques&&data.g2Bloques.length){
+      const cont=document.getElementById('g2CodigosContainer');cont.innerHTML='';g2BlockCount=0;
+      data.g2Bloques.forEach((bl,bi)=>{
+        g2BlockCount++;const div=document.createElement('div');div.className='card g2-codigo-block';div.dataset.idx=g2BlockCount;
+        div.innerHTML=`<div class="section-title">Código #${g2BlockCount} / Code #${g2BlockCount} &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
+        <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" value="${bl.codigo||''}"><span class="scan-icon">⬛</span></div></div>
+        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
+        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
+        <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
+        <div class="grado-section"><div class="grado-header-2">🔴 Números de serie G2 / Serial numbers</div><div class="grado-body g2-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div></div>`;
+        cont.appendChild(div);
+        const seriesBody=div.querySelector('.g2-series-body');
+        (bl.series&&bl.series.length?bl.series:['']).forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g2-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+      });
+    }
     // Ir al paso guardado
     if(data.step&&data.step>0){document.getElementById('page'+currentStep).classList.remove('active');currentStep=data.step;document.getElementById('page'+currentStep).classList.add('active');updateNav();}
     // Toast discreto
@@ -953,14 +1237,40 @@ async function recoverPhotosFromDB(){
   let restored=0;fotos.forEach(f=>{if(!photoStore[f.id]){photoStore[f.id]=f.dataUrl;restored++;}});
   if(restored>0){
     buildGrid('extGrid','ext',EXT_SLOTS);buildGrid('apGrid','ap',AP_SLOTS);
+    // Recreate extra photo slots for keys with 'x'
+    Object.keys(photoStore).filter(k=>k.includes(':x')).forEach(key=>{
+      const[ns,k]=key.split(':');
+      const sectionMap={ext:'extExtraSection',ap:'apExtraSection',desc:'descExtraSection',def:'defExtraSection',estadocont:'estadoContSection'};
+      const sectionId=sectionMap[ns];
+      if(sectionId&&!document.querySelector('[data-ns="'+ns+'"][data-key="'+k+'"]')){
+        extraCounters[ns]=(extraCounters[ns]||0)+1;
+        const section=document.getElementById(sectionId);
+        if(section){let grid=section.querySelector('.extra-grid');if(!grid){const div=document.createElement('div');div.className='photo-extra-divider';div.innerHTML='<span>Fotos adicionales</span>';section.appendChild(div);grid=document.createElement('div');grid.className='photo-grid extra-grid';section.appendChild(grid);}
+        const slot=makeSlot(ns,k,null,'Foto extra',true);grid.appendChild(slot);}
+      }
+    });
     Object.keys(photoStore).forEach(key=>{const[ns,k]=key.split(':');const slot=document.querySelector('[data-ns="'+ns+'"][data-key="'+k+'"]');if(slot){let img=slot.querySelector('img');if(!img){img=document.createElement('img');slot.insertBefore(img,slot.firstChild);}img.src=photoStore[key];slot.classList.add('has-photo');if(!slot.querySelector('.check-badge')){const chk=document.createElement('div');chk.className='check-badge';chk.textContent='✓';slot.appendChild(chk);}}});
     updateCounts();
     const av=document.createElement('div');av.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#059669;color:white;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);white-space:nowrap';av.innerHTML='📸 '+restored+' foto(s) recuperada(s) del respaldo';document.body.appendChild(av);setTimeout(()=>av.remove(),4000);
   }
 }
 
-document.addEventListener('input',saveProgress);
+// Guardar solo al salir del campo (blur) para no ralentizar la escritura
+// Los textareas tienen un debounce más largo
 document.addEventListener('change',saveProgress);
+document.addEventListener('blur',function(e){
+  if(e.target.matches('input,select,textarea')){saveProgress();}
+},true);
+// Para textarea usamos input con debounce largo (700ms) pero no el global
+document.querySelectorAll('textarea').forEach(function(ta){
+  ta.addEventListener('input',saveProgress);
+});
+// MutationObserver para nuevos textareas añadidos dinámicamente
+new MutationObserver(function(muts){
+  muts.forEach(function(m){m.addedNodes.forEach(function(n){
+    if(n.nodeType===1){n.querySelectorAll&&n.querySelectorAll('textarea').forEach(function(ta){ta.addEventListener('input',saveProgress);});}
+  });});
+}).observe(document.body,{childList:true,subtree:true});
 
 // ══════════════════════════════════════════════
 // ONEDRIVE AUTH
@@ -1137,6 +1447,15 @@ function generateReport(){
   const g1TipoDano=V('g1TipoDano'),g2TipoDano=V('g2TipoDano');
   const g1Qty=V('g1Qty'),g2Qty=V('g2Qty');
   const g1Code=V('g1ProductCode'),g2Code=V('g2ProductCode');
+  // OC Adicionales
+  const ocAdicionales=[...document.querySelectorAll('.oc-adicional')].map(i=>i.value).filter(Boolean);
+  const ocAdicStr=ocAdicionales.length?ocAdicionales.join(', '):'—';
+  // Proveedores adicionales
+  const provAdicionales=[...document.querySelectorAll('.proveedor-adicional')].map(i=>i.value).filter(Boolean);
+  const provAdicStr=provAdicionales.length?provAdicionales.join(' / '):'';
+  // Responsable
+  const respAlmSelVal=document.getElementById('respAlmacenSel')?.value||'';
+  const respAlmNomVal=document.getElementById('respAlmacenNom')?.value||'';
 
   const estadoBg=estadoCont==='Aceptado'?'#ECFDF5':estadoCont==='Tolerado'?'#FFF7ED':'#FEF2F2';
   const estadoColor=estadoCont==='Aceptado'?'#065F46':estadoCont==='Tolerado'?'#92400E':'#991B1B';
@@ -1155,7 +1474,7 @@ function generateReport(){
 
   // Inventario
   let inventH='';
-  document.querySelectorAll('#inventBody tr').forEach(row=>{const cells=row.querySelectorAll('input');if(cells.length)inventH+=`<tr><td style="padding:6px 8px;border:1px solid #E2E8F0;font-family:monospace">${cells[0]?.value||'—'}</td><td style="padding:6px 8px;border:1px solid #E2E8F0">${cells[1]?.value||'—'}</td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center">${cells[2]?.value||'—'}</td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center">${cells[3]?.value||'—'}</td></tr>`;});
+  document.querySelectorAll('#inventBody tr').forEach(row=>{const cells=row.querySelectorAll('input');if(cells.length>=3)inventH+=`<tr><td style="padding:6px 8px;border:1px solid #E2E8F0;font-family:monospace">${cells[0]?.value||'—'}</td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center">${cells[1]?.value||'—'}</td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center">${cells[2]?.value||'—'}</td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center">${cells[3]?.value||'—'}</td></tr>`;});
 
   // Observaciones
   let obsH='';document.querySelectorAll('.obs-row').forEach((row,i)=>{const desc=row.querySelector('input')?.value||'—';const tipo=row.querySelector('select')?.value||'—';const thumb=row.querySelector('.obs-thumb img');const fH=thumb?`<img src="${thumb.src}" style="width:70px;height:70px;object-fit:cover;border-radius:6px">`:'';obsH+=`<tr><td style="padding:6px 8px;border:1px solid #E2E8F0">${i+1}</td><td style="padding:6px 8px;border:1px solid #E2E8F0">${tipo}</td><td style="padding:6px 8px;border:1px solid #E2E8F0">${desc}</td><td style="padding:6px 8px;border:1px solid #E2E8F0">${fH}</td></tr>`;});
@@ -1164,11 +1483,11 @@ function generateReport(){
 <style>body{font-family:Segoe UI,system-ui,sans-serif;color:#1a2332;margin:0;padding:20px;background:#F0F4F8}.report{max-width:820px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)}.corp-hdr{background:#1a3a5c;color:white;padding:16px 28px;text-align:center}.corp-hdr .ger{font-size:10px;opacity:.7;letter-spacing:.12em;text-transform:uppercase}.corp-hdr .brand{font-size:22px;font-weight:700;margin:2px 0}.corp-hdr .sub{font-size:11px;opacity:.55}.rh{background:#243B55;color:white;padding:14px 28px;display:flex;align-items:center;gap:16px}.rh h1{font-size:17px;margin:0}.rh p{font-size:12px;opacity:.7;margin:3px 0 0}.sec{padding:18px 28px;border-bottom:1px solid #F1F5F9}.sec h2{font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.1em;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fi{background:#F8FAFC;border-radius:8px;padding:9px 12px}.fi .lbl{font-size:10px;color:#94A3B8;margin-bottom:2px}.fi .lbl-en{font-size:9px;color:#CBD5E1;font-style:italic}.fi .val{font-size:13px;font-weight:600;color:#1a2332}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#F8FAFC;padding:8px;text-align:left;font-size:10px;font-weight:700;color:#64748B;border:1px solid #E2E8F0;text-transform:uppercase}.sb{border:1px solid #E2E8F0;border-radius:8px;padding:12px;text-align:center}.sb img{max-width:180px;height:70px;object-fit:contain}.sb p{font-size:13px;font-weight:600;margin:6px 0 2px}.sb span{font-size:11px;color:#64748B}.badge{display:inline-block;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700}.conf{font-size:10px;color:#94A3B8;text-align:center;padding:12px}@media print{body{background:white;padding:0}.report{box-shadow:none}}</style>
 </head><body><div class="report">
 <div class="corp-hdr"><div class="ger">Gerencia de Innovación y Calidad</div><div class="brand">Grupo Sole®</div><div class="sub">Container Unloading Report / Reporte de Descarga de Contenedor</div></div>
-<div class="rh"><div style="width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📦</div><div><h1>File: ${fileNum} &nbsp;|&nbsp; ${fecha}</h1><p>Supplier / Proveedor: ${proveedor} &nbsp;|&nbsp; Inspector: ${inspector}</p></div></div>
+<div class="rh"><div style="width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📦</div><div><h1>File: ${fileNum} &nbsp;|&nbsp; ${fecha}</h1><p>Supplier / Proveedor: ${proveedor}${provAdicStr?' / '+provAdicStr:''} &nbsp;|&nbsp; Inspector: ${inspector}</p></div></div>
 <div class="sec"><h2>General Information / Información General</h2><div class="grid">
 <div class="fi"><div class="lbl">File Number / N° File</div><div class="val">${fileNum}</div></div>
-<div class="fi"><div class="lbl">Purchase Order / N° OC</div><div class="val">${numOC}</div></div>
-<div class="fi"><div class="lbl">Supplier Name / Proveedor</div><div class="val">${proveedor}</div></div>
+<div class="fi"><div class="lbl">Purchase Order / N° OC</div><div class="val">${numOC}${ocAdicStr!=='—'?' <span style=\"font-size:11px;color:#94A3B8\">(+ '+ocAdicStr+')</span>':''}</div></div>
+<div class="fi"><div class="lbl">Supplier Name / Proveedor</div><div class="val">${proveedor}${provAdicStr?'<br><span style=\"font-size:11px;color:#64748B\">+ '+provAdicStr+'</span>':''}</div></div>
 <div class="fi"><div class="lbl">Unloading Location / Almacén</div><div class="val">${almacen}</div></div>
 <div class="fi"><div class="lbl">Container Size / Tamaño</div><div class="val">${tamano}</div></div>
 <div class="fi"><div class="lbl">Vehicle Plate / Placa</div><div class="val">${placa}</div></div>
@@ -1179,7 +1498,7 @@ function generateReport(){
 </div></div>
 <div class="sec"><h2>QC Team / Equipo de Control de Calidad</h2><div class="grid">
 <div class="fi"><div class="lbl">Quality Control Inspector</div><div class="val">${inspector}</div><div class="lbl" style="margin-top:3px">${cargoInsp}</div></div>
-<div class="fi"><div class="lbl">Warehouse Responsible / Resp. Almacén</div><div class="val">${respAlm}</div></div>
+<div class="fi"><div class="lbl">Warehouse Responsible / Resp. Almacén</div><div class="val">${respAlmSelVal||respAlm}${respAlmNomVal?' — '+respAlmNomVal:''}</div></div>
 </div></div>
 <div class="sec"><h2>Container Codes / Códigos del Contenedor</h2><div class="grid">
 <div class="fi"><div class="lbl">Container Number / N° Contenedor</div><div class="val" style="font-family:monospace">${contenedor}</div></div>
@@ -1196,16 +1515,31 @@ ${fEstH?'<div style="margin-top:10px">'+fEstH+'</div>':''}
 <table><thead><tr><th>Description / Descripción</th><th style="width:60px;text-align:center">Yes/Sí — No</th></tr></thead><tbody>${intRows}</tbody></table>
 ${obsInterna!=='—'&&obsInterna?'<div style="margin-top:8px;background:#F8FAFC;border-radius:8px;padding:10px;font-size:12px"><strong>Internal observations / Observaciones internas:</strong> '+obsInterna+'</div>':''}
 </div>
-${inventH?`<div class="sec"><h2>Received Products Overview / Detalle de Productos Recibidos</h2><table><thead><tr><th>Product Code / Código</th><th>Description / Descripción</th><th>Total Qty / Cantidad</th><th>Units per box / Uds por caja</th></tr></thead><tbody>${inventH}</tbody></table></div>`:''}
-<div class="sec"><h2>Damage Details / Detalle de Daños Observados</h2>
-<table><thead><tr><th>Grade / Grado</th><th>Product Code / Código</th><th>Type of Damage / Tipo de Daño</th><th>Qty / Cant.</th></tr></thead>
-<tbody>
-<tr><td style="padding:8px;border:1px solid #E2E8F0;background:#EBF4FF;font-weight:700;color:#1E40AF">G1 — Tolerable</td><td style="padding:8px;border:1px solid #E2E8F0;font-family:monospace">${g1Code}</td><td style="padding:8px;border:1px solid #E2E8F0">${g1TipoDano}</td><td style="padding:8px;border:1px solid #E2E8F0;text-align:center">${g1Qty}</td></tr>
-<tr><td style="padding:8px;border:1px solid #E2E8F0;background:#FEF9EC;font-weight:700;color:#92400E">G2 — Rejected / Rechazado</td><td style="padding:8px;border:1px solid #E2E8F0;font-family:monospace">${g2Code}</td><td style="padding:8px;border:1px solid #E2E8F0">${g2TipoDano}</td><td style="padding:8px;border:1px solid #E2E8F0;text-align:center">${g2Qty}</td></tr>
-</tbody></table>
-${g1s.length?`<div style="margin-top:12px"><div style="font-size:11px;font-weight:700;color:#1E40AF;margin-bottom:6px">SERIAL NUMBERS — GRADE 1 / SERIES GRADO 1 (Tolerable)</div><div style="display:flex;flex-wrap:wrap;gap:6px">${g1s.map(s=>`<span style="font-family:monospace;font-size:12px;background:#EBF4FF;color:#1E40AF;border-radius:6px;padding:4px 8px">${s}</span>`).join('')}</div></div>`:''}
-${g2s.length?`<div style="margin-top:12px"><div style="font-size:11px;font-weight:700;color:#92400E;margin-bottom:6px">SERIAL NUMBERS — GRADE 2 / SERIES GRADO 2 (Rejected / Rechazado)</div><div style="display:flex;flex-wrap:wrap;gap:6px">${g2s.map(s=>`<span style="font-family:monospace;font-size:12px;background:#FEF9EC;color:#92400E;border-radius:6px;padding:4px 8px">${s}</span>`).join('')}</div></div>`:''}
-</div>
+${inventH?`<div class="sec"><h2>Received Products Overview / Detalle de Productos Recibidos</h2><table><thead><tr><th>Product Code / Código</th><th>Cant. Lote / Batch Qty</th><th>Unid/caja</th><th>Muestra QC</th></tr></thead><tbody>${inventH}</tbody></table></div>`:''}
+${(()=>{
+  let dmgH='<div class="sec"><h2>Damage Details / Detalle de Daños Observados</h2>';
+  const allBlocks=[...document.querySelectorAll('.g1-codigo-block'),...document.querySelectorAll('.g2-codigo-block')];
+  if(allBlocks.length){
+    dmgH+='<table><thead><tr><th>Grade / Grado</th><th>Product Code / Código</th><th>Type of Damage / Tipo de Daño</th><th>Qty</th><th>Internal Units / Uds int.</th><th>Detail / Detalle</th></tr></thead><tbody>';
+    allBlocks.forEach(bl=>{
+      const isg2=bl.classList.contains('g2-codigo-block');
+      const code=bl.querySelector('[class*="code-input"]')?.value||'—';
+      const grade=bl.querySelector('[class*="grado-select"]')?.value||'—';
+      const tipo=bl.querySelector('[class*="tipo-select"]')?.value||'—';
+      const qty=bl.querySelector('[class*="qty-input"]')?.value||'—';
+      const uds=bl.querySelector('[class*="uds-input"]')?.value||'—';
+      const detail=bl.querySelector('[class*="detail-input"]')?.value||'—';
+      const bgColor=grade==='G2'||isg2?'#FEF9EC':'#EBF4FF';
+      const txColor=grade==='G2'||isg2?'#92400E':'#1E40AF';
+      dmgH+=`<tr><td style="padding:8px;border:1px solid #E2E8F0;background:${bgColor};font-weight:700;color:${txColor}">${grade}</td><td style="padding:8px;border:1px solid #E2E8F0;font-family:monospace">${code}</td><td style="padding:8px;border:1px solid #E2E8F0">${tipo}</td><td style="padding:8px;border:1px solid #E2E8F0;text-align:center">${qty}</td><td style="padding:8px;border:1px solid #E2E8F0;text-align:center">${uds}</td><td style="padding:8px;border:1px solid #E2E8F0;font-size:12px">${detail}</td></tr>`;
+      const series=[...bl.querySelectorAll('[class*="-input"].serie-input')].map(i=>i.value).filter(Boolean);
+      if(series.length){dmgH+=`<tr><td colspan="6" style="padding:8px;border:1px solid #E2E8F0;background:#F8FAFC"><span style="font-size:11px;font-weight:700;color:${txColor}">Serials / Series:</span> ${series.map(s=>`<span style="font-family:monospace;font-size:12px;background:${bgColor};color:${txColor};border-radius:6px;padding:3px 7px;display:inline-block;margin:2px">${s}</span>`).join('')}</td></tr>`;}
+    });
+    dmgH+='</tbody></table>';
+  }
+  dmgH+='</div>';
+  return dmgH;
+})()}
 ${fExtH?`<div class="sec"><h2>External Photos / Fotos Exteriores</h2>${fExtH}</div>`:''}
 ${fApH?`<div class="sec"><h2>Opening Photos / Fotos de Apertura</h2>${fApH}</div>`:''}
 ${fExtraH?`<div class="sec"><h2>Additional Photos / Fotos Adicionales</h2>${fExtraH}</div>`:''}
