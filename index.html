@@ -40,7 +40,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#378ADD;box-shadow:0 0 0 3px rgba(55,138,221,0.12);background:white}
 .field input.error,.field select.error{border-color:#EF4444;background:#FEF2F2}
 .barcode-wrap{position:relative}
-.barcode-wrap input{padding-right:38px;font-family:'Courier New',monospace;letter-spacing:0.03em;font-size:13px}
+.barcode-wrap input{padding-right:38px;font-family:'Courier New',monospace;letter-spacing:0.03em;font-size:13px;text-transform:uppercase}
+.uppercase-field{text-transform:uppercase}
 .barcode-wrap .scan-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;opacity:0.4;pointer-events:none}
 .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
 .photo-slot{aspect-ratio:1;border:2px dashed #CBD5E1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#F8FAFC;position:relative;overflow:hidden;transition:border-color 0.2s,background 0.2s;-webkit-tap-highlight-color:transparent}
@@ -67,12 +68,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .check-lbl-es{font-size:13px;color:#1a2332;font-weight:500}
 .check-lbl-en{font-size:10px;color:#94A3B8;margin-top:1px;font-style:italic}
 .check-btns{display:flex;gap:6px;flex-shrink:0}
-.cb-si{padding:5px 10px;background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
-.cb-no{padding:5px 10px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
-.cb-na{padding:5px 10px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
-.cb-si.selected{background:#059669;color:white;border-color:#059669}
-.cb-no.selected{background:#EF4444;color:white;border-color:#EF4444}
-.cb-na.selected{background:#6B7280;color:white;border-color:#6B7280}
+.cb-si{padding:7px 13px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:8px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;line-height:1}
+.cb-no{padding:7px 13px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:8px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;line-height:1}
+.cb-na{padding:7px 13px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:8px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;line-height:1}
+.cb-si.selected{background:#DCFCE7;color:#15803D;border-color:#22C55E;font-size:16px}
+.cb-no.selected{background:#FEE2E2;color:#DC2626;border-color:#EF4444;font-size:16px}
+.cb-na.selected{background:#F1F5F9;color:#64748B;border-color:#94A3B8}
 /* OBS OBSERVACIONES */
 .obs-row{display:flex;gap:8px;margin-bottom:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px}
 .obs-thumb{width:48px;height:48px;border-radius:8px;background:#E2E8F0;overflow:hidden;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;border:1.5px dashed #CBD5E1;-webkit-tap-highlight-color:transparent}
@@ -89,7 +90,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .grado-header-2{background:#FEF9EC;padding:10px 14px;font-size:12px;font-weight:700;color:#92400E;display:flex;align-items:center;gap:8px}
 .grado-body{padding:10px 12px;background:white}
 .serie-input-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.serie-input{flex:1;font-family:'Courier New',monospace;font-size:13px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;background:#F8FAFC;color:#1a2332;letter-spacing:0.03em}
+.serie-input{flex:1;font-family:'Courier New',monospace;font-size:13px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;background:#F8FAFC;color:#1a2332;letter-spacing:0.03em;text-transform:uppercase}
 .serie-input:focus{outline:none;border-color:#378ADD;background:white}
 .serie-del{background:none;border:none;cursor:pointer;color:#CBD5E1;font-size:18px;padding:0 4px;line-height:1}
 /* FIRMAS */
@@ -99,11 +100,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .sig-status{font-size:12px;color:#94A3B8;margin-top:6px}
 .sig-status.signed{color:#10B981;font-weight:600}
 /* NAVEGACIÓN */
-.nav-row{display:flex;gap:10px;margin-top:16px}
-.btn-nav{flex:1;padding:13px;font-size:15px;font-weight:600;border-radius:12px;cursor:pointer;border:none;font-family:'Segoe UI',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
-.btn-back{background:#F1F5F9;color:#475569;border:1.5px solid #E2E8F0}
-.btn-next{background:#1a3a5c;color:white;box-shadow:0 4px 12px rgba(26,58,92,0.25)}
-.btn-next:active{opacity:0.85}
+.nav-row{position:fixed;bottom:0;left:0;right:0;display:flex;gap:0;background:white;border-top:2px solid #E2E8F0;box-shadow:0 -4px 20px rgba(0,0,0,0.10);z-index:100;padding:0;margin:0}
+.btn-nav{flex:1;padding:18px 12px;font-size:16px;font-weight:700;border-radius:0;cursor:pointer;border:none;font-family:'Segoe UI',system-ui,sans-serif;-webkit-tap-highlight-color:transparent;transition:background 0.15s;min-height:64px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-back{background:#F1F5F9;color:#334155;border-right:1px solid #E2E8F0}
+.btn-back:active{background:#E2E8F0}
+.btn-next{background:#1a3a5c;color:white;box-shadow:none}
+.btn-next:active{background:#162d4a}
+/* Espacio para la nav fija en el fondo */
+.app{padding-bottom:80px}
 .btn-submit-final{width:100%;padding:14px;background:#059669;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px;font-family:'Segoe UI',system-ui,sans-serif;box-shadow:0 4px 12px rgba(5,150,105,0.3)}
 .btn-download{width:100%;padding:14px;background:#1a3a5c;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;font-family:'Segoe UI',system-ui,sans-serif}
 .success-banner{background:#ECFDF5;border:1.5px solid #6EE7B7;border-radius:14px;padding:20px;text-align:center;margin-top:12px}
@@ -182,10 +186,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
         <label>Responsable almacén / Warehouse responsible</label>
         <select id="respAlmacenSel" onchange="toggleRespOtro()">
           <option value="">Seleccionar...</option>
-          <option>Jefe de almacén</option>
-          <option>Supervisor de almacén</option>
-          <option>Auxiliar de almacén</option>
-          <option>Responsable de turno</option>
+          <option>Operario de almacén Sole</option>
+          <option>Operario de almacén Trébol</option>
+          <option>Operario de almacén 3ro</option>
+          <option>Montacarguista</option>
+          <option>Encargado de almacén</option>
           <option>Otros</option>
         </select>
       </div>
@@ -195,7 +200,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
       </div>
       <div class="field">
         <label>Nombre del responsable / Name</label>
-        <input id="respAlmacenNom" type="text" placeholder="Nombre completo">
+        <input id="respAlmacenNom" type="text" placeholder="Nombre completo" autocapitalize="words">
       </div>
     </div>
     <div class="card">
@@ -271,8 +276,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     <div class="card">
       <div class="section-title">Códigos / Container codes</div>
       <div class="grid2">
-        <div class="field"><label>N° Contenedor / Container no.</label><div class="barcode-wrap"><input id="contenedor" type="text" placeholder="Escanear o ingresar"><span class="scan-icon">⬛</span></div></div>
-        <div class="field"><label>N° Precinto / Seal no.</label><div class="barcode-wrap"><input id="precinto" type="text" placeholder="Escanear o ingresar"><span class="scan-icon">⬛</span></div></div>
+        <div class="field"><label>N° Contenedor / Container no.</label><div class="barcode-wrap"><input id="contenedor" type="text" placeholder="Escanear o ingresar" autocapitalize="characters" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();saveNow()" onchange="saveNow()"><span class="scan-icon">⬛</span></div></div>
+        <div class="field"><label>N° Precinto / Seal no.</label><div class="barcode-wrap"><input id="precinto" type="text" placeholder="Escanear o ingresar" autocapitalize="characters" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();saveNow()" onchange="saveNow()"><span class="scan-icon">⬛</span></div></div>
       </div>
     </div>
   </div>
@@ -308,7 +313,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
           </tr></thead>
           <tbody id="inventBody">
             <tr>
-              <td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" style="min-width:120px;font-family:monospace;font-size:13px"></td>
+              <td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" oninput="this.value=this.value.toUpperCase()" autocapitalize="characters" style="min-width:120px;font-family:monospace;font-size:13px;text-transform:uppercase"></td>
               <td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,1)" style="max-width:65px"></td>
               <td><input type="text" placeholder="Ej: 12" onkeydown="inventNext(event,this,2)" style="max-width:65px"></td>
               <td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,3)" style="max-width:70px"></td>
@@ -357,7 +362,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
         <div class="section-title">Código #1 / Code #1 &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
         <div class="field" style="margin-bottom:10px">
           <label>Código de producto / Product code</label>
-          <div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código"><span class="scan-icon">⬛</span></div>
+          <div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div>
         </div>
         <div class="grid2" style="margin-bottom:10px">
           <div class="field">
@@ -375,9 +380,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
               <option>Caja rota / Broken box</option>
               <option>Caja húmeda / Wet box</option>
               <option>Caja aplastada / Crushed box</option>
+              <option>Caja manchada / Stained box</option>
+              <option>Caja con deformación leve / Slightly deformed box</option>
+              <option>Producto sin empaque correcto / Improperly packaged product</option>
+              <option>Sin zunchos (producto que los requiere) / Missing strapping</option>
               <option>Producto dañado / Damaged product</option>
               <option>Golpe / Impact damage</option>
               <option>Etiqueta incorrecta / Wrong label</option>
+              <option>Error en rating labels / Wrong rating label</option>
+              <option>Leve sobreajuste por zunchos / Slight over-strapping</option>
               <option>Otro / Other</option>
             </select>
           </div>
@@ -400,7 +411,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
           <div class="grado-header-1">📦 Números de serie G1 / Serial numbers</div>
           <div class="grado-body g1-series-body">
             <div class="serie-input-row">
-              <input type="text" class="serie-input g1-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g1-input')">
+              <input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')">
               <button class="serie-del" onclick="delSerie(this)">×</button>
             </div>
           </div>
@@ -424,7 +435,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
         <div class="section-title">Código #1 / Code #1 &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
         <div class="field" style="margin-bottom:10px">
           <label>Código de producto / Product code</label>
-          <div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código"><span class="scan-icon">⬛</span></div>
+          <div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div>
         </div>
         <div class="grid2" style="margin-bottom:10px">
           <div class="field">
@@ -439,12 +450,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
             <label>Tipo de daño / Damage type</label>
             <select class="g2-tipo-select">
               <option value="">Seleccionar...</option>
-              <option>Caja rota / Broken box</option>
+              <option>Cajas rotas / Broken boxes</option>
+              <option>Manchas de grasa/aceite / Grease or oil stains</option>
+              <option>Desprendimiento de cajas / Box separation/collapse</option>
+              <option>Humedad / Moisture damage</option>
+              <option>Producto mojado / Wet product</option>
+              <option>Manchas de pintura / Paint stains</option>
+              <option>Oxidación / Rust/oxidation</option>
+              <option>Cajas cortadas por zunchos / Boxes cut by strapping</option>
+              <option>Caída de producto por mala manipulación / Product fallen due to mishandling</option>
               <option>Caja húmeda / Wet box</option>
               <option>Caja aplastada / Crushed box</option>
               <option>Producto dañado / Damaged product</option>
-              <option>Golpe / Impact damage</option>
-              <option>Etiqueta incorrecta / Wrong label</option>
+              <option>Golpe severo / Severe impact</option>
               <option>Otro / Other</option>
             </select>
           </div>
@@ -467,7 +485,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
           <div class="grado-header-2">🔴 Números de serie G2 / Serial numbers</div>
           <div class="grado-body g2-series-body">
             <div class="serie-input-row">
-              <input type="text" class="serie-input g2-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g2-input')">
+              <input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')">
               <button class="serie-del" onclick="delSerie(this)">×</button>
             </div>
           </div>
@@ -595,8 +613,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
   </div>
 
   <div class="nav-row">
-    <button class="btn-nav btn-back" id="btnBack" onclick="prevStep()" style="display:none">← Anterior</button>
-    <button class="btn-nav btn-next" id="btnNext" onclick="nextStep()">Siguiente →</button>
+    <button class="btn-nav btn-back" id="btnBack" onclick="prevStep()" style="display:none">◀ Anterior</button>
+    <button class="btn-nav btn-next" id="btnNext" onclick="nextStep()">Siguiente ▶</button>
   </div>
 </div>
 
@@ -685,14 +703,21 @@ function buildChecklist(items,store,containerId){
   const c=document.getElementById(containerId);
   if(!c)return;
   c.innerHTML='';
+  // Leyenda solo la primera vez
+  if(!c.previousElementSibling||!c.previousElementSibling.classList.contains('checklist-legend')){
+    const leg=document.createElement('div');leg.className='checklist-legend';
+    leg.style.cssText='display:flex;gap:10px;font-size:11px;color:#64748B;margin-bottom:8px;align-items:center;flex-wrap:wrap';
+    leg.innerHTML='<span style="background:#DCFCE7;color:#15803D;border:1.5px solid #22C55E;border-radius:6px;padding:3px 8px;font-weight:700">✅ OK</span><span style="font-size:10px">Presente / sin novedad</span><span style="background:#FEE2E2;color:#DC2626;border:1.5px solid #EF4444;border-radius:6px;padding:3px 8px;font-weight:700">⚠️ DEF</span><span style="font-size:10px">Defecto detectado</span><span style="background:#F1F5F9;color:#64748B;border:1.5px solid #94A3B8;border-radius:6px;padding:3px 8px;font-weight:700">— N/A</span><span style="font-size:10px">No aplica</span>';
+    c.parentElement.insertBefore(leg,c);
+  }
   items.forEach((item,i)=>{
     const row=document.createElement('div');
     row.className='check-row';
-    row.innerHTML=`<div><div class="check-lbl-es">${item.es}</div><div class="check-lbl-en">${item.en}</div></div>
-    <div class="check-btns">
-      <button class="cb-si${store[i]==='SI'?' selected':''}" onclick="setCheck(${i},'SI','${containerId}')">✔ Cumple</button>
-      <button class="cb-no${store[i]==='NO'?' selected':''}" onclick="setCheck(${i},'NO','${containerId}')">✘ No cumple</button>
-      <button class="cb-na${store[i]==='NA'?' selected':''}" onclick="setCheck(${i},'NA','${containerId}')">N/A</button>
+    row.innerHTML=`<div style="flex:1;min-width:0"><div class="check-lbl-es">${item.es}</div><div class="check-lbl-en">${item.en}</div></div>
+    <div class="check-btns" style="flex-shrink:0">
+      <button class="cb-si${store[i]==='SI'?' selected':''}" onclick="setCheck(${i},'SI','${containerId}')" title="OK — sin novedad">✅</button>
+      <button class="cb-no${store[i]==='NO'?' selected':''}" onclick="setCheck(${i},'NO','${containerId}')" title="Defecto detectado">⚠️</button>
+      <button class="cb-na${store[i]==='NA'?' selected':''}" onclick="setCheck(${i},'NA','${containerId}')" title="No aplica">—</button>
     </div>`;
     c.appendChild(row);
   });
@@ -706,7 +731,7 @@ function setCheck(idx,val,containerId){
   btns[0].className='cb-si'+(val==='SI'?' selected':'');
   btns[1].className='cb-no'+(val==='NO'?' selected':'');
   btns[2].className='cb-na'+(val==='NA'?' selected':'');
-  saveProgress();
+  saveNow(); // guardado inmediato al tocar checklist
 }
 
 // ══════════════════════════════════════════════
@@ -795,38 +820,73 @@ function inventNext(event,input,colIdx){
 }
 function addInventRow(){
   const tb=document.getElementById('inventBody');const tr=document.createElement('tr');
-  tr.innerHTML='<td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" style="min-width:120px;font-family:monospace;font-size:13px"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,1)" style="max-width:65px"></td><td><input type="text" placeholder="Ej: 12" onkeydown="inventNext(event,this,2)" style="max-width:65px"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,3)" style="max-width:70px"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';
+  tr.innerHTML='<td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" oninput="this.value=this.value.toUpperCase()" autocapitalize="characters" style="min-width:120px;font-family:monospace;font-size:13px;text-transform:uppercase"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,1)" style="max-width:65px"></td><td><input type="text" placeholder="Ej: 12" onkeydown="inventNext(event,this,2)" style="max-width:65px"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,3)" style="max-width:70px"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';
   tb.appendChild(tr);
 }
 function removeRow(btn){const rows=document.getElementById('inventBody').querySelectorAll('tr');if(rows.length>1)btn.closest('tr').remove();}
 
 // ══════════════════════════════════════════════
-// SERIES — avance automático con pistola
+// SERIES — avance automático con pistola/teclado
 // ══════════════════════════════════════════════
-function serieNext(event,input,cls){
-  if(event.key==='Enter'||event.key==='\n'||event.keyCode===13){
-    event.preventDefault();
-    const row=input.closest('.serie-input-row');const next=row.nextElementSibling;
-    if(next&&next.classList.contains('serie-input-row')){
-      next.querySelector('input').focus();
-    } else {
-      // Crear nueva fila y enfocar
-      const bodyId=input.closest('.grado-body').id;
-      addSerieRow(bodyId,cls);
-      const rows=document.getElementById(bodyId).querySelectorAll('.serie-input-row');
-      rows[rows.length-1].querySelector('input').focus();
+
+// Timers para auto-avance por pistola
+const _serieScanTimers = new WeakMap();
+
+function serieAutoAdvance(input, cls){
+  // Convierte a mayúsculas
+  input.value = input.value.toUpperCase();
+  if(!input.value.trim()) return;
+  // Cancelar timer previo
+  if(_serieScanTimers.has(input)) clearTimeout(_serieScanTimers.get(input));
+  // Esperar 350ms sin cambios → avanzar (pistola termina en ~100-200ms)
+  const t = setTimeout(()=>{
+    const row = input.closest('.serie-input-row');
+    const next = row ? row.nextElementSibling : null;
+    if(next && next.classList.contains('serie-input-row')){
+      // Hay fila vacía siguiente → moverse a ella
+      const nextInput = next.querySelector('input');
+      if(nextInput && !nextInput.value.trim()) { nextInput.focus(); return; }
     }
+    // No hay fila vacía → crear nueva y enfocar
+    const body = input.closest('.grado-body');
+    if(!body) return;
+    const newRow = document.createElement('div');
+    newRow.className = 'serie-input-row';
+    newRow.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><button class="serie-del" onclick="delSerie(this)">×</button>`;
+    body.appendChild(newRow);
+    newRow.querySelector('input').focus();
+    saveProgress();
+  }, 350);
+  _serieScanTimers.set(input, t);
+}
+
+function serieEnterNav(event, input, cls){
+  // Enter manual también avanza
+  if(event.key==='Enter'||event.keyCode===13){
+    event.preventDefault();
+    if(_serieScanTimers.has(input)) clearTimeout(_serieScanTimers.get(input));
+    serieAutoAdvance(input, cls);
   }
 }
-function addSerieRow(bodyId,cls){
-  const body=document.getElementById(bodyId);
-  const row=document.createElement('div');row.className='serie-input-row';
-  row.innerHTML=`<input type="text" class="serie-input ${cls}" placeholder="Escanear serie / Scan serial" onkeydown="serieNext(event,this,'${cls}')"><button class="serie-del" onclick="delSerie(this)">×</button>`;
+
+// Función legacy (keydown) — redirige a la nueva lógica
+function serieNext(event,input,cls){
+  serieEnterNav(event, input, cls);
+}
+
+function addSerieRow(bodyId, cls){
+  const body = document.getElementById(bodyId);
+  if(!body) return;
+  const row = document.createElement('div');
+  row.className = 'serie-input-row';
+  row.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><button class="serie-del" onclick="delSerie(this)">×</button>`;
   body.appendChild(row);
 }
+
 function delSerie(btn){
-  const body=btn.closest('.grado-body');
-  if(body.querySelectorAll('.serie-input-row').length>1)btn.closest('.serie-input-row').remove();
+  const body = btn.closest('.grado-body');
+  if(body && body.querySelectorAll('.serie-input-row').length > 1)
+    btn.closest('.serie-input-row').remove();
 }
 
 // ══════════════════════════════════════════════
@@ -835,7 +895,7 @@ function delSerie(btn){
 function addSerieToBlock(btn,cls){
   const body=btn.closest('.card').querySelector('.grado-body');
   const row=document.createElement('div');row.className='serie-input-row';
-  row.innerHTML=`<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" onkeydown="serieNext(event,this,'${cls}')"><button class="serie-del" onclick="delSerie(this)">×</button>`;
+  row.innerHTML=`<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><button class="serie-del" onclick="delSerie(this)">×</button>`;
   body.appendChild(row);
   body.querySelector('input:last-of-type').focus();
 }
@@ -845,10 +905,10 @@ function addG1Block(){
   const container=document.getElementById('g1CodigosContainer');
   const div=document.createElement('div');div.className='card g1-codigo-block';div.dataset.idx=g1BlockCount;
   div.innerHTML=`<div class="section-title">Código #${g1BlockCount} / Code #${g1BlockCount} &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
-  <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código"><span class="scan-icon">⬛</span></div></div>
+  <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div></div>
   <div class="grid2" style="margin-bottom:10px">
     <div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1">G1 — Tolerable</option><option value="G2">G2 — Rechazado</option></select></div>
-    <div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option>Caja rota / Broken box</option><option>Caja húmeda / Wet box</option><option>Caja aplastada / Crushed box</option><option>Producto dañado / Damaged product</option><option>Golpe / Impact damage</option><option>Etiqueta incorrecta / Wrong label</option><option>Otro / Other</option></select></div>
+    <div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option>Caja rota / Broken box</option><option>Caja húmeda / Wet box</option><option>Caja aplastada / Crushed box</option><option>Caja manchada / Stained box</option><option>Caja con deformación leve / Slightly deformed box</option><option>Producto sin empaque correcto / Improperly packaged product</option><option>Sin zunchos (producto que los requiere) / Missing strapping</option><option>Producto dañado / Damaged product</option><option>Golpe / Impact damage</option><option>Etiqueta incorrecta / Wrong label</option><option>Error en rating labels / Wrong rating label</option><option>Leve sobreajuste por zunchos / Slight over-strapping</option><option>Otro / Other</option></select></div>
   </div>
   <div class="grid2" style="margin-bottom:10px">
     <div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0"></div>
@@ -857,7 +917,7 @@ function addG1Block(){
   <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..."></div>
   <div class="grado-section">
     <div class="grado-header-1">📦 Números de serie G1 / Serial numbers</div>
-    <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g1-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
+    <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
     <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div>
   </div>`;
   container.appendChild(div);div.querySelector('.g1-code-input').focus();
@@ -870,10 +930,10 @@ function addG2Block(){
   const container=document.getElementById('g2CodigosContainer');
   const div=document.createElement('div');div.className='card g2-codigo-block';div.dataset.idx=g2BlockCount;
   div.innerHTML=`<div class="section-title">Código #${g2BlockCount} / Code #${g2BlockCount} &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
-  <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código"><span class="scan-icon">⬛</span></div></div>
+  <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div></div>
   <div class="grid2" style="margin-bottom:10px">
     <div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1">G1 — Tolerable</option><option value="G2" selected>G2 — Rechazado</option></select></div>
-    <div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option>Caja rota / Broken box</option><option>Caja húmeda / Wet box</option><option>Caja aplastada / Crushed box</option><option>Producto dañado / Damaged product</option><option>Golpe / Impact damage</option><option>Etiqueta incorrecta / Wrong label</option><option>Otro / Other</option></select></div>
+    <div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option>Cajas rotas / Broken boxes</option><option>Manchas de grasa/aceite / Grease or oil stains</option><option>Desprendimiento de cajas / Box separation/collapse</option><option>Humedad / Moisture damage</option><option>Producto mojado / Wet product</option><option>Manchas de pintura / Paint stains</option><option>Oxidación / Rust/oxidation</option><option>Cajas cortadas por zunchos / Boxes cut by strapping</option><option>Caída de producto por mala manipulación / Product fallen due to mishandling</option><option>Caja húmeda / Wet box</option><option>Caja aplastada / Crushed box</option><option>Producto dañado / Damaged product</option><option>Golpe severo / Severe impact</option><option>Otro / Other</option></select></div>
   </div>
   <div class="grid2" style="margin-bottom:10px">
     <div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0"></div>
@@ -882,7 +942,7 @@ function addG2Block(){
   <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..."></div>
   <div class="grado-section">
     <div class="grado-header-2">🔴 Números de serie G2 / Serial numbers</div>
-    <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g2-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
+    <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
     <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div>
   </div>`;
   container.appendChild(div);div.querySelector('.g2-code-input').focus();
@@ -962,7 +1022,7 @@ function selectOpcion(name,value,btn,selectedClass){
   const radio=document.querySelector('input[name="'+name+'"][value="'+value+'"]');if(radio)radio.checked=true;
   const allBtns=btn.closest('.radio-row').querySelectorAll('.btn-opcion');
   allBtns.forEach(b=>{b.className='btn-opcion';});
-  btn.classList.add(selectedClass);saveProgress();
+  btn.classList.add(selectedClass);saveNow();
 }
 function restoreOpcionBtn(name,value){
   if(!value)return;
@@ -1083,14 +1143,12 @@ function updateNav(){
 }
 
 // ══════════════════════════════════════════════
-// AUTOSAVE
+// AUTOSAVE — SISTEMA ROBUSTO
 // ══════════════════════════════════════════════
-const SAVE_KEY='insp_draft_v5';
+const SAVE_KEY='insp_draft_v7';
 let _saveTimer=null;
-function saveProgress(){
-  if(_saveTimer)clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_doSave,600);
-}
+
+// Captura inmediata del estado completo del DOM → localStorage
 function _doSave(){
   try{
     const fields=['inspNombre','inspCargo','respAlmacen','respAlmacenSel','respAlmacenNom',
@@ -1098,32 +1156,91 @@ function _doSave(){
                   'horaInicio','horaFin','placa','estibadores','proveedor','obsGenerales',
                   'obsEstadoCont','obsInterna','firmaAlmNombre','firmaAlmCargo',
                   'firmaCalNombre','firmaCalCargo','precinto','contenedor',
-                  'avancePct','horaParada','motivoParada','obsParada',
-                  'g1ProductCode','g1TipoDano','g1Qty','g2ProductCode','g2TipoDano','g2Qty'];
-    const data={fields:{},photos:photoStore,step:currentStep,ts:Date.now(),
-                checklistExt:Object.assign({},checklistExt),
-                checklistInt:Object.assign({},checklistInt)};
+                  'avancePct','horaParada','motivoParada','obsParada'];
+    const data={
+      fields:{},
+      photos:Object.assign({},photoStore),
+      step:currentStep,
+      ts:Date.now(),
+      checklistExt:Object.assign({},checklistExt),
+      checklistInt:Object.assign({},checklistInt)
+    };
+    // Campos simples
     fields.forEach(id=>{const el=document.getElementById(id);if(el)data.fields[id]=el.value;});
-    const rc=document.querySelector('input[name="completo"]:checked');if(rc)data.fields['completo']=rc.value;
-    const re=document.querySelector('input[name="estadoCont"]:checked');if(re)data.fields['estadoCont']=re.value;
+    // Radios
+    const rc=document.querySelector('input[name="completo"]:checked');
+    if(rc)data.fields['completo']=rc.value;
+    const re=document.querySelector('input[name="estadoCont"]:checked');
+    if(re)data.fields['estadoCont']=re.value;
+    // Inventario
     data.inventario=[];
-    document.querySelectorAll('#inventBody tr').forEach(row=>{const cells=row.querySelectorAll('input');if(cells.length>=4)data.inventario.push([...cells].map(c=>c.value));});
-    data.seriesG1=[...document.querySelectorAll('.g1-input')].map(i=>i.value);
-    data.seriesG2=[...document.querySelectorAll('.g2-input')].map(i=>i.value);
+    document.querySelectorAll('#inventBody tr').forEach(row=>{
+      const cells=row.querySelectorAll('input');
+      if(cells.length>=3)data.inventario.push([...cells].map(c=>c.value));
+    });
+    // Observaciones
     data.observaciones=[];
-    document.querySelectorAll('.obs-row').forEach(row=>{data.observaciones.push({inp:row.querySelector('input')?.value||'',sel:row.querySelector('select')?.value||'',foto:row.querySelector('.obs-thumb img')?.src||''});});
-    // Save OC adicionales
+    document.querySelectorAll('.obs-row').forEach(row=>{
+      data.observaciones.push({
+        inp:row.querySelector('input')?.value||'',
+        sel:row.querySelector('select')?.value||'',
+        foto:row.querySelector('.obs-thumb img')?.src||''
+      });
+    });
+    // OC adicionales
     data.ocAdicionales=[...document.querySelectorAll('.oc-adicional')].map(i=>i.value);
-    // Save proveedores adicionales
+    // Proveedores adicionales
     data.proveedoresAdicionales=[...document.querySelectorAll('.proveedor-adicional')].map(i=>i.value);
-    // Save G1/G2 multi-code blocks
+    // Bloques G1
     data.g1Bloques=[];
-    document.querySelectorAll('.g1-codigo-block').forEach(bl=>{data.g1Bloques.push({codigo:bl.querySelector('.g1-code-input')?.value||'',grado:bl.querySelector('.g1-grado-select')?.value||'',tipo:bl.querySelector('.g1-tipo-select')?.value||'',qty:bl.querySelector('.g1-qty-input')?.value||'',uds:bl.querySelector('.g1-uds-input')?.value||'',detail:bl.querySelector('.g1-detail-input')?.value||'',series:[...bl.querySelectorAll('.g1-input')].map(i=>i.value)});});
+    document.querySelectorAll('.g1-codigo-block').forEach(bl=>{
+      data.g1Bloques.push({
+        codigo:bl.querySelector('.g1-code-input')?.value||'',
+        grado:bl.querySelector('.g1-grado-select')?.value||'',
+        tipo:bl.querySelector('.g1-tipo-select')?.value||'',
+        qty:bl.querySelector('.g1-qty-input')?.value||'',
+        uds:bl.querySelector('.g1-uds-input')?.value||'',
+        detail:bl.querySelector('.g1-detail-input')?.value||'',
+        series:[...bl.querySelectorAll('.g1-input')].map(i=>i.value)
+      });
+    });
+    // Bloques G2
     data.g2Bloques=[];
-    document.querySelectorAll('.g2-codigo-block').forEach(bl=>{data.g2Bloques.push({codigo:bl.querySelector('.g2-code-input')?.value||'',grado:bl.querySelector('.g2-grado-select')?.value||'',tipo:bl.querySelector('.g2-tipo-select')?.value||'',qty:bl.querySelector('.g2-qty-input')?.value||'',uds:bl.querySelector('.g2-uds-input')?.value||'',detail:bl.querySelector('.g2-detail-input')?.value||'',series:[...bl.querySelectorAll('.g2-input')].map(i=>i.value)});});
+    document.querySelectorAll('.g2-codigo-block').forEach(bl=>{
+      data.g2Bloques.push({
+        codigo:bl.querySelector('.g2-code-input')?.value||'',
+        grado:bl.querySelector('.g2-grado-select')?.value||'',
+        tipo:bl.querySelector('.g2-tipo-select')?.value||'',
+        qty:bl.querySelector('.g2-qty-input')?.value||'',
+        uds:bl.querySelector('.g2-uds-input')?.value||'',
+        detail:bl.querySelector('.g2-detail-input')?.value||'',
+        series:[...bl.querySelectorAll('.g2-input')].map(i=>i.value)
+      });
+    });
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
-  }catch(e){}
+  }catch(e){console.warn('Save error:',e);}
 }
+
+function saveProgress(){
+  if(_saveTimer)clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(_doSave,500);
+}
+function saveNow(){
+  if(_saveTimer)clearTimeout(_saveTimer);
+  _doSave();
+}
+
+// Guardar en TODOS los eventos de salida posibles
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='hidden'){saveNow();}
+});
+window.addEventListener('beforeunload',saveNow);
+window.addEventListener('pagehide',saveNow);
+// iOS Safari: guardar cada vez que baja al background
+window.addEventListener('blur',function(){saveNow();});
+// Red de seguridad: guardar cada 30 segundos automáticamente
+setInterval(saveNow, 30000);
+// _doSave is defined above in AUTOSAVE section
 function clearSavedData(){localStorage.removeItem(SAVE_KEY);dbClearAllPhotos();}
 
 function restoreProgress(){
@@ -1168,15 +1285,15 @@ function restoreProgress(){
     });
     // Inventario
     const tb=document.getElementById('inventBody');tb.innerHTML='';
-    (data.inventario||[]).forEach(row=>{const tr=document.createElement('tr');tr.innerHTML='<td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" style="min-width:120px;font-family:monospace;font-size:13px" value="'+(row[0]||'')+'"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,1)" style="max-width:65px" value="'+(row[1]||row[2]||'')+'"></td><td><input type="text" placeholder="Ej: 12" onkeydown="inventNext(event,this,2)" style="max-width:65px" value="'+(row[2]||row[3]||'')+'"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,3)" style="max-width:70px" value="'+(row[3]||row[4]||'')+'"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';tb.appendChild(tr);});
+    (data.inventario||[]).forEach(row=>{const tr=document.createElement('tr');tr.innerHTML='<td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" oninput="this.value=this.value.toUpperCase()" autocapitalize="characters" style="min-width:120px;font-family:monospace;font-size:13px;text-transform:uppercase" value="'+(row[0]||'')+'"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,1)" style="max-width:65px" value="'+(row[1]||row[2]||'')+'"></td><td><input type="text" placeholder="Ej: 12" onkeydown="inventNext(event,this,2)" style="max-width:65px" value="'+(row[2]||row[3]||'')+'"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,3)" style="max-width:70px" value="'+(row[3]||row[4]||'')+'"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';tb.appendChild(tr);});
     if(!tb.children.length)addInventRow();
     // Series G1
     const g1b=document.getElementById('g1Body');g1b.innerHTML='';
-    (data.seriesG1||['']).forEach(v=>{const row=document.createElement('div');row.className='serie-input-row';row.innerHTML='<input type="text" class="serie-input g1-input" placeholder="Escanear serie / Scan serial" onkeydown="serieNext(event,this,\'g1-input\')" value="'+v+'"><button class="serie-del" onclick="delSerie(this)">×</button>';g1b.appendChild(row);});
+    (data.seriesG1||['']).forEach(v=>{const row=document.createElement('div');row.className='serie-input-row';row.innerHTML='<input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,\'g1-input\')" onkeydown="serieEnterNav(event,this,\'g1-input\')" value="'+v+'"><button class="serie-del" onclick="delSerie(this)">×</button>';g1b.appendChild(row);});
     if(!g1b.children.length)addSerieRow('g1Body','g1-input');
     // Series G2
     const g2b=document.getElementById('g2Body');g2b.innerHTML='';
-    (data.seriesG2||['']).forEach(v=>{const row=document.createElement('div');row.className='serie-input-row';row.innerHTML='<input type="text" class="serie-input g2-input" placeholder="Escanear serie / Scan serial" onkeydown="serieNext(event,this,\'g2-input\')" value="'+v+'"><button class="serie-del" onclick="delSerie(this)">×</button>';g2b.appendChild(row);});
+    (data.seriesG2||['']).forEach(v=>{const row=document.createElement('div');row.className='serie-input-row';row.innerHTML='<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,\'g2-input\')" onkeydown="serieEnterNav(event,this,\'g2-input\')" value="'+v+'"><button class="serie-del" onclick="delSerie(this)">×</button>';g2b.appendChild(row);});
     if(!g2b.children.length)addSerieRow('g2Body','g2-input');
     // Observaciones
     (data.observaciones||[]).forEach(obs=>{addObs();const rows=document.querySelectorAll('.obs-row');const row=rows[rows.length-1];if(row){const inp=row.querySelector('input');if(inp)inp.value=obs.inp;const sel=row.querySelector('select');if(sel)sel.value=obs.sel;if(obs.foto){const th=row.querySelector('.obs-thumb');if(th){th.innerHTML='<img src="'+obs.foto+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';th.style.border='1.5px solid #10B981';}}}});
@@ -1199,13 +1316,13 @@ function restoreProgress(){
         g1BlockCount++;const div=document.createElement('div');div.className='card g1-codigo-block';div.dataset.idx=g1BlockCount;
         div.innerHTML=`<div class="section-title">Código #${g1BlockCount} / Code #${g1BlockCount} &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
         <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" value="${bl.codigo||''}"><span class="scan-icon">⬛</span></div></div>
-        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
+        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
         <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
         <div class="grado-section"><div class="grado-header-1">📦 Números de serie G1 / Serial numbers</div><div class="grado-body g1-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div></div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g1-series-body');
-        (bl.series&&bl.series.length?bl.series:['']).forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g1-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g1-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+        (bl.series&&bl.series.length?bl.series:['']).forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
       });
     }
     // Restaurar G2 bloques
@@ -1215,13 +1332,13 @@ function restoreProgress(){
         g2BlockCount++;const div=document.createElement('div');div.className='card g2-codigo-block';div.dataset.idx=g2BlockCount;
         div.innerHTML=`<div class="section-title">Código #${g2BlockCount} / Code #${g2BlockCount} &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
         <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" value="${bl.codigo||''}"><span class="scan-icon">⬛</span></div></div>
-        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
+        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
         <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
         <div class="grado-section"><div class="grado-header-2">🔴 Números de serie G2 / Serial numbers</div><div class="grado-body g2-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div></div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g2-series-body');
-        (bl.series&&bl.series.length?bl.series:['']).forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" onkeydown="serieNext(event,this,'g2-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+        (bl.series&&bl.series.length?bl.series:['']).forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
       });
     }
     // Ir al paso guardado
@@ -1255,22 +1372,16 @@ async function recoverPhotosFromDB(){
   }
 }
 
-// Guardar solo al salir del campo (blur) para no ralentizar la escritura
-// Los textareas tienen un debounce más largo
-document.addEventListener('change',saveProgress);
-document.addEventListener('blur',function(e){
+// Guardar al cambiar cualquier campo
+document.addEventListener('change', saveProgress);
+// Guardar al salir de cualquier campo (sin lag al escribir)
+document.addEventListener('blur', function(e){
   if(e.target.matches('input,select,textarea')){saveProgress();}
-},true);
-// Para textarea usamos input con debounce largo (700ms) pero no el global
-document.querySelectorAll('textarea').forEach(function(ta){
-  ta.addEventListener('input',saveProgress);
+}, true);
+// Textareas: guardar mientras se escribe (debounce largo para no ralentizar)
+document.addEventListener('input', function(e){
+  if(e.target.tagName==='TEXTAREA'){saveProgress();}
 });
-// MutationObserver para nuevos textareas añadidos dinámicamente
-new MutationObserver(function(muts){
-  muts.forEach(function(m){m.addedNodes.forEach(function(n){
-    if(n.nodeType===1){n.querySelectorAll&&n.querySelectorAll('textarea').forEach(function(ta){ta.addEventListener('input',saveProgress);});}
-  });});
-}).observe(document.body,{childList:true,subtree:true});
 
 // ══════════════════════════════════════════════
 // ONEDRIVE AUTH
