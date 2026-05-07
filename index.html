@@ -689,6 +689,8 @@ let msalToken=null;
 const GSHEET_ID = '1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo';
 const GSHEET_API_KEY = 'AIzaSyDqMldwbQo9qWx-e9qfY-4OEjrxe3NRjJE';
 const GSHEET_RANGE = 'Hoja 1!A:Q';
+// Apps Script URL — puente para escribir filas sin OAuth
+const GSHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzK4xWbWHtbuTKIGI3QaC4XvVB7CileUIZukz2iCFho_M-Jj24yRkhFYNCTLvUVEFJj/exec';
 let gsheetReady = false;
 
 const STEPS=[
@@ -1317,14 +1319,22 @@ setInterval(saveNow, 30000);
 function clearSavedData(){localStorage.removeItem(SAVE_KEY);dbClearAllPhotos();}
 
 function resetApp(){
-  // Limpia datos guardados
-  clearSavedData();
-  // Resetea objetos en memoria
-  Object.keys(checklistExt).forEach(k=>delete checklistExt[k]);
-  Object.keys(checklistInt).forEach(k=>delete checklistInt[k]);
-  Object.keys(photoStore).forEach(k=>delete photoStore[k]);
-  // Recarga la página limpiamente — la forma más confiable de resetear todo
-  window.location.reload();
+  // 1. Borrar borrador guardado
+  try{localStorage.removeItem(SAVE_KEY);}catch(e){}
+  // 2. Borrar fotos de IndexedDB
+  dbClearAllPhotos();
+  // 3. Borrar TODA la config de session (excepto Google Sheets)
+  const gsId  = localStorage.getItem('gs_id');
+  const gsKey = localStorage.getItem('gs_key');
+  const gsTab = localStorage.getItem('gs_tab');
+  localStorage.clear();
+  // Restaurar config de Google Sheets
+  if(gsId)  localStorage.setItem('gs_id',  gsId);
+  if(gsKey) localStorage.setItem('gs_key', gsKey);
+  if(gsTab) localStorage.setItem('gs_tab', gsTab);
+  // 4. Recargar forzando una URL limpia (sin cache del navegador)
+  const url = window.location.href.split('?')[0].split('#')[0];
+  window.location.replace(url + '?t=' + Date.now());
 }
 
 function restoreProgress(){
@@ -1814,152 +1824,19 @@ async function appendRowToGoogleSheet(){
     observaciones // Q OBSERVACIONES
   ];
 
-  // Append usando la API de Google Sheets (modo APPEND — agrega fila nueva al final)
-  // Siempre insertar debajo de la fila de encabezados
-  const url=`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(tab+'!A:Q')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${key}`;
-  const res=await fetch(url,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({values:[row]})
+  // Enviar al Apps Script (puente que escribe en el Sheet sin restricciones)
+  const scriptUrl = GSHEET_SCRIPT_URL;
+  const res = await fetch(scriptUrl, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({values: row})
   });
-  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Error al escribir en Google Sheets');}
-  return await res.json();
+  // Apps Script siempre responde 200 — verificar el contenido
+  const result = await res.json();
+  if(result.status === 'error') throw new Error(result.message||'Error en Apps Script');
+  return result;
 }
 
-// ══════════════════════════════════════════════
-// EXPORTAR EXCEL// ══════════════════════════════════════════════
-// EXPORTAR EXCEL
-// ══════════════════════════════════════════════
-function exportToExcel(){
-  try{
-    const fileNum=document.getElementById('fileNum').value||'—';
-    const fecha=document.getElementById('fecha').value||'—';
-    const proveedor=document.getElementById('proveedor').value||'—';
-    const almacen=document.getElementById('almacen').value||'—';
-    const numOC=document.getElementById('numOC').value||'—';
-    const contenedor=document.getElementById('contenedor').value||'—';
-    const inspector=document.getElementById('inspNombre').value||'—';
-    const estadoCont=document.querySelector('input[name="estadoCont"]:checked')?.value||'—';
-    const completo=document.querySelector('input[name="completo"]:checked')?.value||'—';
-    const g1s=[...document.querySelectorAll('.g1-input')].map(i=>i.value).filter(Boolean);
-    const g2s=[...document.querySelectorAll('.g2-input')].map(i=>i.value).filter(Boolean);
-    const g1Qty=document.getElementById('g1Qty').value||'0';
-    const g2Qty=document.getElementById('g2Qty').value||'0';
-    const g1TipoDano=document.getElementById('g1TipoDano').value||'—';
-    const g2TipoDano=document.getElementById('g2TipoDano').value||'—';
-    const totalFotos=Object.keys(photoStore).length;
-
-    // Condición exterior
-    const extResumen=CHECKLIST_EXT.map((item,i)=>checklistExt[i]==='SI'?item.es:'').filter(Boolean).join('; ')||'Sin observaciones';
-    const intResumen=CHECKLIST_INT.map((item,i)=>checklistInt[i]==='SI'?item.es:'').filter(Boolean).join('; ')||'Sin observaciones';
-
-    // CSV para Excel
-    const rows=[
-      ['REPORTE DE DESCARGA DE CONTENEDOR — GRUPO SOLE®'],
-      [''],
-      ['Campo','Valor'],
-      ['N° File / File Number',fileNum],
-      ['N° OC / Purchase Order',numOC],
-      ['Fecha / Date',fecha],
-      ['Proveedor / Supplier',proveedor],
-      ['Almacén / Location',almacen],
-      ['N° Contenedor / Container No.',contenedor],
-      ['Inspector',inspector],
-      ['Estado contenedor / Container condition',estadoCont],
-      ['Condición exterior / External condition',extResumen],
-      ['Condición interior / Internal condition',intResumen],
-      [''],
-      ['DAÑOS / DAMAGE DETAILS'],
-      ['Tipo daño G1 / G1 Damage type',g1TipoDano],
-      ['Cantidad G1 / G1 Qty',g1Qty],
-      ['Series Grado 1 / Grade 1 Serials',g1s.join(', ')]  ,
-      ['Tipo daño G2 / G2 Damage type',g2TipoDano],
-      ['Cantidad G2 / G2 Qty',g2Qty],
-      ['Series Grado 2 / Grade 2 Serials',g2s.join(', ')],
-      [''],
-      ['Total de fotos / Total photos',totalFotos],
-      ['Descarga completa / Completed',completo],
-      ['Fecha de generación / Generated',new Date().toLocaleString()]
-    ];
-
-    // Inventario
-    rows.push(['']);
-    rows.push(['INVENTARIO DE PRODUCTOS / RECEIVED PRODUCTS']);
-    rows.push(['Código / Code','Descripción / Description','Cantidad / Qty','Uds por caja / Units per box']);
-    document.querySelectorAll('#inventBody tr').forEach(row=>{
-      const cells=row.querySelectorAll('input');
-      if(cells.length)rows.push([cells[0].value,cells[1]?.value||'',cells[2]?.value||'',cells[3]?.value||'']);
-    });
-
-    const csv=rows.map(r=>r.map(c=>'"'+(String(c).replace(/"/g,'""'))+'"').join(',')).join('\n');
-    const bom='\uFEFF';
-    const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8;'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;
-    a.download=('Reporte_'+fileNum+'_'+fecha+'.csv').replace(/\s+/g,'_');
-    a.click();URL.revokeObjectURL(url);
-  }catch(e){console.warn('Excel export error:',e);}
-}
-
-// ══════════════════════════════════════════════
-// SUBIR A ONEDRIVE + REGISTRAR EN EXCEL COMPARTIDO
-// ══════════════════════════════════════════════
-async function uploadToOneDrive(){
-  const btn=document.getElementById('submitBtn');btn.textContent='⏳ Conectando...';btn.disabled=true;
-  try{
-    // — Crear carpeta del reporte en OneDrive personal —
-    let folderId;
-    try{const f=await graphRequest('GET','/me/drive/root:/'+FOLDER_NAME);folderId=f.id;}
-    catch{const f=await graphRequest('POST','/me/drive/root/children',{name:FOLDER_NAME,folder:{}, '@microsoft.graph.conflictBehavior':'rename'});folderId=f.id;}
-    const fileVal=document.getElementById('fileNum').value||'SIN-FILE';
-    const fecha=document.getElementById('fecha').value||new Date().toISOString().split('T')[0];
-    const inspector=document.getElementById('inspNombre').value||'inspector';
-    const reportName='Reporte_'+fileVal+'_'+fecha+'_'+inspector.replace(/\s+/g,'_');
-    const sub=await graphRequest('POST','/me/drive/items/'+folderId+'/children',{name:reportName,folder:{}, '@microsoft.graph.conflictBehavior':'rename'});
-    const subId=sub.id;
-
-    // — Subir fotos —
-    btn.textContent='⏳ Subiendo fotos ('+Object.keys(photoStore).length+')...';
-    let idx=1;
-    for(const[key,dataUrl]of Object.entries(photoStore)){
-      const blob=b64toBlob(dataUrl,'image/jpeg');
-      const name='foto_'+String(idx).padStart(2,'0')+'_'+key.replace(':','_')+'.jpg';
-      await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+subId+':/'+name+':/content',
-        {method:'PUT',headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/jpeg'},body:blob});
-      idx++;
-    }
-
-    // — Subir firmas —
-    btn.textContent='⏳ Subiendo firmas...';
-    for(const[cid,name]of[['sigAlmacen','firma_almacen.png'],['sigCalidad','firma_calidad.png']]){
-      const blob=b64toBlob(document.getElementById(cid).toDataURL('image/png'),'image/png');
-      await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+subId+':/'+name+':/content',
-        {method:'PUT',headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/png'},body:blob});
-    }
-
-    // — Registrar fila en Google Sheets (Histórico Power BI) —
-    btn.textContent='⏳ Registrando en histórico Power BI...';
-    try{
-      await appendRowToGoogleSheet();
-      console.log('✅ Fila registrada en Google Sheets');
-    }catch(gsErr){
-      console.warn('⚠️ No se pudo escribir en Google Sheets:', gsErr.message);
-      // No detiene el flujo — el reporte OneDrive se guarda igual
-    }
-
-    generateReport();exportToExcel();
-    document.getElementById('successBanner').style.display='block';
-    document.getElementById('successBanner').innerHTML=
-      '<div style="font-size:40px;margin-bottom:8px">✅</div>'+
-      '<h3>¡Reporte completo!</h3>'+
-      '<p>📁 Fotos en OneDrive: <strong>'+reportName+'</strong></p>'+
-      '<p style="margin-top:6px">📊 Fila registrada en Google Sheets — Power BI actualizado</p>'+
-      '<p style="margin-top:6px;font-size:12px;color:#047857">'+Object.keys(photoStore).length+' fotos · El dashboard verá los datos en el próximo refresco</p>'+
-      '<button onclick="resetApp()" style="margin-top:16px;width:100%;padding:14px;background:#1a3a5c;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">📋 Nuevo reporte / New report</button>';
-    btn.style.display='none';document.getElementById('downloadBtn').style.display='none';
-    clearSavedData();
-  }catch(err){btn.textContent='☁️ Reintentar';btn.disabled=false;setStatus('error','❌ Error: '+err.message);}
-}
 
 // ══════════════════════════════════════════════
 // AGREGAR FILA AL EXCEL COMPARTIDO (POWER BI)
