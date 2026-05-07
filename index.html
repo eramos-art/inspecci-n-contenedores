@@ -176,7 +176,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
       <div class="section-title">Inspector / Quality Control Inspector</div>
       <div class="grid2" style="margin-bottom:12px">
         <div class="field"><label>Nombre completo / Full name</label><input id="inspNombre" type="text" placeholder="Tu nombre" oninput="updatePill()"></div>
-        <div class="field"><label>Cargo / Role</label><input id="inspCargo" type="text" placeholder="Ej: Inspector de calidad" oninput="updatePill()"></div>
+        <div class="field"><label>Cargo / Role</label>
+          <select id="inspCargo" onchange="updatePill();saveNow()">
+            <option value="">Seleccionar...</option>
+            <option>Operario de Calidad</option>
+            <option>Técnico de Calidad y Recuperados</option>
+            <option>Encargado de Calidad</option>
+            <option>Encargado de Taller Recuperados</option>
+            <option>Otros</option>
+          </select>
+        </div>
       </div>
       <div class="user-pill">
         <div class="avatar" id="pillAvatar">--</div>
@@ -226,7 +235,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
         <button class="btn-add" onclick="addProveedorRow()" style="margin-top:4px">+ Agregar proveedor / Add supplier</button>
       </div>
       <div class="grid2">
-        <div class="field"><label>Fecha / Date</label><input id="fecha" type="date"></div>
+        <div class="field"><label>Fecha / Date ⚠️</label><input id="fecha" type="date"></div>
         <div class="field"><label>Almacén / Unloading location ⚠️</label>
           <select id="almacen">
             <option value="">Seleccionar...</option>
@@ -245,7 +254,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
             <option>LCL (Carga suelta)</option>
           </select>
         </div>
-        <div class="field"><label>Hora inicio / Start time</label><input id="horaInicio" type="time"></div>
+        <div class="field"><label>Hora inicio / Start time ⚠️</label><input id="horaInicio" type="time"></div>
         <div class="field"><label>Placa / Plate number</label><input id="placa" type="text" placeholder="ABC-123"></div>
         <div class="field"><label>N° estibadores / Dockers</label><input id="estibadores" type="number" min="0" placeholder="Ej: 4"></div>
       </div>
@@ -276,8 +285,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     <div class="card">
       <div class="section-title">Códigos / Container codes</div>
       <div class="grid2">
-        <div class="field"><label>N° Contenedor / Container no.</label><div class="barcode-wrap"><input id="contenedor" type="text" placeholder="Escanear o ingresar" autocapitalize="characters" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();saveNow()" onchange="saveNow()"><span class="scan-icon">⬛</span></div></div>
-        <div class="field"><label>N° Precinto / Seal no.</label><div class="barcode-wrap"><input id="precinto" type="text" placeholder="Escanear o ingresar" autocapitalize="characters" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();saveNow()" onchange="saveNow()"><span class="scan-icon">⬛</span></div></div>
+        <div class="field"><label>N° Contenedor / Container no. ⚠️</label><div class="barcode-wrap"><input id="contenedor" type="text" placeholder="Escanear o ingresar" autocapitalize="characters" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();saveNow()" onchange="saveNow()"><span class="scan-icon">⬛</span></div></div>
+        <div class="field"><label>N° Precinto / Seal no. ⚠️</label><div class="barcode-wrap"><input id="precinto" type="text" placeholder="Escanear o ingresar" autocapitalize="characters" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();saveNow()" onchange="saveNow()"><span class="scan-icon">⬛</span></div></div>
       </div>
     </div>
   </div>
@@ -1093,7 +1102,10 @@ function toggleAvance(){const c=document.querySelector('input[name="completo"]:c
 // ══════════════════════════════════════════════
 function updatePill(){
   const name=document.getElementById('inspNombre').value.trim();
-  const role=document.getElementById('inspCargo').value.trim();
+  const cargoEl=document.getElementById('inspCargo');
+  const role=cargoEl.tagName==='SELECT'
+    ?(cargoEl.selectedIndex>0?cargoEl.options[cargoEl.selectedIndex].text:'')
+    :cargoEl.value.trim();
   const ini=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()||'--';
   document.getElementById('pillAvatar').textContent=ini;
   document.getElementById('pillName').textContent=name||'Sin nombre';
@@ -1104,8 +1116,18 @@ function updatePill(){
 // ALERTAS CAMPOS OBLIGATORIOS
 // ══════════════════════════════════════════════
 const REQUIRED_BY_STEP={
-  0:[{id:'fileNum',label:'N° File'},{id:'proveedor',label:'Proveedor'},{id:'almacen',label:'Almacén'}],
-  1:[],2:[],3:[],4:[],5:[],6:[]
+  0:[
+    {id:'fileNum',   label:'FILE'},
+    {id:'numOC',     label:'N° OC'},
+    {id:'almacen',   label:'Almacén'},
+    {id:'fecha',     label:'Fecha'},
+    {id:'horaInicio',label:'Hora inicio'}
+  ],
+  1:[
+    {id:'contenedor',label:'N° Contenedor'},
+    {id:'precinto',  label:'N° Precinto'}
+  ],
+  2:[],3:[],4:[],5:[],6:[]
 };
 function validateStep(step){
   const reqs=REQUIRED_BY_STEP[step]||[];
@@ -1293,6 +1315,17 @@ window.addEventListener('blur',function(){saveNow();});
 setInterval(saveNow, 30000);
 // _doSave is defined above in AUTOSAVE section
 function clearSavedData(){localStorage.removeItem(SAVE_KEY);dbClearAllPhotos();}
+
+function resetApp(){
+  // Limpia datos guardados
+  clearSavedData();
+  // Resetea objetos en memoria
+  Object.keys(checklistExt).forEach(k=>delete checklistExt[k]);
+  Object.keys(checklistInt).forEach(k=>delete checklistInt[k]);
+  Object.keys(photoStore).forEach(k=>delete photoStore[k]);
+  // Recarga la página limpiamente — la forma más confiable de resetear todo
+  window.location.reload();
+}
 
 function restoreProgress(){
   try{
@@ -1574,7 +1607,8 @@ async function uploadToOneDrive(){
       '<h3>¡Reporte completo!</h3>'+
       '<p>📁 Fotos en OneDrive: <strong>'+reportName+'</strong></p>'+
       '<p style="margin-top:6px">📊 Fila registrada en Google Sheets — Power BI actualizado</p>'+
-      '<p style="margin-top:6px;font-size:12px;color:#047857">'+Object.keys(photoStore).length+' fotos · El dashboard verá los datos en el próximo refresco</p>';
+      '<p style="margin-top:6px;font-size:12px;color:#047857">'+Object.keys(photoStore).length+' fotos · El dashboard verá los datos en el próximo refresco</p>'+
+      '<button onclick="resetApp()" style="margin-top:16px;width:100%;padding:14px;background:#1a3a5c;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">📋 Nuevo reporte / New report</button>';
     btn.style.display='none';document.getElementById('downloadBtn').style.display='none';
     clearSavedData();
   }catch(err){btn.textContent='☁️ Reintentar';btn.disabled=false;setStatus('error','❌ Error: '+err.message);}
@@ -1920,7 +1954,8 @@ async function uploadToOneDrive(){
       '<h3>¡Reporte completo!</h3>'+
       '<p>📁 Fotos en OneDrive: <strong>'+reportName+'</strong></p>'+
       '<p style="margin-top:6px">📊 Fila registrada en Google Sheets — Power BI actualizado</p>'+
-      '<p style="margin-top:6px;font-size:12px;color:#047857">'+Object.keys(photoStore).length+' fotos · El dashboard verá los datos en el próximo refresco</p>';
+      '<p style="margin-top:6px;font-size:12px;color:#047857">'+Object.keys(photoStore).length+' fotos · El dashboard verá los datos en el próximo refresco</p>'+
+      '<button onclick="resetApp()" style="margin-top:16px;width:100%;padding:14px;background:#1a3a5c;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">📋 Nuevo reporte / New report</button>';
     btn.style.display='none';document.getElementById('downloadBtn').style.display='none';
     clearSavedData();
   }catch(err){btn.textContent='☁️ Reintentar';btn.disabled=false;setStatus('error','❌ Error: '+err.message);}
@@ -2144,7 +2179,7 @@ async function submitReport(){
         console.log('✅ Fila registrada en Google Sheets');
       }catch(e){console.warn('GSheets:',e.message);}
       document.getElementById('successBanner').style.display='block';
-      document.getElementById('successBanner').innerHTML='<div style="font-size:40px;margin-bottom:8px">✅</div><h3>¡Reporte generado!</h3><p>HTML y Excel descargados en tu dispositivo. 📊</p><p style="margin-top:6px;font-size:12px;color:#047857">📊 Registrado en histórico Google Sheets automáticamente.</p><p style="margin-top:4px;font-size:12px;color:#065F46">💡 También puedes iniciar sesión con Microsoft para subir las fotos a OneDrive.</p>';
+      document.getElementById('successBanner').innerHTML='<div style="font-size:40px;margin-bottom:8px">✅</div><h3>¡Reporte generado!</h3><p>HTML y Excel descargados en tu dispositivo. 📊</p><p style="margin-top:6px;font-size:12px;color:#047857">📊 Registrado en histórico Google Sheets automáticamente.</p><p style="margin-top:4px;font-size:12px;color:#065F46">💡 También puedes iniciar sesión con Microsoft para subir las fotos a OneDrive.</p><button onclick="resetApp()" style="margin-top:16px;width:100%;padding:14px;background:#1a3a5c;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">📋 Nuevo reporte / New report</button>';
       btn.style.display='none';clearSavedData();
     },400);
   }
