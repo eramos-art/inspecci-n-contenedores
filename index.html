@@ -1323,18 +1323,105 @@ function resetApp(){
   try{localStorage.removeItem(SAVE_KEY);}catch(e){}
   // 2. Borrar fotos de IndexedDB
   dbClearAllPhotos();
-  // 3. Borrar TODA la config de session (excepto Google Sheets)
+  // 3. Guardar config Google Sheets
   const gsId  = localStorage.getItem('gs_id');
   const gsKey = localStorage.getItem('gs_key');
   const gsTab = localStorage.getItem('gs_tab');
-  localStorage.clear();
-  // Restaurar config de Google Sheets
+  // 4. Limpiar localStorage completo
+  try{localStorage.clear();}catch(e){}
+  // 5. Restaurar config Google Sheets
   if(gsId)  localStorage.setItem('gs_id',  gsId);
   if(gsKey) localStorage.setItem('gs_key', gsKey);
   if(gsTab) localStorage.setItem('gs_tab', gsTab);
-  // 4. Recargar forzando una URL limpia (sin cache del navegador)
-  const url = window.location.href.split('?')[0].split('#')[0];
-  window.location.replace(url + '?t=' + Date.now());
+  // 6. Limpiar DOM directamente sin recargar
+  resetDOM();
+}
+
+function resetDOM(){
+  // Limpiar todos los inputs de texto
+  document.querySelectorAll('input[type="text"],input[type="number"],input[type="date"],input[type="time"]').forEach(el=>{
+    el.value='';el.classList.remove('error');
+  });
+  // Limpiar selects — volver al primer option
+  document.querySelectorAll('select').forEach(el=>{el.selectedIndex=0;});
+  // Limpiar textareas
+  document.querySelectorAll('textarea').forEach(el=>{el.value='';});
+  // Resetear fecha a hoy
+  const fechaEl=document.getElementById('fecha');
+  if(fechaEl)fechaEl.value=new Date().toISOString().split('T')[0];
+  // Limpiar fotos
+  Object.keys(photoStore).forEach(k=>delete photoStore[k]);
+  buildGrid('extGrid','ext',EXT_SLOTS);
+  buildGrid('apGrid','ap',AP_SLOTS);
+  // Limpiar secciones de fotos extra
+  ['extExtraSection','apExtraSection','descExtraSection','defExtraSection','estadoContSection'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.innerHTML='';
+  });
+  extraCounters={ext:0,ap:0,desc:0,def:0,estadocont:0};
+  // Limpiar checklists
+  Object.keys(checklistExt).forEach(k=>delete checklistExt[k]);
+  Object.keys(checklistInt).forEach(k=>delete checklistInt[k]);
+  buildChecklist(CHECKLIST_EXT,checklistExt,'checklistExt');
+  buildChecklist(CHECKLIST_INT,checklistInt,'checklistInt');
+  // Limpiar inventario
+  const tb=document.getElementById('inventBody');if(tb)tb.innerHTML='';
+  addInventRow();
+  // Limpiar OC y proveedores adicionales
+  const ocList=document.getElementById('ocAdicionalesList');if(ocList)ocList.innerHTML='';
+  const provList=document.getElementById('proveedoresAdicionalesList');if(provList)provList.innerHTML='';
+  ocCount=0;provCount=0;
+  // Limpiar observaciones
+  const obsList=document.getElementById('obsList');if(obsList)obsList.innerHTML='';
+  obsCount=0;
+  // Limpiar bloques G1/G2 — dejar solo el primero vacío
+  const g1Cont=document.getElementById('g1CodigosContainer');
+  const g2Cont=document.getElementById('g2CodigosContainer');
+  if(g1Cont){
+    const first=g1Cont.querySelector('.g1-codigo-block');
+    if(first){
+      g1Cont.innerHTML='';
+      g1BlockCount=1;
+      // Recrear primer bloque vacío
+      addG1Block();g1BlockCount=1;
+    }
+  }
+  if(g2Cont){
+    g2Cont.innerHTML='';
+    g2BlockCount=1;
+    addG2Block();g2BlockCount=1;
+  }
+  // Limpiar firmas
+  ['sigAlmacen','sigCalidad'].forEach(id=>{
+    const c=document.getElementById(id);
+    if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);
+  });
+  document.getElementById('statusAlm').textContent='Sin firma aún — dibuja tu firma arriba';
+  document.getElementById('statusAlm').className='sig-status';
+  document.getElementById('statusCal').textContent='Sin firma aún — dibuja tu firma arriba';
+  document.getElementById('statusCal').className='sig-status';
+  // Resetear botones de opción
+  document.querySelectorAll('.btn-opcion').forEach(b=>b.className='btn-opcion');
+  document.querySelectorAll('input[type="radio"]').forEach(r=>r.checked=false);
+  // Ocultar secciones condicionales
+  const avance=document.getElementById('avanceSection');if(avance)avance.style.display='none';
+  // Ocultar success banner, mostrar submit
+  const banner=document.getElementById('successBanner');if(banner){banner.style.display='none';banner.innerHTML='';}
+  const submitBtn=document.getElementById('submitBtn');if(submitBtn){submitBtn.style.display='block';submitBtn.disabled=false;submitBtn.textContent='☁️ Enviar reporte / Submit report';}
+  // Pill
+  updatePill();
+  updateCounts();
+  // Ir al paso 1
+  document.querySelectorAll('.step-page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page0').classList.add('active');
+  currentStep=0;
+  updateNav();
+  window.scrollTo({top:0,behavior:'smooth'});
+  // Confirmar al usuario
+  const toast=document.createElement('div');
+  toast.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#059669;color:white;padding:12px 24px;border-radius:20px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
+  toast.textContent='✅ Listo para nuevo reporte';
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(),3000);
 }
 
 function restoreProgress(){
