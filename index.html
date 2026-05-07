@@ -615,34 +615,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
       </div>
       <!-- Estado: no configurado -->
       <div id="gsheetSetupNeeded">
-        <div style="font-size:12px;color:#374151;margin-bottom:10px;line-height:1.6">
-          Para activar el registro automático en tu Google Sheet ingresa los datos a continuación. Solo se hace <strong>una vez</strong>.
+        <div style="font-size:12px;color:#374151;margin-bottom:12px;line-height:1.6">
+          Presiona el botón para activar el registro automático en el histórico de inspecciones. Solo se hace <strong>una vez</strong>.
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div class="field">
-            <label style="color:#065F46">ID del Google Sheet</label>
-            <input id="gsheetIdInput" type="text" placeholder="1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo" value="1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo"
-              style="font-family:monospace;font-size:12px;background:white"
-              oninput="saveGSheetConfig()">
-          </div>
-          <div class="field">
-            <label style="color:#065F46">API Key de Google</label>
-            <input id="gsheetKeyInput" type="text" placeholder="AIzaSy..."
-              style="font-family:monospace;font-size:12px;background:white"
-              oninput="saveGSheetConfig()">
-          </div>
-          <div class="field">
-            <label style="color:#065F46">Nombre de la hoja (pestaña)</label>
-            <input id="gsheetTabInput" type="text" placeholder="Hoja 1" value="Hoja 1"
-              oninput="saveGSheetConfig()">
-          </div>
-        </div>
-        <button onclick="testGSheetConnection()" style="width:100%;margin-top:10px;padding:10px;background:#065F46;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
-          🔗 Verificar conexión y guardar
+        <!-- Campos ocultos — pre-cargados automáticamente -->
+        <input id="gsheetIdInput"  type="hidden" value="1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo">
+        <input id="gsheetKeyInput" type="hidden" value="AIzaSyDqMldwbQo9qWx-e9qfY-4OEjrxe3NRjJE">
+        <input id="gsheetTabInput" type="hidden" value="Hoja 1">
+        <button onclick="testGSheetConnection()" style="width:100%;padding:12px;background:#065F46;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
+          🔗 Activar histórico Google Sheets
         </button>
-        <div style="margin-top:8px;font-size:11px;color:#6B7280;line-height:1.6">
-          ¿No sabes cómo obtener estos datos? Escríbele a tu administrador o sigue la guía paso a paso en el manual.
-        </div>
       </div>
       <!-- Estado: configurado OK -->
       <div id="gsheetReady" style="display:none;text-align:center;padding:8px 0">
@@ -1613,20 +1595,26 @@ function saveGSheetConfig(){
 }
 
 function loadGSheetConfig(){
-  // ID del Sheet pre-configurado — se puede sobreescribir con localStorage
-  const DEFAULT_ID = '1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo';
-  const id  = localStorage.getItem('gs_id')||DEFAULT_ID;
-  const key = localStorage.getItem('gs_key')||'';
-  const tab = localStorage.getItem('gs_tab')||'Hoja 1';
+  // Credenciales fijas del proyecto Sole Inspecciones
+  const DEFAULT_ID  = '1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo';
+  const DEFAULT_KEY = 'AIzaSyDqMldwbQo9qWx-e9qfY-4OEjrxe3NRjJE';
+  const DEFAULT_TAB = 'Hoja 1';
+  // Usar las del localStorage si existen, si no usar las del código
+  const id  = localStorage.getItem('gs_id')  || DEFAULT_ID;
+  const key = localStorage.getItem('gs_key') || DEFAULT_KEY;
+  const tab = localStorage.getItem('gs_tab') || DEFAULT_TAB;
+  // Pre-guardar en localStorage para persistencia
+  localStorage.setItem('gs_id',  id);
+  localStorage.setItem('gs_key', key);
+  localStorage.setItem('gs_tab', tab);
+  // Actualizar campos del formulario
   const inp1 = document.getElementById('gsheetIdInput');
   const inp2 = document.getElementById('gsheetKeyInput');
   const inp3 = document.getElementById('gsheetTabInput');
   if(inp1) inp1.value = id;
   if(inp2) inp2.value = key;
   if(inp3) inp3.value = tab;
-  // Pre-guardar el ID por defecto si aún no hay nada guardado
-  if(!localStorage.getItem('gs_id')) localStorage.setItem('gs_id', DEFAULT_ID);
-  if(!localStorage.getItem('gs_tab')) localStorage.setItem('gs_tab', 'Hoja 1');
+  // Si ya tiene ID y key → marcar como listo automáticamente
   if(id && key){
     gsheetReady = true;
     const needed = document.getElementById('gsheetSetupNeeded');
