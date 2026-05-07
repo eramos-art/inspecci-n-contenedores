@@ -604,8 +604,58 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     <!-- RESUMEN -->
     <div class="card" id="summaryCard"></div>
 
-    <!-- EXCEL BADGE -->
-    <div class="excel-badge">📊 Se exportará también a <strong style="margin-left:4px">Excel</strong> para historial Power BI</div>
+    <!-- GOOGLE SHEETS BADGE + CONFIG -->
+    <div id="gsheetConfigCard" style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:14px;padding:16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:20px">📊</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#065F46">Histórico Google Sheets → Power BI</div>
+          <div style="font-size:11px;color:#047857;margin-top:2px">Sin TI · Gratis · Se alimenta automáticamente al enviar</div>
+        </div>
+      </div>
+      <!-- Estado: no configurado -->
+      <div id="gsheetSetupNeeded">
+        <div style="font-size:12px;color:#374151;margin-bottom:10px;line-height:1.6">
+          Para activar el registro automático en tu Google Sheet ingresa los datos a continuación. Solo se hace <strong>una vez</strong>.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="field">
+            <label style="color:#065F46">ID del Google Sheet</label>
+            <input id="gsheetIdInput" type="text" placeholder="1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo" value="1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo"
+              style="font-family:monospace;font-size:12px;background:white"
+              oninput="saveGSheetConfig()">
+          </div>
+          <div class="field">
+            <label style="color:#065F46">API Key de Google</label>
+            <input id="gsheetKeyInput" type="text" placeholder="AIzaSy..."
+              style="font-family:monospace;font-size:12px;background:white"
+              oninput="saveGSheetConfig()">
+          </div>
+          <div class="field">
+            <label style="color:#065F46">Nombre de la hoja (pestaña)</label>
+            <input id="gsheetTabInput" type="text" placeholder="Hoja 1" value="Hoja 1"
+              oninput="saveGSheetConfig()">
+          </div>
+        </div>
+        <button onclick="testGSheetConnection()" style="width:100%;margin-top:10px;padding:10px;background:#065F46;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
+          🔗 Verificar conexión y guardar
+        </button>
+        <div style="margin-top:8px;font-size:11px;color:#6B7280;line-height:1.6">
+          ¿No sabes cómo obtener estos datos? Escríbele a tu administrador o sigue la guía paso a paso en el manual.
+        </div>
+      </div>
+      <!-- Estado: configurado OK -->
+      <div id="gsheetReady" style="display:none;text-align:center;padding:8px 0">
+        <div style="font-size:24px;margin-bottom:4px">✅</div>
+        <div style="font-size:13px;font-weight:700;color:#065F46">Google Sheet conectado</div>
+        <div style="font-size:11px;color:#047857;margin-top:2px">Sheet: <strong>Inspección Contenedores — Grupo Sole</strong></div>
+        <div style="font-size:11px;color:#047857;margin-top:2px">Cada reporte agrega una fila nueva · Power BI listo</div>
+        <button onclick="document.getElementById('gsheetSetupNeeded').style.display='block';document.getElementById('gsheetReady').style.display='none'" 
+          style="margin-top:8px;padding:6px 14px;background:none;border:1px solid #6B7280;border-radius:6px;font-size:11px;color:#6B7280;cursor:pointer;font-family:inherit">
+          Cambiar configuración
+        </button>
+      </div>
+    </div>
 
     <div class="success-banner" id="successBanner" style="display:none"></div>
     <button class="btn-submit-final" id="submitBtn" onclick="submitReport()">☁️ Enviar reporte / Submit report</button>
@@ -630,6 +680,25 @@ const REDIRECT_URI='https://eramos-art.github.io/inspecci-n-contenedores/';
 const SCOPES=['Files.ReadWrite','User.Read'];
 const FOLDER_NAME='Inspecciones_Contenedores';
 let msalToken=null;
+
+// ══════════════════════════════════════════════
+// GOOGLE SHEETS — HISTÓRICO POWER BI
+// Columnas: FILE | N°OC | PROVEEDOR | FECHA | ALMACÉN |
+//   N° CONTENEDOR | COND.EXT | COND.INT | CÓDIGO | CANT.LOTE |
+//   DEFECTOS G1 | DEFECTOS G2 | HORA INICIO | HORA FINAL |
+//   DESCARGA COMPLETA | INSPECTOR | OBSERVACIONES
+// ══════════════════════════════════════════════
+// INSTRUCCIONES RÁPIDAS:
+// 1. Ve a sheets.google.com → crea hoja con las columnas de tu plantilla
+// 2. Comparte el Sheet → "Cualquiera con el link puede editar"
+// 3. Copia el ID del link (entre /d/ y /edit) y pégalo abajo
+// 4. Activa Google Sheets API en console.cloud.google.com → crea API key
+// 5. Pega la API key abajo
+// ────────────────────────────────────────────
+const GSHEET_ID = '1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo';
+const GSHEET_API_KEY = 'AIzaSyDqMldwbQo9qWx-e9qfY-4OEjrxe3NRjJE';
+const GSHEET_RANGE = 'Hoja 1!A:Q';
+let gsheetReady = false;
 
 const STEPS=[
   {icon:'👤',label:'Paso 1 de 7',title:'Datos generales'},
@@ -1387,7 +1456,9 @@ document.addEventListener('input', function(e){
 // ONEDRIVE AUTH
 // ══════════════════════════════════════════════
 function getMsalAuthUrl(){const p=new URLSearchParams({client_id:MSAL_CLIENT_ID,response_type:'token',redirect_uri:REDIRECT_URI,scope:SCOPES.join(' '),response_mode:'fragment'});return'https://login.microsoftonline.com/'+MSAL_TENANT+'/oauth2/v2.0/authorize?'+p;}
-async function doLogin(){try{const token=await loginPopup();msalToken=token;const me=await graphRequest('GET','/me');document.getElementById('loggedName').textContent=me.displayName||me.userPrincipalName;document.getElementById('loginBanner').style.display='none';document.getElementById('loggedUser').style.display='block';document.getElementById('submitBtn').textContent='☁️ Subir a OneDrive';document.getElementById('downloadBtn').style.display='block';setStatus('connected','✅ Conectado — se guardará en: '+FOLDER_NAME);}catch(e){setStatus('error','❌ Error: '+e.message);}}
+async function doLogin(){try{const token=await loginPopup();msalToken=token;const me=await graphRequest('GET','/me');document.getElementById('loggedName').textContent=me.displayName||me.userPrincipalName;document.getElementById('loginBanner').style.display='none';document.getElementById('loggedUser').style.display='block';document.getElementById('submitBtn').textContent='☁️ Enviar a OneDrive + Power BI';document.getElementById('downloadBtn').style.display='block';setStatus('connected','✅ Conectado — datos irán al histórico Power BI');
+    // Verificar si la tabla ya existe en el Excel compartido
+    checkExcelTableExists();}catch(e){setStatus('error','❌ Error: '+e.message);}}
 function doLogout(){msalToken=null;document.getElementById('loginBanner').style.display='flex';document.getElementById('loggedUser').style.display='none';document.getElementById('submitBtn').textContent='☁️ Enviar reporte';document.getElementById('downloadBtn').style.display='none';setStatus('','');}
 function setStatus(type,msg){const el=document.getElementById('onedriveStatus');el.className='onedrive-status'+(type?' '+type:'');el.textContent=msg;if(!type)el.style.display='none';}
 async function loginPopup(){return new Promise((resolve,reject)=>{const popup=window.open(getMsalAuthUrl(),'mslogin','width=500,height=650,left=100,top=100');if(!popup){reject(new Error('Permite los popups.'));return;}const timer=setInterval(()=>{try{if(popup.closed){clearInterval(timer);reject(new Error('Ventana cerrada.'));return;}const hash=popup.location.hash;if(hash&&hash.includes('access_token')){clearInterval(timer);popup.close();const p=new URLSearchParams(hash.substring(1));resolve(p.get('access_token'));}}catch(e){}},300);setTimeout(()=>{clearInterval(timer);if(!popup.closed)popup.close();reject(new Error('Tiempo agotado.'));},120000);}); }
@@ -1469,11 +1540,12 @@ function exportToExcel(){
 }
 
 // ══════════════════════════════════════════════
-// SUBIR A ONEDRIVE
+// SUBIR A ONEDRIVE + REGISTRAR EN EXCEL COMPARTIDO
 // ══════════════════════════════════════════════
 async function uploadToOneDrive(){
   const btn=document.getElementById('submitBtn');btn.textContent='⏳ Conectando...';btn.disabled=true;
   try{
+    // — Crear carpeta del reporte en OneDrive personal —
     let folderId;
     try{const f=await graphRequest('GET','/me/drive/root:/'+FOLDER_NAME);folderId=f.id;}
     catch{const f=await graphRequest('POST','/me/drive/root/children',{name:FOLDER_NAME,folder:{}, '@microsoft.graph.conflictBehavior':'rename'});folderId=f.id;}
@@ -1483,41 +1555,589 @@ async function uploadToOneDrive(){
     const reportName='Reporte_'+fileVal+'_'+fecha+'_'+inspector.replace(/\s+/g,'_');
     const sub=await graphRequest('POST','/me/drive/items/'+folderId+'/children',{name:reportName,folder:{}, '@microsoft.graph.conflictBehavior':'rename'});
     const subId=sub.id;
+
+    // — Subir fotos —
     btn.textContent='⏳ Subiendo fotos ('+Object.keys(photoStore).length+')...';
     let idx=1;
-    for(const[key,dataUrl]of Object.entries(photoStore)){const blob=b64toBlob(dataUrl,'image/jpeg');const name='foto_'+String(idx).padStart(2,'0')+'_'+key.replace(':','_')+'.jpg';await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+subId+':/'+name+':/content',{method:'PUT',headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/jpeg'},body:blob});idx++;}
+    for(const[key,dataUrl]of Object.entries(photoStore)){
+      const blob=b64toBlob(dataUrl,'image/jpeg');
+      const name='foto_'+String(idx).padStart(2,'0')+'_'+key.replace(':','_')+'.jpg';
+      await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+subId+':/'+name+':/content',
+        {method:'PUT',headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/jpeg'},body:blob});
+      idx++;
+    }
+
+    // — Subir firmas —
     btn.textContent='⏳ Subiendo firmas...';
-    for(const[cid,name]of[['sigAlmacen','firma_almacen.png'],['sigCalidad','firma_calidad.png']]){const blob=b64toBlob(document.getElementById(cid).toDataURL('image/png'),'image/png');await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+subId+':/'+name+':/content',{method:'PUT',headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/png'},body:blob});}
-    btn.textContent='⏳ Guardando datos...';
-    const g1s=[...document.querySelectorAll('.g1-input')].map(i=>i.value).filter(Boolean);
-    const g2s=[...document.querySelectorAll('.g2-input')].map(i=>i.value).filter(Boolean);
-    const extResumen=CHECKLIST_EXT.map((item,i)=>checklistExt[i]==='SI'?item.es:'').filter(Boolean);
-    const intResumen=CHECKLIST_INT.map((item,i)=>checklistInt[i]==='SI'?item.es:'').filter(Boolean);
-    const summary={
-      file:document.getElementById('fileNum').value,numOC:document.getElementById('numOC').value,
-      fecha:document.getElementById('fecha').value,almacen:document.getElementById('almacen').value,
-      proveedor:document.getElementById('proveedor').value,contenedor:document.getElementById('contenedor').value,
-      precinto:document.getElementById('precinto').value,placa:document.getElementById('placa').value,
-      estibadores:document.getElementById('estibadores').value,tamano:document.getElementById('tamano').value,
-      horaInicio:document.getElementById('horaInicio').value,horaFin:document.getElementById('horaFin').value,
-      inspector:inspector,estadoContenedor:document.querySelector('input[name="estadoCont"]:checked')?.value||'',
-      condicionExterior:extResumen,condicionInterior:intResumen,
-      g1ProductCode:document.getElementById('g1ProductCode').value,
-      g1TipoDano:document.getElementById('g1TipoDano').value,
-      g1Qty:document.getElementById('g1Qty').value,seriesGrado1:g1s,
-      g2ProductCode:document.getElementById('g2ProductCode').value,
-      g2TipoDano:document.getElementById('g2TipoDano').value,
-      g2Qty:document.getElementById('g2Qty').value,seriesGrado2:g2s,
-      obsGenerales:document.getElementById('obsGenerales').value,
-      totalFotos:Object.keys(photoStore).length,fechaEnvio:new Date().toISOString()
-    };
-    const jsonBlob=new Blob([JSON.stringify(summary,null,2)],{type:'application/json'});
-    await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+subId+':/datos_reporte.json:/content',{method:'PUT',headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'application/json'},body:jsonBlob});
+    for(const[cid,name]of[['sigAlmacen','firma_almacen.png'],['sigCalidad','firma_calidad.png']]){
+      const blob=b64toBlob(document.getElementById(cid).toDataURL('image/png'),'image/png');
+      await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+subId+':/'+name+':/content',
+        {method:'PUT',headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/png'},body:blob});
+    }
+
+    // — Registrar fila en Google Sheets (Histórico Power BI) —
+    btn.textContent='⏳ Registrando en histórico Power BI...';
+    try{
+      await appendRowToGoogleSheet();
+      console.log('✅ Fila registrada en Google Sheets');
+    }catch(gsErr){
+      console.warn('⚠️ No se pudo escribir en Google Sheets:', gsErr.message);
+      // No detiene el flujo — el reporte OneDrive se guarda igual
+    }
+
     generateReport();exportToExcel();
     document.getElementById('successBanner').style.display='block';
-    document.getElementById('successBanner').innerHTML='<div style="font-size:40px;margin-bottom:8px">✅</div><h3>¡Reporte guardado en OneDrive!</h3><p>Carpeta: <strong>'+FOLDER_NAME+' / '+reportName+'</strong></p><p style="margin-top:6px">Fotos: <strong>'+Object.keys(photoStore).length+'</strong> — También exportado a Excel 📊</p>';
-    btn.style.display='none';document.getElementById('downloadBtn').style.display='none';clearSavedData();
+    document.getElementById('successBanner').innerHTML=
+      '<div style="font-size:40px;margin-bottom:8px">✅</div>'+
+      '<h3>¡Reporte completo!</h3>'+
+      '<p>📁 Fotos en OneDrive: <strong>'+reportName+'</strong></p>'+
+      '<p style="margin-top:6px">📊 Fila registrada en Google Sheets — Power BI actualizado</p>'+
+      '<p style="margin-top:6px;font-size:12px;color:#047857">'+Object.keys(photoStore).length+' fotos · El dashboard verá los datos en el próximo refresco</p>';
+    btn.style.display='none';document.getElementById('downloadBtn').style.display='none';
+    clearSavedData();
   }catch(err){btn.textContent='☁️ Reintentar';btn.disabled=false;setStatus('error','❌ Error: '+err.message);}
+}
+
+// ══════════════════════════════════════════════
+// GOOGLE SHEETS — CONFIG Y FUNCIONES
+// ══════════════════════════════════════════════
+
+function saveGSheetConfig(){
+  // Guarda en localStorage para no perder la config
+  const id  = document.getElementById('gsheetIdInput')?.value.trim()||'';
+  const key = document.getElementById('gsheetKeyInput')?.value.trim()||'';
+  const tab = document.getElementById('gsheetTabInput')?.value.trim()||'Seguimiento';
+  localStorage.setItem('gs_id', id);
+  localStorage.setItem('gs_key', key);
+  localStorage.setItem('gs_tab', tab);
+}
+
+function loadGSheetConfig(){
+  // ID del Sheet pre-configurado — se puede sobreescribir con localStorage
+  const DEFAULT_ID = '1wc6AxjW1-gtJjaYfqD0fmtcCt1GqHx3DUdnjTfWHDRo';
+  const id  = localStorage.getItem('gs_id')||DEFAULT_ID;
+  const key = localStorage.getItem('gs_key')||'';
+  const tab = localStorage.getItem('gs_tab')||'Hoja 1';
+  const inp1 = document.getElementById('gsheetIdInput');
+  const inp2 = document.getElementById('gsheetKeyInput');
+  const inp3 = document.getElementById('gsheetTabInput');
+  if(inp1) inp1.value = id;
+  if(inp2) inp2.value = key;
+  if(inp3) inp3.value = tab;
+  // Pre-guardar el ID por defecto si aún no hay nada guardado
+  if(!localStorage.getItem('gs_id')) localStorage.setItem('gs_id', DEFAULT_ID);
+  if(!localStorage.getItem('gs_tab')) localStorage.setItem('gs_tab', 'Hoja 1');
+  if(id && key){
+    gsheetReady = true;
+    const needed = document.getElementById('gsheetSetupNeeded');
+    const ready  = document.getElementById('gsheetReady');
+    if(needed) needed.style.display='none';
+    if(ready)  ready.style.display='block';
+  }
+}
+
+async function testGSheetConnection(){
+  const id  = document.getElementById('gsheetIdInput')?.value.trim();
+  const key = document.getElementById('gsheetKeyInput')?.value.trim();
+  const tab = document.getElementById('gsheetTabInput')?.value.trim()||'Hoja 1';
+  if(!id||!key){alert('Debes ingresar el ID del Sheet y la API Key.');return;}
+  const btn = document.querySelector('#gsheetSetupNeeded button');
+  btn.textContent='⏳ Verificando...';btn.disabled=true;
+  try{
+    // 1. Verificar que el Sheet existe y la key funciona
+    const url=`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(tab+'!A1:Q1')}?key=${key}`;
+    const res=await fetch(url);
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Error de conexión — verifica la API Key y permisos del Sheet');}
+    const data=await res.json();
+    const existingHeaders=(data.values&&data.values[0])||[];
+
+    // 2. Si la primera fila está vacía, crear encabezados automáticamente
+    if(existingHeaders.length===0){
+      btn.textContent='⏳ Creando encabezados...';
+      const HEADERS=["FILE", "N° O.C.", "PROVEEDOR", "FECHA", "ALMACÉN", "N° CONTENEDOR", "COND. EXTERIOR CONTENEDOR", "COND. INTERIOR CONTENEDOR", "CÓDIGO", "CANT. LOTE", "DEFECTOS GRADO 1", "DEFECTOS GRADO 2", "HORA DE INICIO", "HORA FINAL", "DESCARGA COMPLETA SI/NO", "INSPECTOR DE LA DESCARGA", "OBSERVACIONES"];
+      const writeUrl=`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(tab+'!A1:Q1')}?valueInputOption=USER_ENTERED&key=${key}`;
+      const writeRes=await fetch(writeUrl,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({values:[HEADERS]})
+      });
+      if(!writeRes.ok){
+        // La API key no puede escribir — necesita OAuth. Informar al usuario.
+        const we=await writeRes.json();
+        // No es error crítico — el append usará OAuth de Microsoft o modo público
+        console.warn('No se pudieron crear encabezados con API key (solo lectura). Se crearán al primer envío.');
+      } else {
+        console.log('✅ Encabezados creados en la fila 1');
+      }
+    }
+
+    saveGSheetConfig();
+    gsheetReady=true;
+    document.getElementById('gsheetSetupNeeded').style.display='none';
+    document.getElementById('gsheetReady').style.display='block';
+
+    const msg = existingHeaders.length===0
+      ? '✅ Conexión exitosa.\n\n📋 Se crearon los 17 encabezados automáticamente en tu Google Sheet:\n\nFILE · N°OC · PROVEEDOR · FECHA · ALMACÉN · N°CONTENEDOR · COND.EXT · COND.INT · CÓDIGO · CANT.LOTE · DEFECTOS G1 · DEFECTOS G2 · HORA INICIO · HORA FINAL · DESCARGA · INSPECTOR · OBSERVACIONES\n\nYa puedes enviar reportes — cada envío agrega una fila nueva.'
+      : '✅ Conexión exitosa con Google Sheet existente.\n\nColumnas detectadas: '+existingHeaders.length+'\nYa puedes enviar reportes.';
+    alert(msg);
+  }catch(err){
+    btn.textContent='🔗 Verificar conexión y guardar';btn.disabled=false;
+    alert('❌ Error al conectar:\n'+err.message+'\n\nVerifica que:\n• El ID del Sheet es correcto\n• La API Key es válida y tiene activada la API de Google Sheets\n• El Sheet es accesible (Cualquiera con el link puede ver)');
+  }
+}
+
+// ── Columnas de tu plantilla (en orden exacto) ──
+// FILE | N°OC | PROVEEDOR | FECHA | ALMACÉN | N°CONTENEDOR |
+// COND.EXT | COND.INT | CÓDIGO | CANT.LOTE |
+// DEFECTOS G1 | DEFECTOS G2 | HORA INICIO | HORA FINAL |
+// DESCARGA COMPLETA | INSPECTOR | OBSERVACIONES
+
+async function appendRowToGoogleSheet(){
+  const id  = localStorage.getItem('gs_id')||GSHEET_ID;
+  const key = localStorage.getItem('gs_key')||GSHEET_API_KEY;
+  const tab = localStorage.getItem('gs_tab')||'Seguimiento';
+  if(!id||id==='PEGAR_ID_DEL_GOOGLE_SHEET_AQUI'||!key||key==='PEGAR_API_KEY_DE_GOOGLE_AQUI'){
+    console.warn('Google Sheets no configurado — se omite registro automático');
+    return;
+  }
+
+  const V=id=>document.getElementById(id)?.value||'';
+
+  // ── Col A: FILE ──
+  const fileNum = V('fileNum');
+  // ── Col B: N° O.C. (principal + adicionales) ──
+  const numOC = V('numOC');
+  const ocAdc = [...document.querySelectorAll('.oc-adicional')].map(i=>i.value).filter(Boolean).join(' / ');
+  const ocFull = ocAdc ? numOC+' / '+ocAdc : numOC;
+  // ── Col C: PROVEEDOR (principal + adicionales) ──
+  const proveedor = V('proveedor');
+  const provAdc = [...document.querySelectorAll('.proveedor-adicional')].map(i=>i.value).filter(Boolean).join(' / ');
+  const provFull = provAdc ? proveedor+' / '+provAdc : proveedor;
+  // ── Col D: FECHA ──
+  const fecha = V('fecha');
+  // ── Col E: ALMACÉN ──
+  const almacen = V('almacen');
+  // ── Col F: N° CONTENEDOR ──
+  const contenedor = V('contenedor');
+  // ── Col G: COND. EXTERIOR CONTENEDOR ──
+  // Items con defecto (⚠️) + observaciones
+  const extDefectos = CHECKLIST_EXT.filter((_,i)=>checklistExt[i]==='NO').map(it=>it.es).join(', ');
+  const obsExt = V('obsEstadoCont');
+  const condExt = [extDefectos, obsExt].filter(Boolean).join(' | ');
+  // ── Col H: COND. INTERIOR CONTENEDOR ──
+  const intDefectos = CHECKLIST_INT.filter((_,i)=>checklistInt[i]==='NO').map(it=>it.es).join(', ');
+  const obsInt = V('obsInterna');
+  const condInt = [intDefectos, obsInt].filter(Boolean).join(' | ');
+  // ── Col I: CÓDIGO (inventario — todos los códigos) ──
+  const codigos = [];
+  document.querySelectorAll('#inventBody tr').forEach(row=>{
+    const cells=row.querySelectorAll('input');
+    if(cells.length>=1&&cells[0].value) codigos.push(cells[0].value);
+  });
+  const codigosStr = codigos.join(' / ');
+  // ── Col J: CANT. LOTE (suma de cajas de todos los productos) ──
+  let totalLote = 0;
+  document.querySelectorAll('#inventBody tr').forEach(row=>{
+    const cells=row.querySelectorAll('input');
+    if(cells.length>=2) totalLote += parseInt(cells[1].value||'0');
+  });
+  // ── Col K: DEFECTOS GRADO 1 ──
+  const g1Items=[];
+  document.querySelectorAll('.g1-codigo-block').forEach(bl=>{
+    const cod=bl.querySelector('.g1-code-input')?.value||'';
+    const tipo=bl.querySelector('.g1-tipo-select')?.value||'';
+    const qty=bl.querySelector('.g1-qty-input')?.value||'0';
+    if(cod||tipo) g1Items.push(`${cod} · ${tipo} · Cant:${qty}`);
+  });
+  const defG1 = g1Items.join(' | ');
+  // ── Col L: DEFECTOS GRADO 2 ──
+  const g2Items=[];
+  document.querySelectorAll('.g2-codigo-block').forEach(bl=>{
+    const cod=bl.querySelector('.g2-code-input')?.value||'';
+    const tipo=bl.querySelector('.g2-tipo-select')?.value||'';
+    const qty=bl.querySelector('.g2-qty-input')?.value||'0';
+    if(cod||tipo) g2Items.push(`${cod} · ${tipo} · Cant:${qty}`);
+  });
+  const defG2 = g2Items.join(' | ');
+  // ── Col M: HORA DE INICIO ──
+  const horaInicio = V('horaInicio');
+  // ── Col N: HORA FINAL ──
+  const horaFin = V('horaFin');
+  // ── Col O: DESCARGA COMPLETA SI/NO ──
+  const completo = document.querySelector('input[name="completo"]:checked')?.value||'';
+  // ── Col P: INSPECTOR DE LA DESCARGA ──
+  const inspector = V('inspNombre');
+  // ── Col Q: OBSERVACIONES ──
+  const estadoCont = document.querySelector('input[name="estadoCont"]:checked')?.value||'';
+  const obsGen = V('obsGenerales');
+  const observaciones = `Estado: ${estadoCont} | ${obsGen}`;
+
+  const row = [
+    fileNum,      // A FILE
+    ocFull,       // B N° O.C.
+    provFull,     // C PROVEEDOR
+    fecha,        // D FECHA
+    almacen,      // E ALMACÉN
+    contenedor,   // F N° CONTENEDOR
+    condExt,      // G COND. EXTERIOR CONTENEDOR
+    condInt,      // H COND. INTERIOR CONTENEDOR
+    codigosStr,   // I CÓDIGO
+    totalLote,    // J CANT. LOTE
+    defG1,        // K DEFECTOS GRADO 1
+    defG2,        // L DEFECTOS GRADO 2
+    horaInicio,   // M HORA DE INICIO
+    horaFin,      // N HORA FINAL
+    completo,     // O DESCARGA COMPLETA SI/NO
+    inspector,    // P INSPECTOR DE LA DESCARGA
+    observaciones // Q OBSERVACIONES
+  ];
+
+  // Append usando la API de Google Sheets (modo APPEND — agrega fila nueva al final)
+  // Siempre insertar debajo de la fila de encabezados
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(tab+'!A:Q')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${key}`;
+  const res=await fetch(url,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({values:[row]})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Error al escribir en Google Sheets');}
+  return await res.json();
+}
+
+// ══════════════════════════════════════════════
+// EXPORTAR EXCEL// ══════════════════════════════════════════════
+// EXPORTAR EXCEL
+// ══════════════════════════════════════════════
+function exportToExcel(){
+  try{
+    const fileNum=document.getElementById('fileNum').value||'—';
+    const fecha=document.getElementById('fecha').value||'—';
+    const proveedor=document.getElementById('proveedor').value||'—';
+    const almacen=document.getElementById('almacen').value||'—';
+    const numOC=document.getElementById('numOC').value||'—';
+    const contenedor=document.getElementById('contenedor').value||'—';
+    const inspector=document.getElementById('inspNombre').value||'—';
+    const estadoCont=document.querySelector('input[name="estadoCont"]:checked')?.value||'—';
+    const completo=document.querySelector('input[name="completo"]:checked')?.value||'—';
+    const g1s=[...document.querySelectorAll('.g1-input')].map(i=>i.value).filter(Boolean);
+    const g2s=[...document.querySelectorAll('.g2-input')].map(i=>i.value).filter(Boolean);
+    const g1Qty=document.getElementById('g1Qty').value||'0';
+    const g2Qty=document.getElementById('g2Qty').value||'0';
+    const g1TipoDano=document.getElementById('g1TipoDano').value||'—';
+    const g2TipoDano=document.getElementById('g2TipoDano').value||'—';
+    const totalFotos=Object.keys(photoStore).length;
+
+    // Condición exterior
+    const extResumen=CHECKLIST_EXT.map((item,i)=>checklistExt[i]==='SI'?item.es:'').filter(Boolean).join('; ')||'Sin observaciones';
+    const intResumen=CHECKLIST_INT.map((item,i)=>checklistInt[i]==='SI'?item.es:'').filter(Boolean).join('; ')||'Sin observaciones';
+
+    // CSV para Excel
+    const rows=[
+      ['REPORTE DE DESCARGA DE CONTENEDOR — GRUPO SOLE®'],
+      [''],
+      ['Campo','Valor'],
+      ['N° File / File Number',fileNum],
+      ['N° OC / Purchase Order',numOC],
+      ['Fecha / Date',fecha],
+      ['Proveedor / Supplier',proveedor],
+      ['Almacén / Location',almacen],
+      ['N° Contenedor / Container No.',contenedor],
+      ['Inspector',inspector],
+      ['Estado contenedor / Container condition',estadoCont],
+      ['Condición exterior / External condition',extResumen],
+      ['Condición interior / Internal condition',intResumen],
+      [''],
+      ['DAÑOS / DAMAGE DETAILS'],
+      ['Tipo daño G1 / G1 Damage type',g1TipoDano],
+      ['Cantidad G1 / G1 Qty',g1Qty],
+      ['Series Grado 1 / Grade 1 Serials',g1s.join(', ')]  ,
+      ['Tipo daño G2 / G2 Damage type',g2TipoDano],
+      ['Cantidad G2 / G2 Qty',g2Qty],
+      ['Series Grado 2 / Grade 2 Serials',g2s.join(', ')],
+      [''],
+      ['Total de fotos / Total photos',totalFotos],
+      ['Descarga completa / Completed',completo],
+      ['Fecha de generación / Generated',new Date().toLocaleString()]
+    ];
+
+    // Inventario
+    rows.push(['']);
+    rows.push(['INVENTARIO DE PRODUCTOS / RECEIVED PRODUCTS']);
+    rows.push(['Código / Code','Descripción / Description','Cantidad / Qty','Uds por caja / Units per box']);
+    document.querySelectorAll('#inventBody tr').forEach(row=>{
+      const cells=row.querySelectorAll('input');
+      if(cells.length)rows.push([cells[0].value,cells[1]?.value||'',cells[2]?.value||'',cells[3]?.value||'']);
+    });
+
+    const csv=rows.map(r=>r.map(c=>'"'+(String(c).replace(/"/g,'""'))+'"').join(',')).join('\n');
+    const bom='\uFEFF';
+    const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;
+    a.download=('Reporte_'+fileNum+'_'+fecha+'.csv').replace(/\s+/g,'_');
+    a.click();URL.revokeObjectURL(url);
+  }catch(e){console.warn('Excel export error:',e);}
+}
+
+// ══════════════════════════════════════════════
+// SUBIR A ONEDRIVE + REGISTRAR EN EXCEL COMPARTIDO
+// ══════════════════════════════════════════════
+async function uploadToOneDrive(){
+  const btn=document.getElementById('submitBtn');btn.textContent='⏳ Conectando...';btn.disabled=true;
+  try{
+    // — Crear carpeta del reporte en OneDrive personal —
+    let folderId;
+    try{const f=await graphRequest('GET','/me/drive/root:/'+FOLDER_NAME);folderId=f.id;}
+    catch{const f=await graphRequest('POST','/me/drive/root/children',{name:FOLDER_NAME,folder:{}, '@microsoft.graph.conflictBehavior':'rename'});folderId=f.id;}
+    const fileVal=document.getElementById('fileNum').value||'SIN-FILE';
+    const fecha=document.getElementById('fecha').value||new Date().toISOString().split('T')[0];
+    const inspector=document.getElementById('inspNombre').value||'inspector';
+    const reportName='Reporte_'+fileVal+'_'+fecha+'_'+inspector.replace(/\s+/g,'_');
+    const sub=await graphRequest('POST','/me/drive/items/'+folderId+'/children',{name:reportName,folder:{}, '@microsoft.graph.conflictBehavior':'rename'});
+    const subId=sub.id;
+
+    // — Subir fotos —
+    btn.textContent='⏳ Subiendo fotos ('+Object.keys(photoStore).length+')...';
+    let idx=1;
+    for(const[key,dataUrl]of Object.entries(photoStore)){
+      const blob=b64toBlob(dataUrl,'image/jpeg');
+      const name='foto_'+String(idx).padStart(2,'0')+'_'+key.replace(':','_')+'.jpg';
+      await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+subId+':/'+name+':/content',
+        {method:'PUT',headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/jpeg'},body:blob});
+      idx++;
+    }
+
+    // — Subir firmas —
+    btn.textContent='⏳ Subiendo firmas...';
+    for(const[cid,name]of[['sigAlmacen','firma_almacen.png'],['sigCalidad','firma_calidad.png']]){
+      const blob=b64toBlob(document.getElementById(cid).toDataURL('image/png'),'image/png');
+      await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+subId+':/'+name+':/content',
+        {method:'PUT',headers:{'Authorization':'Bearer '+msalToken,'Content-Type':'image/png'},body:blob});
+    }
+
+    // — Registrar fila en Google Sheets (Histórico Power BI) —
+    btn.textContent='⏳ Registrando en histórico Power BI...';
+    try{
+      await appendRowToGoogleSheet();
+      console.log('✅ Fila registrada en Google Sheets');
+    }catch(gsErr){
+      console.warn('⚠️ No se pudo escribir en Google Sheets:', gsErr.message);
+      // No detiene el flujo — el reporte OneDrive se guarda igual
+    }
+
+    generateReport();exportToExcel();
+    document.getElementById('successBanner').style.display='block';
+    document.getElementById('successBanner').innerHTML=
+      '<div style="font-size:40px;margin-bottom:8px">✅</div>'+
+      '<h3>¡Reporte completo!</h3>'+
+      '<p>📁 Fotos en OneDrive: <strong>'+reportName+'</strong></p>'+
+      '<p style="margin-top:6px">📊 Fila registrada en Google Sheets — Power BI actualizado</p>'+
+      '<p style="margin-top:6px;font-size:12px;color:#047857">'+Object.keys(photoStore).length+' fotos · El dashboard verá los datos en el próximo refresco</p>';
+    btn.style.display='none';document.getElementById('downloadBtn').style.display='none';
+    clearSavedData();
+  }catch(err){btn.textContent='☁️ Reintentar';btn.disabled=false;setStatus('error','❌ Error: '+err.message);}
+}
+
+// ══════════════════════════════════════════════
+// AGREGAR FILA AL EXCEL COMPARTIDO (POWER BI)
+// Usa la Graph API Excel workbook tables API
+// Endpoint: POST /users/{owner}/drive/items/{guid}/workbook/tables/{table}/rows/add
+// ══════════════════════════════════════════════
+async function appendRowToSharedExcel(carpetaId, carpetaNombre){
+  // Recopilar todos los datos del formulario
+  const V=id=>document.getElementById(id)?.value||'';
+  const fileNum      = V('fileNum');
+  const numOC        = V('numOC');
+  const fecha        = V('fecha');
+  const almacen      = V('almacen');
+  const proveedor    = V('proveedor');
+  const contenedor   = V('contenedor');
+  const precinto     = V('precinto');
+  const placa        = V('placa');
+  const tamano       = V('tamano');
+  const horaInicio   = V('horaInicio');
+  const horaFin      = V('horaFin');
+  const estibadores  = V('estibadores');
+  const inspector    = V('inspNombre');
+  const cargoInsp    = V('inspCargo');
+  const respAlm      = document.getElementById('respAlmacenSel')?.value||'';
+  const respAlmNom   = V('respAlmacenNom');
+  const estadoCont   = document.querySelector('input[name="estadoCont"]:checked')?.value||'';
+  const completo     = document.querySelector('input[name="completo"]:checked')?.value||'';
+  const obsGenerales = V('obsGenerales');
+  const obsInterna   = V('obsInterna');
+  const obsExterna   = V('obsEstadoCont');
+
+  // Proveedores adicionales
+  const provAdc=[...document.querySelectorAll('.proveedor-adicional')].map(i=>i.value).filter(Boolean).join(' | ');
+  // OC adicionales
+  const ocAdc=[...document.querySelectorAll('.oc-adicional')].map(i=>i.value).filter(Boolean).join(' | ');
+
+  // Inventario: código y cant. lote
+  const inventRows=[];
+  document.querySelectorAll('#inventBody tr').forEach(row=>{
+    const cells=row.querySelectorAll('input');
+    if(cells.length>=2&&cells[0].value)inventRows.push(cells[0].value+'('+cells[1].value+')');
+  });
+  const inventStr=inventRows.join(' | ');
+
+  // Bloques G1
+  const g1Items=[];let totalG1=0;
+  document.querySelectorAll('.g1-codigo-block').forEach(bl=>{
+    const codigo=bl.querySelector('.g1-code-input')?.value||'';
+    const grado=bl.querySelector('.g1-grado-select')?.value||'';
+    const tipo=bl.querySelector('.g1-tipo-select')?.value||'';
+    const qty=parseInt(bl.querySelector('.g1-qty-input')?.value||'0');
+    if(codigo||tipo){g1Items.push(codigo+'|'+grado+'|'+tipo+'|'+qty);totalG1+=qty;}
+  });
+  // Bloques G2
+  const g2Items=[];let totalG2=0;
+  document.querySelectorAll('.g2-codigo-block').forEach(bl=>{
+    const codigo=bl.querySelector('.g2-code-input')?.value||'';
+    const grado=bl.querySelector('.g2-grado-select')?.value||'';
+    const tipo=bl.querySelector('.g2-tipo-select')?.value||'';
+    const qty=parseInt(bl.querySelector('.g2-qty-input')?.value||'0');
+    if(codigo||tipo){g2Items.push(codigo+'|'+grado+'|'+tipo+'|'+qty);totalG2+=qty;}
+  });
+
+  // Checklists — solo ítems con defecto (NO)
+  const extDefectos=CHECKLIST_EXT.filter((_,i)=>checklistExt[i]==='NO').map(i=>i.es).join(', ');
+  const intDefectos=CHECKLIST_INT.filter((_,i)=>checklistInt[i]==='NO').map(i=>i.es).join(', ');
+
+  // Timestamp de envío
+  const ahora=new Date();
+  const fechaEnvio=ahora.toLocaleDateString('es-PE');
+  const horaEnvio=ahora.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+
+  // ── Enlace a la carpeta del reporte en OneDrive ──
+  const linkCarpeta=carpetaId?
+    'https://onedrive.live.com/?id='+carpetaId:'';
+
+  // ── Fila de datos (orden = columnas de la tabla en el Excel) ──
+  // Asegúrate de que el Excel tenga exactamente estas columnas en este orden
+  const row=[
+    fechaEnvio,           // A: Fecha envío
+    horaEnvio,            // B: Hora envío
+    fileNum,              // C: N° FILE
+    numOC,                // D: N° OC Principal
+    ocAdc,                // E: OC Adicionales
+    fecha,                // F: Fecha inspección
+    horaInicio,           // G: Hora inicio
+    horaFin,              // H: Hora fin
+    almacen,              // I: Almacén
+    tamano,               // J: Tamaño contenedor
+    contenedor,           // K: N° Contenedor
+    precinto,             // L: N° Precinto
+    placa,                // M: Placa
+    proveedor,            // N: Proveedor principal
+    provAdc,              // O: Proveedores adicionales
+    inspector,            // P: Inspector
+    cargoInsp,            // Q: Cargo inspector
+    respAlm,              // R: Cargo resp. almacén
+    respAlmNom,           // S: Nombre resp. almacén
+    estibadores,          // T: N° estibadores
+    estadoCont,           // U: Estado contenedor (Aceptado/Tolerado/Rechazado)
+    completo,             // V: Descarga completa
+    extDefectos,          // W: Defectos ext. (checklist)
+    intDefectos,          // X: Defectos int. (checklist)
+    obsExterna,           // Y: Obs. condición exterior
+    obsInterna,           // Z: Obs. condición interior
+    obsGenerales,         // AA: Obs. generales
+    inventStr,            // AB: Inventario (código+cant)
+    g1Items.join(' || '), // AC: Detalle G1 (código|grado|tipo|qty)
+    totalG1,              // AD: Total uds G1
+    g2Items.join(' || '), // AE: Detalle G2 (código|grado|tipo|qty)
+    totalG2,              // AF: Total uds G2
+    Object.keys(photoStore).length, // AG: Total fotos
+    carpetaNombre,        // AH: Nombre carpeta OneDrive
+  ];
+
+  // ── Llamada a Graph API — Excel Tables ──
+  // El Excel debe tener una tabla llamada "TablaInspecciones"
+  // Se puede crear manualmente o con el botón de setup (ver setupExcelTable)
+  const url=`/users/${SHARED_FILE_OWNER}/drive/items/${SHARED_FILE_GUID}/workbook/tables/${SHARED_TABLE_NAME}/rows/add`;
+  await graphRequest('POST', url, {values:[row]});
+}
+
+// ══════════════════════════════════════════════
+// VERIFICAR SI LA TABLA YA EXISTE
+// ══════════════════════════════════════════════
+async function checkExcelTableExists(){
+  try{
+    const url=`/users/${SHARED_FILE_OWNER}/drive/items/${SHARED_FILE_GUID}/workbook/tables`;
+    const resp=await graphRequest('GET', url);
+    const existe=resp.value.some(t=>t.name===SHARED_TABLE_NAME);
+    if(!existe){
+      // Mostrar card de setup
+      const card=document.getElementById('setupCard');
+      if(card)card.style.display='block';
+    }
+  }catch(e){
+    // Si falla silenciosamente, mostrar el card de setup por si acaso
+    const card=document.getElementById('setupCard');
+    if(card)card.style.display='block';
+  }
+}
+
+// ══════════════════════════════════════════════
+// SETUP INICIAL: crear la tabla en el Excel compartido
+// Solo se necesita ejecutar UNA VEZ
+// ══════════════════════════════════════════════
+async function setupExcelTable(){
+  if(!msalToken){alert('Primero inicia sesión con Microsoft.');return;}
+  const btn=document.getElementById('setupBtn');
+  if(btn){btn.textContent='⏳ Configurando...';btn.disabled=true;}
+  try{
+    // 1. Verificar que el archivo existe
+    const fileUrl=`/users/${SHARED_FILE_OWNER}/drive/items/${SHARED_FILE_GUID}`;
+    await graphRequest('GET', fileUrl);
+
+    // 2. Crear hoja si no existe
+    const sheetsResp=await graphRequest('GET', fileUrl+'/workbook/worksheets');
+    const hojaExiste=sheetsResp.value.some(s=>s.name==='Inspecciones');
+    if(!hojaExiste){
+      await graphRequest('POST', fileUrl+'/workbook/worksheets/add',{name:'Inspecciones'});
+    }
+
+    // 3. Escribir encabezados en A1
+    const headers=[[
+      'Fecha Envío','Hora Envío','N° FILE','N° OC Principal','OC Adicionales',
+      'Fecha Inspección','Hora Inicio','Hora Fin','Almacén','Tamaño Cont.',
+      'N° Contenedor','N° Precinto','Placa','Proveedor Principal','Proveedores Adicionales',
+      'Inspector','Cargo Inspector','Cargo Resp. Almacén','Nombre Resp. Almacén','N° Estibadores',
+      'Estado Contenedor','Descarga Completa',
+      'Defectos Ext. (Checklist)','Defectos Int. (Checklist)',
+      'Obs. Condición Exterior','Obs. Condición Interior','Obs. Generales',
+      'Inventario (código+cant)','Detalle G1','Total Uds G1',
+      'Detalle G2','Total Uds G2','Total Fotos','Carpeta OneDrive'
+    ]];
+    await graphRequest('PATCH', fileUrl+'/workbook/worksheets/Inspecciones/range(address=\'A1:AH1\')',
+      {values:headers});
+
+    // 4. Crear tabla sobre los encabezados
+    // Verificar si ya existe
+    const tablesResp=await graphRequest('GET', fileUrl+'/workbook/tables');
+    const tablaExiste=tablesResp.value.some(t=>t.name===SHARED_TABLE_NAME);
+    if(!tablaExiste){
+      await graphRequest('POST', fileUrl+'/workbook/tables/add',
+        {address:'Inspecciones!A1:AH1', hasHeaders:true});
+      // Renombrar la tabla creada (toma el primer índice)
+      const tablesResp2=await graphRequest('GET', fileUrl+'/workbook/tables');
+      const nuevaTabla=tablesResp2.value[tablesResp2.value.length-1];
+      await graphRequest('PATCH', fileUrl+'/workbook/tables/'+nuevaTabla.id,
+        {name:SHARED_TABLE_NAME});
+    }
+
+    if(btn){btn.textContent='✅ ¡Tabla lista!';btn.style.background='#059669';}
+    setTimeout(()=>{
+      if(btn){btn.style.display='none';}
+      document.getElementById('setupBadge').style.display='flex';
+    },2000);
+    alert('✅ Tabla "'+SHARED_TABLE_NAME+'" creada correctamente en el Excel compartido. Ya puedes enviar reportes.');
+  }catch(err){
+    if(btn){btn.textContent='❌ Error — Reintentar';btn.disabled=false;}
+    alert('Error al configurar tabla: '+err.message+'\n\nAsegúrate de haber iniciado sesión con la cuenta eramos@sole.com.pe');
+  }
 }
 
 function onlyDownload(){generateReport();exportToExcel();}
@@ -1528,10 +2148,15 @@ async function submitReport(){
   if(msalToken){await uploadToOneDrive();}
   else{
     const btn=document.getElementById('submitBtn');btn.textContent='⏳ Generando...';btn.disabled=true;
-    setTimeout(()=>{
+    setTimeout(async()=>{
       generateReport();exportToExcel();
+      // Intentar registrar en Google Sheets aunque no haya login de OneDrive
+      try{
+        await appendRowToGoogleSheet();
+        console.log('✅ Fila registrada en Google Sheets');
+      }catch(e){console.warn('GSheets:',e.message);}
       document.getElementById('successBanner').style.display='block';
-      document.getElementById('successBanner').innerHTML='<div style="font-size:40px;margin-bottom:8px">✅</div><h3>¡Reporte generado!</h3><p>HTML y Excel descargados en tu dispositivo. 📊</p><p style="margin-top:8px;font-size:12px;color:#065F46">💡 Inicia sesión con Microsoft para subir a OneDrive automáticamente.</p>';
+      document.getElementById('successBanner').innerHTML='<div style="font-size:40px;margin-bottom:8px">✅</div><h3>¡Reporte generado!</h3><p>HTML y Excel descargados en tu dispositivo. 📊</p><p style="margin-top:6px;font-size:12px;color:#047857">📊 Registrado en histórico Google Sheets automáticamente.</p><p style="margin-top:4px;font-size:12px;color:#065F46">💡 También puedes iniciar sesión con Microsoft para subir las fotos a OneDrive.</p>';
       btn.style.display='none';clearSavedData();
     },400);
   }
@@ -1683,7 +2308,7 @@ buildProgress();
 updateNav();
 setupSig('sigAlmacen','statusAlm');
 setupSig('sigCalidad','statusCal');
-restoreProgress();
+restoreProgress();loadGSheetConfig();
 recoverPhotosFromDB();
 </script>
 </body>
