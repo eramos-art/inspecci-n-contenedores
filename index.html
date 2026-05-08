@@ -2375,15 +2375,16 @@ function generateReport(){
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Container Unloading Report — ${fileNum} — ${fecha}</title>
 <style>body{font-family:Segoe UI,system-ui,sans-serif;color:#1a2332;margin:0;padding:20px;background:#F0F4F8}.report{max-width:820px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)}.corp-hdr{background:#1a3a5c;color:white;padding:16px 28px;text-align:center}.corp-hdr .ger{font-size:10px;opacity:.7;letter-spacing:.12em;text-transform:uppercase}.corp-hdr .brand{font-size:22px;font-weight:700;margin:2px 0}.corp-hdr .sub{font-size:11px;opacity:.55}.rh{background:#243B55;color:white;padding:14px 28px;display:flex;align-items:center;gap:16px}.rh h1{font-size:17px;margin:0}.rh p{font-size:12px;opacity:.7;margin:3px 0 0}.sec{padding:18px 28px;border-bottom:1px solid #F1F5F9}.sec h2{font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.1em;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fi{background:#F8FAFC;border-radius:8px;padding:9px 12px}.fi .lbl{font-size:10px;color:#94A3B8;margin-bottom:2px}.fi .lbl-en{font-size:9px;color:#CBD5E1;font-style:italic}.fi .val{font-size:13px;font-weight:600;color:#1a2332}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#F8FAFC;padding:8px;text-align:left;font-size:10px;font-weight:700;color:#64748B;border:1px solid #E2E8F0;text-transform:uppercase}.sb{border:1px solid #E2E8F0;border-radius:8px;padding:12px;text-align:center}.sb img{max-width:180px;height:70px;object-fit:contain}.sb p{font-size:13px;font-weight:600;margin:6px 0 2px}.sb span{font-size:11px;color:#64748B}.badge{display:inline-block;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700}.conf{font-size:10px;color:#94A3B8;text-align:center;padding:12px}@media print{
   body{background:white;padding:0;margin:0}
-  .report{box-shadow:none;border-radius:0;max-width:100%}
+  .report{box-shadow:none;border-radius:0;max-width:100%;width:100%}
   #pdfBtn{display:none!important}
   img{max-width:100%;page-break-inside:avoid}
-  table{page-break-inside:avoid}
-  .sec{page-break-inside:avoid}
-  @page{margin:1.2cm;size:A4}
+  table{page-break-inside:avoid;font-size:11px}
+  .sec{page-break-inside:avoid;margin-bottom:8px}
+  .grid{grid-template-columns:1fr 1fr}
+  @page{margin:1cm;size:A4 portrait}
 }
 @media screen{
-  body{padding-bottom:80px}
+  body{padding-bottom:72px}
 }
 </style>
 </head><body><div class="report">
@@ -2463,40 +2464,18 @@ ${obsH?`<div class="sec"><h2>Observations / Observaciones</h2><table><thead><tr>
 window.onload=function(){
   document.getElementById('pdfBtn').style.display='flex';
 };
-async function savePDF(){
-  const btn=document.getElementById('saveBtnInner');
-  btn.textContent='⏳ Generando...';
-  try{
-    // Intentar con API moderna (Chrome desktop/Android)
-    if(window.showSaveFilePicker){
-      const html=document.documentElement.outerHTML;
-      const blob=new Blob([html],{type:'text/html'});
-      const handle=await window.showSaveFilePicker({
-        suggestedName:document.title.replace(/[^a-z0-9\-_]/gi,'_')+'.html',
-        types:[{description:'Página web',accept:{'text/html':['.html']}}]
-      });
-      const writable=await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      btn.textContent='✅ Guardado';
-      setTimeout(()=>btn.textContent='💾 Guardar PDF',2000);
-    } else {
-      // Fallback: usar print() con destino PDF
-      document.getElementById('pdfBtn').style.display='none';
-      window.print();
-      setTimeout(()=>{document.getElementById('pdfBtn').style.display='flex';btn.textContent='💾 Guardar PDF';},1500);
-    }
-  }catch(e){
-    btn.textContent='💾 Guardar PDF';
-  }
+function savePDF(){
+  document.getElementById('pdfBtn').style.display='none';
+  window.print();
+  setTimeout(()=>document.getElementById('pdfBtn').style.display='flex',2000);
 }
 <\/script>
-<!-- Botón flotante PDF -->
-<div id="pdfBtn" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a3a5c;padding:14px 20px;z-index:999;box-shadow:0 -4px 16px rgba(0,0,0,0.25);justify-content:center;gap:12px;align-items:center">
-  <button id="saveBtnInner" onclick="savePDF()" style="background:white;color:#1a3a5c;border:none;border-radius:10px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">
-    💾 Guardar PDF
+<!-- Botón PDF -->
+<div id="pdfBtn" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a3a5c;padding:12px 20px;z-index:999;box-shadow:0 -4px 16px rgba(0,0,0,0.25);justify-content:center;gap:10px;align-items:center">
+  <button onclick="savePDF()" style="background:white;color:#1a3a5c;border:none;border-radius:10px;padding:11px 28px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">
+    💾 Guardar como PDF
   </button>
-  <span style="font-size:11px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif">Selecciona "Guardar como PDF" si aparece el diálogo</span>
+  <span style="font-size:11px;color:rgba(255,255,255,0.65);font-family:Arial,sans-serif">En el diálogo elige "Guardar como PDF" (no impresora)</span>
 </div></body></html>`;
 
   // ── GENERAR PDF: abrir en nueva ventana y disparar impresión automática ──
