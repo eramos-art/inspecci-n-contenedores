@@ -1890,7 +1890,7 @@ async function testGSheetConnection(){
     // 2. Si la primera fila está vacía, crear encabezados automáticamente
     if(existingHeaders.length===0){
       btn.textContent='⏳ Creando encabezados...';
-      const HEADERS=["FILE", "N° O.C.", "PROVEEDOR", "FECHA", "ALMACÉN", "N° CONTENEDOR", "COND. EXTERIOR CONTENEDOR", "COND. INTERIOR CONTENEDOR", "CÓDIGO", "CANT. LOTE", "DEFECTOS GRADO 1", "DEFECTOS GRADO 2", "HORA DE INICIO", "HORA FINAL", "DESCARGA COMPLETA SI/NO", "INSPECTOR DE LA DESCARGA", "OBSERVACIONES"];
+      const HEADERS=["FILE", "N° O.C.", "PROVEEDOR", "FECHA", "ALMACÉN", "N° CONTENEDOR", "COND. EXTERIOR", "COND. INTERIOR", "CÓDIGO", "CANT. LOTE", "DEFECTOS GRADO 1", "DEFECTOS GRADO 2", "HORA INICIO", "HORA FINAL", "DESCARGA COMPLETA", "INSPECTOR", "ESTADO CONTENEDOR", "OBS. EXTERIOR", "OBS. INTERIOR", "OBS. GENERALES", "OBS. CON FOTO", "MOTIVO PARADA", "TOTAL CAJAS G1", "SERIES ESC. G1", "TOTAL CAJAS G2", "SERIES ESC. G2"];
       const writeUrl=`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(tab+'!A1:Q1')}?valueInputOption=USER_ENTERED&key=${key}`;
       const writeRes=await fetch(writeUrl,{
         method:'PUT',
@@ -1978,60 +1978,80 @@ async function appendRowToGoogleSheet(){
     if(cells.length>=2) totalLote += parseInt(cells[1].value||'0');
   });
   // ── Col K: DEFECTOS GRADO 1 ──
+  // ── Col K: DEFECTOS GRADO 1 — solo cantidades, sin series ──
   const g1Items=[];
+  let totalCajasG1=0, totalSeriesG1=0;
   document.querySelectorAll('.g1-codigo-block').forEach(bl=>{
     const cod=bl.querySelector('.g1-code-input')?.value||'';
     const tipo=bl.querySelector('.g1-tipo-select')?.value||'';
-    const qty=bl.querySelector('.g1-qty-input')?.value||'0';
-    const series=[...bl.querySelectorAll('.g1-input')].map(i=>i.value).filter(Boolean);
-    if(cod||tipo) g1Items.push(`${cod} · ${tipo} · Cajas:${qty} · Series(${series.length}):${series.join(',')}`);
+    const qty=parseInt(bl.querySelector('.g1-qty-input')?.value||'0');
+    const seriesEsc=[...bl.querySelectorAll('.g1-input')].filter(i=>i.value.trim()).length;
+    totalCajasG1+=qty; totalSeriesG1+=seriesEsc;
+    if(cod||tipo) g1Items.push(`${cod} · ${tipo} · Cajas:${qty} · Series escaneadas:${seriesEsc}`);
   });
   const defG1 = g1Items.join(' | ');
-  const totalSeriesG1 = [...document.querySelectorAll('.g1-codigo-block .g1-input')].filter(i=>i.value.trim()).length;
-  // ── Col L: DEFECTOS GRADO 2 ──
+
+  // ── Col L: DEFECTOS GRADO 2 — solo cantidades, sin series ──
   const g2Items=[];
+  let totalCajasG2=0, totalSeriesG2=0;
   document.querySelectorAll('.g2-codigo-block').forEach(bl=>{
     const cod=bl.querySelector('.g2-code-input')?.value||'';
     const tipo=bl.querySelector('.g2-tipo-select')?.value||'';
-    const qty=bl.querySelector('.g2-qty-input')?.value||'0';
-    const series=[...bl.querySelectorAll('.g2-input')].map(i=>i.value).filter(Boolean);
-    if(cod||tipo) g2Items.push(`${cod} · ${tipo} · Cajas:${qty} · Series(${series.length}):${series.join(',')}`);
+    const qty=parseInt(bl.querySelector('.g2-qty-input')?.value||'0');
+    const seriesEsc=[...bl.querySelectorAll('.g2-input')].filter(i=>i.value.trim()).length;
+    totalCajasG2+=qty; totalSeriesG2+=seriesEsc;
+    if(cod||tipo) g2Items.push(`${cod} · ${tipo} · Cajas:${qty} · Series escaneadas:${seriesEsc}`);
   });
   const defG2 = g2Items.join(' | ');
-  const totalSeriesG2 = [...document.querySelectorAll('.g2-codigo-block .g2-input')].filter(i=>i.value.trim()).length;
-  // ── Col M: HORA DE INICIO ──
-  const horaInicio = V('horaInicio');
-  // ── Col N: HORA FINAL ──
-  const horaFin = V('horaFin');
-  // ── Col O: DESCARGA COMPLETA SI/NO ──
-  const completo = document.querySelector('input[name="completo"]:checked')?.value||'';
-  // ── Col P: INSPECTOR DE LA DESCARGA ──
-  const inspector = V('inspNombre');
-  // ── Col Q: OBSERVACIONES ──
-  const estadoCont = document.querySelector('input[name="estadoCont"]:checked')?.value||'';
-  const obsGen = V('obsGenerales');
-  const observaciones = `Estado: ${estadoCont} | ${obsGen}`;
+
+  // ── Observaciones completas ──
+  const horaInicio   = V('horaInicio');
+  const horaFin      = V('horaFin');
+  const completo     = document.querySelector('input[name="completo"]:checked')?.value||'';
+  const inspector    = V('inspNombre');
+  const estadoCont   = document.querySelector('input[name="estadoCont"]:checked')?.value||'';
+  const obsGen       = V('obsGenerales');
+  const obsExtCont   = V('obsEstadoCont');   // obs estado exterior contenedor
+  const obsIntCont   = V('obsInterna');      // obs condición interior
+  // Observaciones con foto (del paso 4)
+  const obsItems=[];
+  document.querySelectorAll('.obs-row').forEach(row=>{
+    const desc=row.querySelector('input')?.value||'';
+    const tipo=row.querySelector('select')?.value||'';
+    if(desc) obsItems.push((tipo?tipo+': ':'')+desc);
+  });
+  const obsConFoto = obsItems.join(' | ');
+  // Observación de parada (si aplica)
+  const motivoParada = V('motivoParada');
+  const obsParada    = V('obsParada');
 
   const row = [
-    fileNum,      // A FILE
-    ocFull,       // B N° O.C.
-    provFull,     // C PROVEEDOR
-    fecha,        // D FECHA
-    almacen,      // E ALMACÉN
-    contenedor,   // F N° CONTENEDOR
-    condExt,      // G COND. EXTERIOR CONTENEDOR
-    condInt,      // H COND. INTERIOR CONTENEDOR
-    codigosStr,   // I CÓDIGO
-    totalLote,    // J CANT. LOTE
-    defG1,        // K DEFECTOS GRADO 1
-    defG2,        // L DEFECTOS GRADO 2
-    horaInicio,   // M HORA DE INICIO
-    horaFin,      // N HORA FINAL
-    completo,     // O DESCARGA COMPLETA SI/NO
-    inspector,    // P INSPECTOR DE LA DESCARGA
-    observaciones, // Q OBSERVACIONES
-    totalSeriesG1, // R TOTAL SERIES G1
-    totalSeriesG2, // S TOTAL SERIES G2
+    fileNum,        // A  FILE
+    ocFull,         // B  N° O.C.
+    provFull,       // C  PROVEEDOR
+    fecha,          // D  FECHA
+    almacen,        // E  ALMACÉN
+    contenedor,     // F  N° CONTENEDOR
+    condExt,        // G  COND. EXTERIOR CONTENEDOR
+    condInt,        // H  COND. INTERIOR CONTENEDOR
+    codigosStr,     // I  CÓDIGO
+    totalLote,      // J  CANT. LOTE
+    defG1,          // K  DEFECTOS GRADO 1 (código · tipo · cajas · series escaneadas)
+    defG2,          // L  DEFECTOS GRADO 2
+    horaInicio,     // M  HORA DE INICIO
+    horaFin,        // N  HORA FINAL
+    completo,       // O  DESCARGA COMPLETA SI/NO
+    inspector,      // P  INSPECTOR DE LA DESCARGA
+    estadoCont,     // Q  ESTADO DEL CONTENEDOR
+    obsExtCont,     // R  OBS. ESTADO EXTERIOR
+    obsIntCont,     // S  OBS. CONDICIÓN INTERIOR
+    obsGen,         // T  OBSERVACIONES GENERALES
+    obsConFoto,     // U  OBSERVACIONES CON FOTO
+    motivoParada?motivoParada+(obsParada?' — '+obsParada:''):'', // V  MOTIVO PARADA
+    totalCajasG1,   // W  TOTAL CAJAS G1
+    totalSeriesG1,  // X  TOTAL SERIES ESCANEADAS G1
+    totalCajasG2,   // Y  TOTAL CAJAS G2
+    totalSeriesG2,  // Z  TOTAL SERIES ESCANEADAS G2
   ];
 
   // Enviar al Apps Script (puente que escribe en el Sheet sin restricciones)
@@ -2423,17 +2443,32 @@ function savePDF(){
   </button>
 </div></body></html>`;
 
-  // Abrir ventana de impresión/PDF
-  const blob=new Blob([html],{type:'text/html'});
+  // ── GENERAR PDF: abrir en nueva pestaña para imprimir/guardar ──
+  // Usar iframe para evitar bloqueo de popup en móvil
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const win=window.open(url,'_blank');
-  // Si el navegador bloquea el popup, ofrecer descarga directa como fallback
-  if(!win||win.closed||typeof win.closed==='undefined'){
-    const a=document.createElement('a');a.href=url;
-    a.download=('Reporte_'+fileNum+'_'+fecha+'.pdf').replace(/\s+/g,'_');
-    a.click();
+
+  // Intentar abrir nueva pestaña
+  const win=window.open(url,'_blank','noopener');
+  if(win){
+    // Dar tiempo a que cargue antes de mostrar instrucción
+    setTimeout(()=>{
+      URL.revokeObjectURL(url);
+    },10000);
+  } else {
+    // Fallback: descargar el HTML con extensión que el usuario puede imprimir
+    // Mostrar modal con instrucciones
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML=`<div style="background:white;border-radius:16px;padding:24px;max-width:360px;text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">📄</div>
+      <div style="font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:8px">Guardar como PDF</div>
+      <div style="font-size:13px;color:#475569;margin-bottom:16px;line-height:1.5">Tu navegador bloqueó la nueva pestaña. Presiona el botón para descargar el reporte y ábrelo para guardarlo como PDF.</div>
+      <a href="${url}" download="Reporte_${fileNum}_${fecha}.html" style="display:block;background:#1a3a5c;color:white;padding:12px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;margin-bottom:8px" onclick="setTimeout(()=>this.closest('[style]').remove(),500)">⬇️ Descargar reporte</a>
+      <button onclick="this.closest('[style]').remove();URL.revokeObjectURL('${url}')" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:13px;font-family:inherit">Cancelar</button>
+    </div>`;
+    document.body.appendChild(overlay);
   }
-  setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
 
 // ══════════════════════════════════════════════
