@@ -671,7 +671,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 
     <div class="success-banner" id="successBanner" style="display:none"></div>
     <button class="btn-submit-final" id="submitBtn" onclick="submitReport()">☁️ Enviar reporte / Submit report</button>
-    <button class="btn-download" id="downloadBtn" onclick="onlyDownload()" style="display:none">⬇️ Solo descargar / Download only</button>
+    <!-- Botón de solo descarga removido — se usa Google Sheets -->
   </div>
 
   <div class="nav-row">
@@ -1820,7 +1820,7 @@ async function uploadToOneDrive(){
       // No detiene el flujo — el reporte OneDrive se guarda igual
     }
 
-    generateReport();exportToExcel();
+    generateReport();
     document.getElementById('successBanner').style.display='block';
     document.getElementById('successBanner').style.display='block';
     document.getElementById('successBanner').innerHTML=
@@ -2289,7 +2289,7 @@ async function submitReport(){
   else{
     const btn=document.getElementById('submitBtn');btn.textContent='⏳ Generando...';btn.disabled=true;
     setTimeout(async()=>{
-      generateReport();exportToExcel();
+      generateReport();
       // Intentar registrar en Google Sheets aunque no haya login de OneDrive
       try{
         await appendRowToGoogleSheet();
@@ -2374,11 +2374,18 @@ function generateReport(){
 
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Container Unloading Report — ${fileNum} — ${fecha}</title>
 <style>body{font-family:Segoe UI,system-ui,sans-serif;color:#1a2332;margin:0;padding:20px;background:#F0F4F8}.report{max-width:820px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)}.corp-hdr{background:#1a3a5c;color:white;padding:16px 28px;text-align:center}.corp-hdr .ger{font-size:10px;opacity:.7;letter-spacing:.12em;text-transform:uppercase}.corp-hdr .brand{font-size:22px;font-weight:700;margin:2px 0}.corp-hdr .sub{font-size:11px;opacity:.55}.rh{background:#243B55;color:white;padding:14px 28px;display:flex;align-items:center;gap:16px}.rh h1{font-size:17px;margin:0}.rh p{font-size:12px;opacity:.7;margin:3px 0 0}.sec{padding:18px 28px;border-bottom:1px solid #F1F5F9}.sec h2{font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.1em;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fi{background:#F8FAFC;border-radius:8px;padding:9px 12px}.fi .lbl{font-size:10px;color:#94A3B8;margin-bottom:2px}.fi .lbl-en{font-size:9px;color:#CBD5E1;font-style:italic}.fi .val{font-size:13px;font-weight:600;color:#1a2332}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#F8FAFC;padding:8px;text-align:left;font-size:10px;font-weight:700;color:#64748B;border:1px solid #E2E8F0;text-transform:uppercase}.sb{border:1px solid #E2E8F0;border-radius:8px;padding:12px;text-align:center}.sb img{max-width:180px;height:70px;object-fit:contain}.sb p{font-size:13px;font-weight:600;margin:6px 0 2px}.sb span{font-size:11px;color:#64748B}.badge{display:inline-block;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700}.conf{font-size:10px;color:#94A3B8;text-align:center;padding:12px}@media print{
-  body{background:white;padding:0}
-  .report{box-shadow:none}
+  body{background:white;padding:0;margin:0}
+  .report{box-shadow:none;border-radius:0;max-width:100%}
   #pdfBtn{display:none!important}
-  @page{margin:1cm;size:A4}
-}</style>
+  img{max-width:100%;page-break-inside:avoid}
+  table{page-break-inside:avoid}
+  .sec{page-break-inside:avoid}
+  @page{margin:1.2cm;size:A4}
+}
+@media screen{
+  body{padding-bottom:80px}
+}
+</style>
 </head><body><div class="report">
 <div class="corp-hdr" style="padding:0;overflow:hidden"><div style="background:#1a3a5c;padding:10px 20px 8px;text-align:center"><img src="data:image/png;base64,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" alt="Grupo Sole" style="max-height:120px;max-width:420px;object-fit:contain"></div><div style="background:#1a3a5c;padding:8px 20px;text-align:center"><div style="font-size:13px;font-weight:700;color:white;letter-spacing:0.04em">GERENCIA DE INNOVACIÓN Y CALIDAD</div><div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px">Container Unloading Report / Reporte de Descarga de Contenedor</div></div></div>
 <div class="rh"><div style="width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📦</div><div><h1>File: ${fileNum} &nbsp;|&nbsp; ${fecha}</h1><p>Supplier / Proveedor: ${proveedor}${provAdicStr?' / '+provAdicStr:''} &nbsp;|&nbsp; Inspector: ${inspector}</p></div></div>
@@ -2454,31 +2461,69 @@ ${obsH?`<div class="sec"><h2>Observations / Observaciones</h2><table><thead><tr>
 <div class="conf">Confidencial — Queda prohibida la reproducción total o parcial sin autorización de la Alta Dirección.<br><em>Confidential — Reproduction without Senior Management authorization is prohibited.</em></div>
 </div><script>
 window.onload=function(){
-  // Mostrar botón de guardar PDF
-  document.getElementById('pdfBtn').style.display='block';
+  document.getElementById('pdfBtn').style.display='flex';
 };
-function savePDF(){
-  document.getElementById('pdfBtn').style.display='none';
-  window.print();
-  setTimeout(()=>document.getElementById('pdfBtn').style.display='block',1500);
+async function savePDF(){
+  const btn=document.getElementById('saveBtnInner');
+  btn.textContent='⏳ Generando...';
+  try{
+    // Intentar con API moderna (Chrome desktop/Android)
+    if(window.showSaveFilePicker){
+      const html=document.documentElement.outerHTML;
+      const blob=new Blob([html],{type:'text/html'});
+      const handle=await window.showSaveFilePicker({
+        suggestedName:document.title.replace(/[^a-z0-9\-_]/gi,'_')+'.html',
+        types:[{description:'Página web',accept:{'text/html':['.html']}}]
+      });
+      const writable=await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      btn.textContent='✅ Guardado';
+      setTimeout(()=>btn.textContent='💾 Guardar PDF',2000);
+    } else {
+      // Fallback: usar print() con destino PDF
+      document.getElementById('pdfBtn').style.display='none';
+      window.print();
+      setTimeout(()=>{document.getElementById('pdfBtn').style.display='flex';btn.textContent='💾 Guardar PDF';},1500);
+    }
+  }catch(e){
+    btn.textContent='💾 Guardar PDF';
+  }
 }
 <\/script>
-<div id="pdfBtn" style="display:none;position:fixed;bottom:20px;right:20px;z-index:999">
-  <button onclick="savePDF()" style="background:#1a3a5c;color:white;border:none;border-radius:12px;padding:14px 24px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);font-family:Arial,sans-serif">
-    💾 Guardar como PDF
+<!-- Botón flotante PDF -->
+<div id="pdfBtn" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a3a5c;padding:14px 20px;z-index:999;box-shadow:0 -4px 16px rgba(0,0,0,0.25);justify-content:center;gap:12px;align-items:center">
+  <button id="saveBtnInner" onclick="savePDF()" style="background:white;color:#1a3a5c;border:none;border-radius:10px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">
+    💾 Guardar PDF
   </button>
+  <span style="font-size:11px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif">Selecciona "Guardar como PDF" si aparece el diálogo</span>
 </div></body></html>`;
 
-  // ── GENERAR PDF: descarga directa del HTML (se puede imprimir/guardar como PDF) ──
+  // ── GENERAR PDF: abrir en nueva ventana y disparar impresión automática ──
+  // El usuario solo elige "Guardar como PDF" en el diálogo de impresión
   const blob=new Blob([html],{type:'text/html;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=('Reporte_'+fileNum+'_'+fecha).replace(/\s+/g,'_')+'.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url),3000);
+  const win=window.open(url,'_blank');
+  if(win){
+    // La ventana tiene window.onload que dispara print() automáticamente
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+  } else {
+    // Si el navegador bloquea popup → mostrar instrucciones claras
+    const modal=document.createElement('div');
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML=`<div style="background:white;border-radius:16px;padding:24px;max-width:340px;width:100%;text-align:center;font-family:inherit">
+      <div style="font-size:40px;margin-bottom:12px">📄</div>
+      <div style="font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:8px">Guardar reporte como PDF</div>
+      <div style="font-size:13px;color:#475569;line-height:1.6;margin-bottom:16px">
+        1. Presiona <strong>Abrir reporte</strong><br>
+        2. Cuando se abra, toca el menú ⋮ o compartir<br>
+        3. Selecciona <strong>Imprimir → Guardar como PDF</strong>
+      </div>
+      <a href="${url}" target="_blank" style="display:block;background:#1a3a5c;color:white;padding:13px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;margin-bottom:8px" onclick="setTimeout(()=>{modal.remove();URL.revokeObjectURL('${url}')},1000)">📄 Abrir reporte</a>
+      <button onclick="this.closest('[style*=inset]').remove();URL.revokeObjectURL('${url}')" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:13px;font-family:inherit;padding:8px">Cerrar</button>
+    </div>`;
+    document.body.appendChild(modal);
+  }
 }
 
 // ══════════════════════════════════════════════
