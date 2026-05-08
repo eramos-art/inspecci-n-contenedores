@@ -1816,13 +1816,13 @@ async function uploadToOneDrive(){
 
     generateReport();exportToExcel();
     document.getElementById('successBanner').style.display='block';
+    document.getElementById('successBanner').style.display='block';
     document.getElementById('successBanner').innerHTML=
-      '<div style="font-size:40px;margin-bottom:8px">✅</div>'+
-      '<h3>¡Reporte completo!</h3>'+
-      '<p>📁 Fotos en OneDrive: <strong>'+reportName+'</strong></p>'+
-      '<p style="margin-top:6px">📊 Fila registrada en Google Sheets — Power BI actualizado</p>'+
-      '<p style="margin-top:6px;font-size:12px;color:#047857">'+Object.keys(photoStore).length+' fotos · El dashboard verá los datos en el próximo refresco</p>'+
-      '<button onclick="resetApp()" style="margin-top:16px;width:100%;padding:14px;background:#1a3a5c;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">📋 Nuevo reporte / New report</button>';
+      '<div style="font-size:48px;margin-bottom:10px">✅</div>'+
+      '<h3 style="font-size:18px;color:#065F46;margin-bottom:8px">¡Reporte completado!</h3>'+
+      '<p style="font-size:13px;color:#047857;margin-bottom:4px">📁 Fotos en OneDrive: <strong>'+reportName+'</strong></p>'+
+      '<p style="font-size:13px;color:#047857;margin-bottom:16px">📊 Registrado en Google Sheets · Power BI actualizado</p>'+
+      '<button onclick="resetApp()" style="width:100%;padding:16px;background:#059669;color:white;border:none;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.02em;box-shadow:0 4px 12px rgba(5,150,105,0.3)">📋 Iniciar Nuevo Reporte</button>';
     btn.style.display='none';document.getElementById('downloadBtn').style.display='none';
     clearSavedData();
   }catch(err){btn.textContent='☁️ Reintentar';btn.disabled=false;setStatus('error','❌ Error: '+err.message);}
@@ -1890,7 +1890,7 @@ async function testGSheetConnection(){
     // 2. Si la primera fila está vacía, crear encabezados automáticamente
     if(existingHeaders.length===0){
       btn.textContent='⏳ Creando encabezados...';
-      const HEADERS=["FILE", "N° O.C.", "PROVEEDOR", "FECHA", "ALMACÉN", "N° CONTENEDOR", "COND. EXTERIOR", "COND. INTERIOR", "CÓDIGO", "CANT. LOTE", "DEFECTOS GRADO 1", "DEFECTOS GRADO 2", "HORA INICIO", "HORA FINAL", "DESCARGA COMPLETA", "INSPECTOR", "ESTADO CONTENEDOR", "OBS. EXTERIOR", "OBS. INTERIOR", "OBS. GENERALES", "OBS. CON FOTO", "MOTIVO PARADA", "TOTAL CAJAS G1", "SERIES ESC. G1", "TOTAL CAJAS G2", "SERIES ESC. G2"];
+      const HEADERS=["FILE", "N° O.C.", "PROVEEDOR", "FECHA", "ALMACÉN", "N° CONTENEDOR", "COND. EXTERIOR CONTENEDOR", "COND. INTERIOR CONTENEDOR", "CÓDIGO", "CANT. LOTE", "DEFECTOS GRADO 1", "DEFECTOS GRADO 2", "CANT. GRADO 1", "CANT. GRADO 2", "HORA DE INICIO", "HORA FINAL", "DESCARGA COMPLETA SI/NO", "INSPECTOR DE LA DESCARGA", "OBSERVACIONES"];
       const writeUrl=`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(tab+'!A1:Q1')}?valueInputOption=USER_ENTERED&key=${key}`;
       const writeRes=await fetch(writeUrl,{
         method:'PUT',
@@ -2025,6 +2025,16 @@ async function appendRowToGoogleSheet(){
   const motivoParada = V('motivoParada');
   const obsParada    = V('obsParada');
 
+  // Observaciones combinadas para col S
+  const obsCompletas = [
+    estadoCont ? 'Estado: '+estadoCont : '',
+    obsExtCont ? 'Ext: '+obsExtCont : '',
+    obsIntCont ? 'Int: '+obsIntCont : '',
+    obsGen,
+    obsConFoto ? 'Novedades: '+obsConFoto : '',
+    motivoParada ? 'Parada: '+motivoParada+(obsParada?' — '+obsParada:'') : ''
+  ].filter(Boolean).join(' | ');
+
   const row = [
     fileNum,        // A  FILE
     ocFull,         // B  N° O.C.
@@ -2036,22 +2046,15 @@ async function appendRowToGoogleSheet(){
     condInt,        // H  COND. INTERIOR CONTENEDOR
     codigosStr,     // I  CÓDIGO
     totalLote,      // J  CANT. LOTE
-    defG1,          // K  DEFECTOS GRADO 1 (código · tipo · cajas · series escaneadas)
+    defG1,          // K  DEFECTOS GRADO 1 (código · tipo de daño)
     defG2,          // L  DEFECTOS GRADO 2
-    horaInicio,     // M  HORA DE INICIO
-    horaFin,        // N  HORA FINAL
-    completo,       // O  DESCARGA COMPLETA SI/NO
-    inspector,      // P  INSPECTOR DE LA DESCARGA
-    estadoCont,     // Q  ESTADO DEL CONTENEDOR
-    obsExtCont,     // R  OBS. ESTADO EXTERIOR
-    obsIntCont,     // S  OBS. CONDICIÓN INTERIOR
-    obsGen,         // T  OBSERVACIONES GENERALES
-    obsConFoto,     // U  OBSERVACIONES CON FOTO
-    motivoParada?motivoParada+(obsParada?' — '+obsParada:''):'', // V  MOTIVO PARADA
-    totalCajasG1,   // W  TOTAL CAJAS G1
-    totalSeriesG1,  // X  TOTAL SERIES ESCANEADAS G1
-    totalCajasG2,   // Y  TOTAL CAJAS G2
-    totalSeriesG2,  // Z  TOTAL SERIES ESCANEADAS G2
+    totalCajasG1,   // M  CANT. GRADO 1
+    totalCajasG2,   // N  CANT. GRADO 2
+    horaInicio,     // O  HORA DE INICIO
+    horaFin,        // P  HORA FINAL
+    completo,       // Q  DESCARGA COMPLETA SI/NO
+    inspector,      // R  INSPECTOR DE LA DESCARGA
+    obsCompletas,   // S  OBSERVACIONES (estado+ext+int+generales+novedades+parada)
   ];
 
   // Enviar al Apps Script (puente que escribe en el Sheet sin restricciones)
@@ -2287,7 +2290,13 @@ async function submitReport(){
         console.log('✅ Fila registrada en Google Sheets');
       }catch(e){console.warn('GSheets:',e.message);}
       document.getElementById('successBanner').style.display='block';
-      document.getElementById('successBanner').innerHTML='<div style="font-size:40px;margin-bottom:8px">✅</div><h3>¡Reporte generado!</h3><p>HTML y Excel descargados en tu dispositivo. 📊</p><p style="margin-top:6px;font-size:12px;color:#047857">📊 Registrado en histórico Google Sheets automáticamente.</p><p style="margin-top:4px;font-size:12px;color:#065F46">💡 También puedes iniciar sesión con Microsoft para subir las fotos a OneDrive.</p><button onclick="resetApp()" style="margin-top:16px;width:100%;padding:14px;background:#1a3a5c;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">📋 Nuevo reporte / New report</button>';
+      document.getElementById('successBanner').style.display='block';
+      document.getElementById('successBanner').innerHTML=
+        '<div style="font-size:48px;margin-bottom:10px">✅</div>'+
+        '<h3 style="font-size:18px;color:#065F46;margin-bottom:8px">¡Reporte completado!</h3>'+
+        '<p style="font-size:13px;color:#047857;margin-bottom:4px">📄 Reporte descargado en tu dispositivo</p>'+
+        '<p style="font-size:13px;color:#047857;margin-bottom:16px">📊 Registrado en Google Sheets automáticamente</p>'+
+        '<button onclick="resetApp()" style="width:100%;padding:16px;background:#059669;color:white;border:none;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.02em;box-shadow:0 4px 12px rgba(5,150,105,0.3)">📋 Iniciar Nuevo Reporte</button>';
       btn.style.display='none';clearSavedData();
     },400);
   }
@@ -2443,32 +2452,16 @@ function savePDF(){
   </button>
 </div></body></html>`;
 
-  // ── GENERAR PDF: abrir en nueva pestaña para imprimir/guardar ──
-  // Usar iframe para evitar bloqueo de popup en móvil
+  // ── GENERAR PDF: descarga directa del HTML (se puede imprimir/guardar como PDF) ──
   const blob=new Blob([html],{type:'text/html;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-
-  // Intentar abrir nueva pestaña
-  const win=window.open(url,'_blank','noopener');
-  if(win){
-    // Dar tiempo a que cargue antes de mostrar instrucción
-    setTimeout(()=>{
-      URL.revokeObjectURL(url);
-    },10000);
-  } else {
-    // Fallback: descargar el HTML con extensión que el usuario puede imprimir
-    // Mostrar modal con instrucciones
-    const overlay=document.createElement('div');
-    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-    overlay.innerHTML=`<div style="background:white;border-radius:16px;padding:24px;max-width:360px;text-align:center">
-      <div style="font-size:32px;margin-bottom:8px">📄</div>
-      <div style="font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:8px">Guardar como PDF</div>
-      <div style="font-size:13px;color:#475569;margin-bottom:16px;line-height:1.5">Tu navegador bloqueó la nueva pestaña. Presiona el botón para descargar el reporte y ábrelo para guardarlo como PDF.</div>
-      <a href="${url}" download="Reporte_${fileNum}_${fecha}.html" style="display:block;background:#1a3a5c;color:white;padding:12px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;margin-bottom:8px" onclick="setTimeout(()=>this.closest('[style]').remove(),500)">⬇️ Descargar reporte</a>
-      <button onclick="this.closest('[style]').remove();URL.revokeObjectURL('${url}')" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:13px;font-family:inherit">Cancelar</button>
-    </div>`;
-    document.body.appendChild(overlay);
-  }
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=('Reporte_'+fileNum+'_'+fecha).replace(/\s+/g,'_')+'.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
 }
 
 // ══════════════════════════════════════════════
