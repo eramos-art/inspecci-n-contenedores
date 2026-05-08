@@ -45,6 +45,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .barcode-wrap .scan-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;opacity:0.4;pointer-events:none}
 .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
 .photo-slot{aspect-ratio:1;border:2px dashed #CBD5E1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#F8FAFC;position:relative;overflow:hidden;transition:border-color 0.2s,background 0.2s;-webkit-tap-highlight-color:transparent}
+/* Fotos de defecto en bloques G1/G2 - más grandes */
+.bloque-foto-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px}
+.bloque-foto-slot{aspect-ratio:4/3;border:2px dashed #CBD5E1;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#F8FAFC;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;min-height:120px}
+.bloque-foto-slot img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+.bloque-foto-slot .rm-btn{position:absolute;top:6px;right:6px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;z-index:2;display:none;align-items:center;justify-content:center;font-weight:700}
+.bloque-foto-slot:hover .rm-btn,.bloque-foto-slot.has-photo .rm-btn{display:flex}
+/* Visor pantalla completa */
+.foto-viewer{position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column}
+.foto-viewer.open{display:flex}
+.foto-viewer img{max-width:95vw;max-height:80vh;object-fit:contain;border-radius:8px}
+.foto-viewer-nav{display:flex;gap:16px;margin-top:16px;align-items:center}
+.foto-viewer-nav button{background:rgba(255,255,255,0.15);color:white;border:none;border-radius:8px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+.foto-viewer-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .photo-slot:active{background:#EBF4FF;border-color:#378ADD}
 .photo-slot img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:10px}
 .photo-slot .slot-num{font-size:11px;font-weight:700;color:#378ADD;margin-bottom:2px;z-index:1}
@@ -674,6 +687,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     <!-- Botón de solo descarga removido — se usa Google Sheets -->
   </div>
 
+  <!-- VISOR DE FOTOS PANTALLA COMPLETA -->
+  <div class="foto-viewer" id="fotoViewer" onclick="closeFotoViewer(event)">
+    <button class="foto-viewer-close" onclick="closeFotoViewer()">✕</button>
+    <img id="fotoViewerImg" src="" alt="Foto">
+    <div class="foto-viewer-nav">
+      <button onclick="fotoViewerPrev()">← Anterior</button>
+      <span id="fotoViewerCounter" style="color:white;font-size:13px"></span>
+      <button onclick="fotoViewerNext()">Siguiente →</button>
+    </div>
+    <div style="margin-top:10px">
+      <button onclick="fotoViewerDelete()" style="background:rgba(220,38,38,0.8);color:white;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">🗑 Eliminar foto</button>
+    </div>
+  </div>
+
   <div class="nav-row">
     <button class="btn-nav btn-back" id="btnBack" onclick="prevStep()" style="display:none">◀ Anterior</button>
     <button class="btn-nav btn-next" id="btnNext" onclick="nextStep()">Siguiente ▶</button>
@@ -921,6 +948,32 @@ function serieAutoAdvance(input, cls){
   // Actualizar contador del bloque
   updateSerieCounter(input);
   if(!input.value.trim()) return;
+  // ── Detectar serie duplicada ──
+  const val = input.value.trim();
+  const allSeries = [...document.querySelectorAll('.serie-input')]
+    .filter(i=>i!==input && i.value.trim()===val);
+  if(allSeries.length > 0){
+    input.style.background='#FEE2E2';
+    input.style.borderColor='#DC2626';
+    input.style.color='#991B1B';
+    // Mostrar alerta
+    let alert = input.parentElement.querySelector('.serie-dup-alert');
+    if(!alert){
+      alert=document.createElement('div');
+      alert.className='serie-dup-alert';
+      alert.style.cssText='color:#DC2626;font-size:11px;font-weight:700;margin-top:3px;padding:4px 8px;background:#FEE2E2;border-radius:6px;border:1px solid #FCA5A5';
+      input.parentElement.appendChild(alert);
+    }
+    alert.textContent='⚠️ Serie duplicada: '+val;
+    return; // No avanzar si está duplicado
+  } else {
+    // Limpiar estado de error si estaba marcado
+    input.style.background='';
+    input.style.borderColor='';
+    input.style.color='';
+    const alert=input.parentElement.querySelector('.serie-dup-alert');
+    if(alert) alert.remove();
+  }
   // Cancelar timer previo
   if(_serieScanTimers.has(input)) clearTimeout(_serieScanTimers.get(input));
   // Esperar 350ms sin cambios → avanzar (pistola termina en ~100-200ms)
@@ -1005,6 +1058,50 @@ function updateGSheetSerieCount(){
 // ══════════════════════════════════════════════
 let bloqueFotoCounters = {};
 
+// Estado del visor
+let _viewerPhotos=[], _viewerIdx=0, _viewerNs='', _viewerSlots=[];
+
+function openFotoViewer(photos, idx){
+  _viewerPhotos=photos; _viewerIdx=idx;
+  const viewer=document.getElementById('fotoViewer');
+  viewer.classList.add('open');
+  renderFotoViewer();
+  document.body.style.overflow='hidden';
+}
+function renderFotoViewer(){
+  const p=_viewerPhotos[_viewerIdx];
+  document.getElementById('fotoViewerImg').src=p.src;
+  document.getElementById('fotoViewerCounter').textContent=(_viewerIdx+1)+' de '+_viewerPhotos.length;
+  // Guardar referencia para borrar
+  _viewerNs=p.ns; _viewerSlots=p;
+}
+function closeFotoViewer(e){
+  if(e&&e.target!==document.getElementById('fotoViewer')&&e.target!==document.querySelector('.foto-viewer-close'))return;
+  document.getElementById('fotoViewer').classList.remove('open');
+  document.body.style.overflow='';
+}
+function fotoViewerPrev(){if(_viewerIdx>0){_viewerIdx--;renderFotoViewer();}}
+function fotoViewerNext(){if(_viewerIdx<_viewerPhotos.length-1){_viewerIdx++;renderFotoViewer();}}
+function fotoViewerDelete(){
+  const p=_viewerPhotos[_viewerIdx];
+  // Eliminar del photoStore
+  delete photoStore[p.fullKey];
+  // Eliminar el slot del DOM
+  if(p.slotEl){p.slotEl.remove();}
+  // Actualizar visor
+  _viewerPhotos.splice(_viewerIdx,1);
+  if(_viewerPhotos.length===0){
+    document.getElementById('fotoViewer').classList.remove('open');
+    document.body.style.overflow='';
+  } else {
+    if(_viewerIdx>=_viewerPhotos.length)_viewerIdx=_viewerPhotos.length-1;
+    renderFotoViewer();
+  }
+  // Actualizar contador
+  if(p.block&&p.grade) updateBloqueFotoCount(p.block,p.grade);
+  saveProgress();
+}
+
 function addFotoBloque(btn, grade){
   const block = btn.closest('.g1-codigo-block, .g2-codigo-block');
   if(!block) return;
@@ -1012,44 +1109,73 @@ function addFotoBloque(btn, grade){
   const ns = grade + '_blk_' + blockIdx;
   bloqueFotoCounters[ns] = (bloqueFotoCounters[ns]||0) + 1;
   const key = 'f' + bloqueFotoCounters[ns];
-  const sectionDiv = btn.previousElementSibling.previousElementSibling; // .g1-fotos-section
-  // Crear slot de foto
+  const fullKey = ns+':'+key;
+
+  // Buscar o crear el grid de fotos
+  let grid = btn.previousElementSibling.previousElementSibling;
+  if(!grid || !grid.classList.contains('bloque-foto-grid')){
+    grid = document.createElement('div');
+    grid.className = 'bloque-foto-grid';
+    btn.parentNode.insertBefore(grid, btn.previousElementSibling);
+  }
+
+  // Crear slot grande
   const slot = document.createElement('div');
-  slot.style.cssText = 'display:inline-block;margin:4px;position:relative;width:72px;height:72px;border:2px dashed #CBD5E1;border-radius:8px;cursor:pointer;overflow:hidden;background:#F8FAFC;vertical-align:top';
+  slot.className = 'bloque-foto-slot';
   slot.dataset.ns = ns; slot.dataset.key = key;
-  slot.innerHTML = '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px">📷</span>';
+  slot.innerHTML = '<span style="font-size:28px;opacity:0.4">📷</span>';
+
   // Botón eliminar
   const rm = document.createElement('button');
-  rm.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:11px;display:none;align-items:center;justify-content:center;z-index:2';
-  rm.textContent='×';
-  rm.onclick = (e)=>{e.stopPropagation();delete photoStore[ns+':'+key];slot.remove();updateBloqueFotoCount(block,grade);saveProgress();};
+  rm.className = 'rm-btn';
+  rm.innerHTML = '×';
+  rm.onclick = (e)=>{
+    e.stopPropagation();
+    delete photoStore[fullKey];
+    slot.remove();
+    updateBloqueFotoCount(block,grade);
+    saveProgress();
+  };
   slot.appendChild(rm);
-  slot.addEventListener('mouseenter',()=>rm.style.display='flex');
-  slot.addEventListener('mouseleave',()=>rm.style.display='none');
-  slot.addEventListener('click',()=>{
-    const fi=document.getElementById('hiddenFile');
-    fi.onchange=(e)=>{
-      if(!e.target.files[0])return;
-      const reader=new FileReader();
-      reader.onload=(ev)=>{
-        photoStore[ns+':'+key]=ev.target.result;
-        slot.innerHTML='';
-        const img=document.createElement('img');img.src=ev.target.result;
-        img.style.cssText='width:100%;height:100%;object-fit:cover';
-        slot.appendChild(img);slot.appendChild(rm);rm.style.display='none';
-        slot.style.border='2px solid #10B981';
-        const fname='Insp_'+(document.getElementById('fileNum').value||'FILE')+'_'+grade+'_blk'+blockIdx+'_'+key+'.jpg';
-        saveToGallery(ev.target.result,fname);
-        dbSavePhoto(ns+':'+key,ev.target.result,fname);
-        updateBloqueFotoCount(block,grade);
-        saveProgress();
+
+  // Click: si ya tiene foto → abrir visor. Si no → tomar foto
+  slot.addEventListener('click', (e)=>{
+    if(e.target===rm) return;
+    if(photoStore[fullKey]){
+      // Abrir visor con todas las fotos del bloque
+      const allPhotos = Object.keys(photoStore)
+        .filter(k=>k.startsWith(ns+':'))
+        .map(k=>({fullKey:k, ns, key:k.split(':')[1], src:photoStore[k], slotEl:document.querySelector(`[data-ns="${ns}"][data-key="${k.split(':')[1]}"]`), block, grade}));
+      const myIdx = allPhotos.findIndex(p=>p.fullKey===fullKey);
+      openFotoViewer(allPhotos, myIdx>=0?myIdx:0);
+    } else {
+      // Tomar foto nueva
+      const fi=document.getElementById('hiddenFile');
+      fi.onchange=(e)=>{
+        if(!e.target.files[0])return;
+        const reader=new FileReader();
+        reader.onload=(ev)=>{
+          photoStore[fullKey]=ev.target.result;
+          slot.innerHTML='';
+          const img=document.createElement('img');
+          img.src=ev.target.result;
+          slot.appendChild(img);
+          slot.appendChild(rm);
+          slot.classList.add('has-photo');
+          const fname='Insp_'+(document.getElementById('fileNum').value||'FILE')+'_'+grade+'_blk'+blockIdx+'_'+key+'.jpg';
+          saveToGallery(ev.target.result,fname);
+          dbSavePhoto(fullKey,ev.target.result,fname);
+          updateBloqueFotoCount(block,grade);
+          saveProgress();
+        };
+        reader.readAsDataURL(e.target.files[0]);
+        fi.value='';
       };
-      reader.readAsDataURL(e.target.files[0]);
-      fi.value='';
-    };
-    fi.click();
+      fi.click();
+    }
   });
-  sectionDiv.appendChild(slot);
+
+  grid.appendChild(slot);
   updateBloqueFotoCount(block,grade);
 }
 
@@ -1562,11 +1688,14 @@ function restoreProgress(){
       const el=document.getElementById(id);if(el)el.value=val;
     });
     updatePill();
-    // Checklists
-    Object.assign(checklistExt,data.checklistExt||{});
-    Object.assign(checklistInt,data.checklistInt||{});
-    buildChecklist(CHECKLIST_EXT,checklistExt,'checklistExt');
-    buildChecklist(CHECKLIST_INT,checklistInt,'checklistInt');
+    // Checklists — cargar valores primero, luego construir UI
+    Object.keys(checklistExt).forEach(k=>delete checklistExt[k]); // limpiar
+    Object.keys(checklistInt).forEach(k=>delete checklistInt[k]);
+    Object.assign(checklistExt, data.checklistExt||{});
+    Object.assign(checklistInt, data.checklistInt||{});
+    // Reconstruir UI con los valores ya cargados
+    buildChecklist(CHECKLIST_EXT, checklistExt, 'checklistExt');
+    buildChecklist(CHECKLIST_INT, checklistInt, 'checklistInt');
     // Fotos
     Object.assign(photoStore,data.photos||{});
     buildGrid('extGrid','ext',EXT_SLOTS);buildGrid('apGrid','ap',AP_SLOTS);
