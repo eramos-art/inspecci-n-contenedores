@@ -71,6 +71,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .photo-count-badge{font-size:12px;color:#64748B;margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .photo-count-badge .cnt{font-weight:700;color:#10B981}
 .btn-add-photo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 14px;font-size:13px;font-weight:600;border:1.5px solid #378ADD;background:#EBF4FF;color:#1E40AF;border-radius:10px;cursor:pointer;margin-top:6px;font-family:'Segoe UI',system-ui,sans-serif;transition:background 0.2s;-webkit-tap-highlight-color:transparent}
+/* Modal fuente de foto */
+.foto-source-modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;display:none;align-items:flex-end;justify-content:center}
+.foto-source-modal.open{display:flex}
+.foto-source-sheet{background:white;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 16px 32px;font-family:'Segoe UI',system-ui,sans-serif}
+.foto-source-title{font-size:13px;color:#94A3B8;text-align:center;margin-bottom:16px;font-weight:500}
+.foto-source-btn{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border:none;background:#F8FAFC;border-radius:12px;margin-bottom:10px;cursor:pointer;font-size:15px;font-weight:600;color:#1a2332;font-family:inherit;-webkit-tap-highlight-color:transparent;transition:background 0.15s}
+.foto-source-btn:active{background:#E2E8F0}
+.foto-source-btn span{font-size:22px}
+.foto-source-cancel{width:100%;padding:13px;border:none;background:#F1F5F9;border-radius:12px;margin-top:4px;cursor:pointer;font-size:15px;font-weight:600;color:#64748B;font-family:inherit}
 .btn-add-photo:active{background:#BFDBFE}
 .photo-extra-divider{display:flex;align-items:center;gap:8px;margin:12px 0 8px}
 .photo-extra-divider span{font-size:11px;color:#94A3B8;white-space:nowrap;font-weight:500}
@@ -687,6 +696,28 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     <!-- Botón de solo descarga removido — se usa Google Sheets -->
   </div>
 
+  <!-- MODAL FUENTE DE FOTO: Cámara o Galería -->
+  <div class="foto-source-modal" id="fotoSourceModal">
+    <div class="foto-source-sheet">
+      <div class="foto-source-title">Seleccionar fuente de imagen</div>
+      <button class="foto-source-btn" onclick="pickFromCamera()">
+        <span>📷</span>
+        <div style="text-align:left">
+          <div>Tomar foto</div>
+          <div style="font-size:12px;font-weight:400;color:#64748B">Abrir cámara ahora</div>
+        </div>
+      </button>
+      <button class="foto-source-btn" onclick="pickFromGallery()">
+        <span>🖼️</span>
+        <div style="text-align:left">
+          <div>Elegir de galería</div>
+          <div style="font-size:12px;font-weight:400;color:#64748B">Seleccionar foto guardada</div>
+        </div>
+      </button>
+      <button class="foto-source-cancel" onclick="closeFotoSourceModal()">Cancelar</button>
+    </div>
+  </div>
+
   <!-- VISOR DE FOTOS PANTALLA COMPLETA -->
   <div class="foto-viewer" id="fotoViewer" onclick="closeFotoViewer(event)">
     <button class="foto-viewer-close" onclick="closeFotoViewer()">✕</button>
@@ -708,6 +739,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 </div>
 
 <input type="file" accept="image/*" capture="environment" id="hiddenFile" style="display:none">
+<input type="file" accept="image/*" id="hiddenFileGallery" style="display:none">
 
 <script>
 // ══════════════════════════════════════════════
@@ -873,7 +905,28 @@ function makeSlot(ns,key,num,label,removable){
   s.addEventListener('click',(e)=>{if(e.target===rm)return;openPicker(ns,key,s);});
   return s;
 }
-function openPicker(ns,key,slot){pendingTarget={ns,key,slot};const fi=document.getElementById('hiddenFile');fi.onchange=(e)=>{if(e.target.files[0])readFile(e.target.files[0]);fi.value='';};fi.click();}
+function openPicker(ns,key,slot){
+  pendingTarget={ns,key,slot};
+  showFotoSourceModal();
+}
+function showFotoSourceModal(){
+  document.getElementById('fotoSourceModal').classList.add('open');
+}
+function closeFotoSourceModal(){
+  document.getElementById('fotoSourceModal').classList.remove('open');
+}
+function pickFromCamera(){
+  closeFotoSourceModal();
+  const fi=document.getElementById('hiddenFile');
+  fi.onchange=(e)=>{if(e.target.files[0])readFile(e.target.files[0]);fi.value='';};
+  fi.click();
+}
+function pickFromGallery(){
+  closeFotoSourceModal();
+  const fi=document.getElementById('hiddenFileGallery');
+  fi.onchange=(e)=>{if(e.target.files[0])readFile(e.target.files[0]);fi.value='';};
+  fi.click();
+}
 function readFile(file){
   const reader=new FileReader();
   reader.onload=async(e)=>{
@@ -1149,10 +1202,9 @@ function addFotoBloque(btn, grade){
       const myIdx = allPhotos.findIndex(p=>p.fullKey===fullKey);
       openFotoViewer(allPhotos, myIdx>=0?myIdx:0);
     } else {
-      // Tomar foto nueva
-      const fi=document.getElementById('hiddenFile');
-      fi.onchange=(e)=>{
-        if(!e.target.files[0])return;
+      // Mostrar modal para elegir cámara o galería
+      const handleFile=(file)=>{
+        if(!file) return;
         const reader=new FileReader();
         reader.onload=(ev)=>{
           photoStore[fullKey]=ev.target.result;
@@ -1168,10 +1220,18 @@ function addFotoBloque(btn, grade){
           updateBloqueFotoCount(block,grade);
           saveProgress();
         };
-        reader.readAsDataURL(e.target.files[0]);
-        fi.value='';
+        reader.readAsDataURL(file);
       };
-      fi.click();
+      // Mostrar modal fuente
+      document.getElementById('fotoSourceModal').classList.add('open');
+      // Sobrescribir los pickers para este slot específico
+      document.getElementById('hiddenFile').onchange=(e)=>{document.getElementById('fotoSourceModal').classList.remove('open');if(e.target.files[0])handleFile(e.target.files[0]);document.getElementById('hiddenFile').value='';};
+      document.getElementById('hiddenFileGallery').onchange=(e)=>{document.getElementById('fotoSourceModal').classList.remove('open');if(e.target.files[0])handleFile(e.target.files[0]);document.getElementById('hiddenFileGallery').value='';};
+      // Sobrescribir funciones del modal temporalmente
+      window._pickFromCameraOrig=window.pickFromCamera;
+      window._pickFromGalleryOrig=window.pickFromGallery;
+      window.pickFromCamera=()=>{document.getElementById('fotoSourceModal').classList.remove('open');document.getElementById('hiddenFile').click();window.pickFromCamera=window._pickFromCameraOrig;window.pickFromGallery=window._pickFromGalleryOrig;};
+      window.pickFromGallery=()=>{document.getElementById('fotoSourceModal').classList.remove('open');document.getElementById('hiddenFileGallery').click();window.pickFromCamera=window._pickFromCameraOrig;window.pickFromGallery=window._pickFromGalleryOrig;};
     }
   });
 
@@ -1303,10 +1363,26 @@ function addObs(){
   div.innerHTML='<div class="obs-thumb" id="oth'+id+'" title="Tocar para agregar foto">📷</div><div class="obs-fields"><input class="obs-input" type="text" placeholder="Descripción / Description"><select class="obs-select"><option value="">Tipo / Type...</option><option>Caja defectuosa / Defective box</option><option>Producto dañado / Damaged product</option><option>Producto faltante / Missing product</option><option>Humedad / Moisture</option><option>Contaminación / Contamination</option><option>Error de etiqueta / Wrong label</option><option>Golpe / Impact</option><option>Otro / Other</option></select></div><button class="btn-rm" onclick="document.getElementById(\'obs-'+id+'\').remove()">×</button>';
   list.appendChild(div);
   document.getElementById('oth'+id).addEventListener('click',()=>{
-    const fi=document.getElementById('hiddenFile');
-    fi.onchange=(e)=>{
-      if(e.target.files[0]){const reader=new FileReader();reader.onload=(ev)=>{const th=document.getElementById('oth'+id);if(th){th.innerHTML='<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';th.style.border='1.5px solid #10B981';}photoStore['obs:'+id]=ev.target.result;const fnum=document.getElementById('fileNum').value||'FILE';saveToGallery(ev.target.result,'Insp_'+fnum+'_obs_'+id+'.jpg');saveProgress();};reader.readAsDataURL(e.target.files[0]);}fi.value='';
-    };fi.click();
+    const handleObs=(file)=>{
+      if(!file)return;
+      const reader=new FileReader();
+      reader.onload=(ev)=>{
+        const th=document.getElementById('oth'+id);
+        if(th){th.innerHTML='<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';th.style.border='1.5px solid #10B981';}
+        photoStore['obs:'+id]=ev.target.result;
+        const fnum=document.getElementById('fileNum').value||'FILE';
+        saveToGallery(ev.target.result,'Insp_'+fnum+'_obs_'+id+'.jpg');
+        saveProgress();
+      };
+      reader.readAsDataURL(file);
+    };
+    // Mostrar modal fuente
+    document.getElementById('fotoSourceModal').classList.add('open');
+    document.getElementById('hiddenFile').onchange=(e)=>{document.getElementById('fotoSourceModal').classList.remove('open');if(e.target.files[0])handleObs(e.target.files[0]);document.getElementById('hiddenFile').value='';};
+    document.getElementById('hiddenFileGallery').onchange=(e)=>{document.getElementById('fotoSourceModal').classList.remove('open');if(e.target.files[0])handleObs(e.target.files[0]);document.getElementById('hiddenFileGallery').value='';};
+    window._pickFromCameraOrig=window.pickFromCamera;window._pickFromGalleryOrig=window.pickFromGallery;
+    window.pickFromCamera=()=>{document.getElementById('fotoSourceModal').classList.remove('open');document.getElementById('hiddenFile').click();window.pickFromCamera=window._pickFromCameraOrig;window.pickFromGallery=window._pickFromGalleryOrig;};
+    window.pickFromGallery=()=>{document.getElementById('fotoSourceModal').classList.remove('open');document.getElementById('hiddenFileGallery').click();window.pickFromCamera=window._pickFromCameraOrig;window.pickFromGallery=window._pickFromGalleryOrig;};
   });
 }
 
