@@ -68,12 +68,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .check-lbl-es{font-size:13px;color:#1a2332;font-weight:500}
 .check-lbl-en{font-size:10px;color:#94A3B8;margin-top:1px;font-style:italic}
 .check-btns{display:flex;gap:6px;flex-shrink:0}
-.cb-si{padding:7px 13px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:8px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;line-height:1}
-.cb-no{padding:7px 13px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:8px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;line-height:1}
-.cb-na{padding:7px 13px;background:#F8FAFC;color:#64748B;border:1.5px solid #E2E8F0;border-radius:8px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;line-height:1}
-.cb-si.selected{background:#DCFCE7;color:#15803D;border-color:#22C55E;font-size:16px}
-.cb-no.selected{background:#FEE2E2;color:#DC2626;border-color:#EF4444;font-size:16px}
-.cb-na.selected{background:#F1F5F9;color:#64748B;border-color:#94A3B8}
+.cb-si{padding:7px 14px;background:#F8FAFC;color:#475569;border:1.5px solid #E2E8F0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;line-height:1}
+.cb-no{padding:7px 14px;background:#F8FAFC;color:#475569;border:1.5px solid #E2E8F0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;line-height:1}
+.cb-na{padding:7px 14px;background:#F8FAFC;color:#475569;border:1.5px solid #E2E8F0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;line-height:1}
+.cb-si.selected{background:#DCFCE7;color:#166534;border-color:#16A34A;font-weight:700}
+.cb-no.selected{background:#FEE2E2;color:#991B1B;border-color:#DC2626;font-weight:700}
+.cb-na.selected{background:#F1F5F9;color:#475569;border-color:#94A3B8;font-weight:700}
 /* OBS OBSERVACIONES */
 .obs-row{display:flex;gap:8px;margin-bottom:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px}
 .obs-thumb{width:48px;height:48px;border-radius:8px;background:#E2E8F0;overflow:hidden;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;border:1.5px dashed #CBD5E1;-webkit-tap-highlight-color:transparent}
@@ -153,11 +153,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 </head>
 <body>
 <div class="app">
-  <!-- ENCABEZADO CORPORATIVO -->
-  <div class="corp-header">
-    <div class="corp-gerencia">Gerencia de Innovación y Calidad</div>
-    <div class="corp-brand">Grupo Sole®</div>
-    <div class="corp-sub">Container Unloading Report / Reporte de Descarga</div>
+  <!-- ENCABEZADO CORPORATIVO CON LOGO -->
+  <div class="corp-header" style="padding:0;overflow:hidden;border-radius:14px;box-shadow:0 4px 12px rgba(26,58,92,0.25);margin-bottom:8px">
+    <!-- Logo banner -->
+    <div style="width:100%;background:#1a3a5c;padding:10px 16px 8px">
+      <img src="data:image/png;base64,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" alt="Grupo Sole" style="width:100%;max-height:130px;object-fit:contain;display:block;padding:8px 0">
+    </div>
+    <!-- Subtítulo -->
+    <div style="background:#1a3a5c;padding:8px 16px;text-align:center">
+      <div style="font-size:13px;font-weight:700;color:white;letter-spacing:0.04em">GERENCIA DE INNOVACIÓN Y CALIDAD</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px">Container Unloading Report / Reporte de Descarga de Contenedor</div>
+    </div>
   </div>
 
   <div class="progress-bar" id="progressBar"></div>
@@ -780,21 +786,21 @@ function buildChecklist(items,store,containerId){
   const c=document.getElementById(containerId);
   if(!c)return;
   c.innerHTML='';
-  // Leyenda solo la primera vez
+  // Leyenda
   if(!c.previousElementSibling||!c.previousElementSibling.classList.contains('checklist-legend')){
     const leg=document.createElement('div');leg.className='checklist-legend';
-    leg.style.cssText='display:flex;gap:10px;font-size:11px;color:#64748B;margin-bottom:8px;align-items:center;flex-wrap:wrap';
-    leg.innerHTML='<span style="background:#DCFCE7;color:#15803D;border:1.5px solid #22C55E;border-radius:6px;padding:3px 8px;font-weight:700">✅ OK</span><span style="font-size:10px">Presente / sin novedad</span><span style="background:#FEE2E2;color:#DC2626;border:1.5px solid #EF4444;border-radius:6px;padding:3px 8px;font-weight:700">⚠️ DEF</span><span style="font-size:10px">Defecto detectado</span><span style="background:#F1F5F9;color:#64748B;border:1.5px solid #94A3B8;border-radius:6px;padding:3px 8px;font-weight:700">— N/A</span><span style="font-size:10px">No aplica</span>';
+    leg.style.cssText='display:flex;gap:8px;font-size:11px;color:#64748B;margin-bottom:10px;align-items:center;flex-wrap:wrap';
+    leg.innerHTML='<span style="background:#DCFCE7;color:#166534;border:1.5px solid #16A34A;border-radius:6px;padding:3px 10px;font-weight:700;font-size:11px">SÍ</span><span style="font-size:10px;color:#64748B">Se observa / está presente</span><span style="background:#FEE2E2;color:#991B1B;border:1.5px solid #DC2626;border-radius:6px;padding:3px 10px;font-weight:700;font-size:11px">NO</span><span style="font-size:10px;color:#64748B">No se observa / no está</span><span style="background:#F1F5F9;color:#475569;border:1.5px solid #94A3B8;border-radius:6px;padding:3px 10px;font-weight:700;font-size:11px">N/A</span><span style="font-size:10px;color:#64748B">No aplica</span>';
     c.parentElement.insertBefore(leg,c);
   }
   items.forEach((item,i)=>{
     const row=document.createElement('div');
     row.className='check-row';
     row.innerHTML=`<div style="flex:1;min-width:0"><div class="check-lbl-es">${item.es}</div><div class="check-lbl-en">${item.en}</div></div>
-    <div class="check-btns" style="flex-shrink:0">
-      <button class="cb-si${store[i]==='SI'?' selected':''}" onclick="setCheck(${i},'SI','${containerId}')" title="OK — sin novedad">✅</button>
-      <button class="cb-no${store[i]==='NO'?' selected':''}" onclick="setCheck(${i},'NO','${containerId}')" title="Defecto detectado">⚠️</button>
-      <button class="cb-na${store[i]==='NA'?' selected':''}" onclick="setCheck(${i},'NA','${containerId}')" title="No aplica">—</button>
+    <div class="check-btns" style="flex-shrink:0;gap:5px">
+      <button class="cb-si${store[i]==='SI'?' selected':''}" onclick="setCheck(${i},'SI','${containerId}')" title="Sí — se observa">SÍ</button>
+      <button class="cb-no${store[i]==='NO'?' selected':''}" onclick="setCheck(${i},'NO','${containerId}')" title="No — no se observa">NO</button>
+      <button class="cb-na${store[i]==='NA'?' selected':''}" onclick="setCheck(${i},'NA','${containerId}')" title="No aplica">N/A</button>
     </div>`;
     c.appendChild(row);
   });
@@ -2337,8 +2343,19 @@ function generateReport(){
   const estadoColor=estadoCont==='Aceptado'?'#065F46':estadoCont==='Tolerado'?'#92400E':'#991B1B';
 
   // Checklists
-  const extRows=CHECKLIST_EXT.map((item,i)=>`<tr><td style="padding:6px 8px;border:1px solid #E2E8F0">${item.es}<br><span style="font-size:11px;color:#94A3B8;font-style:italic">${item.en}</span></td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center;font-weight:700;color:${checklistExt[i]==='SI'?'#059669':'#64748B'}">${checklistExt[i]||'—'}</td></tr>`).join('');
-  const intRows=CHECKLIST_INT.map((item,i)=>`<tr><td style="padding:6px 8px;border:1px solid #E2E8F0">${item.es}<br><span style="font-size:11px;color:#94A3B8;font-style:italic">${item.en}</span></td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center;font-weight:700;color:${checklistInt[i]==='SI'?'#059669':'#64748B'}">${checklistInt[i]||'—'}</td></tr>`).join('');
+  // SÍ = verde (se observa/presente), NO = rojo (no está), N/A = gris
+  const extRows=CHECKLIST_EXT.map((item,i)=>{
+    const val=checklistExt[i]||'—';
+    const color=val==='SI'?'#166534':val==='NO'?'#991B1B':'#64748B';
+    const bg=val==='SI'?'#DCFCE7':val==='NO'?'#FEE2E2':'transparent';
+    return `<tr><td style="padding:6px 8px;border:1px solid #E2E8F0">${item.es}<br><span style="font-size:11px;color:#94A3B8;font-style:italic">${item.en}</span></td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center;font-weight:700;color:${color};background:${bg}">${val}</td></tr>`;
+  }).join('');
+  const intRows=CHECKLIST_INT.map((item,i)=>{
+    const val=checklistInt[i]||'—';
+    const color=val==='SI'?'#166534':val==='NO'?'#991B1B':'#64748B';
+    const bg=val==='SI'?'#DCFCE7':val==='NO'?'#FEE2E2':'transparent';
+    return `<tr><td style="padding:6px 8px;border:1px solid #E2E8F0">${item.es}<br><span style="font-size:11px;color:#94A3B8;font-style:italic">${item.en}</span></td><td style="padding:6px 8px;border:1px solid #E2E8F0;text-align:center;font-weight:700;color:${color};background:${bg}">${val}</td></tr>`;
+  }).join('');
 
   // Fotos
   const extLbls=['Lateral derecho / Right side','Lateral izquierdo / Left side','Frontal vehículo / Front vehicle','Posterior / Rear','N° contenedor','N° precinto'];
@@ -2363,7 +2380,7 @@ function generateReport(){
   @page{margin:1cm;size:A4}
 }</style>
 </head><body><div class="report">
-<div class="corp-hdr"><div class="ger">Gerencia de Innovación y Calidad</div><div class="brand">Grupo Sole®</div><div class="sub">Container Unloading Report / Reporte de Descarga de Contenedor</div></div>
+<div class="corp-hdr" style="padding:0;overflow:hidden"><div style="background:#1a3a5c;padding:10px 20px 8px;text-align:center"><img src="data:image/png;base64,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" alt="Grupo Sole" style="max-height:120px;max-width:420px;object-fit:contain"></div><div style="background:#1a3a5c;padding:8px 20px;text-align:center"><div style="font-size:13px;font-weight:700;color:white;letter-spacing:0.04em">GERENCIA DE INNOVACIÓN Y CALIDAD</div><div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px">Container Unloading Report / Reporte de Descarga de Contenedor</div></div></div>
 <div class="rh"><div style="width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📦</div><div><h1>File: ${fileNum} &nbsp;|&nbsp; ${fecha}</h1><p>Supplier / Proveedor: ${proveedor}${provAdicStr?' / '+provAdicStr:''} &nbsp;|&nbsp; Inspector: ${inspector}</p></div></div>
 <div class="sec"><h2>General Information / Información General</h2><div class="grid">
 <div class="fi"><div class="lbl">File Number / N° File</div><div class="val">${fileNum}</div></div>
