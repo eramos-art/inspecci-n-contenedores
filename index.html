@@ -9,6 +9,7 @@
 <title>Inspección de Contenedores — Grupo Sole</title>
 <link rel="manifest" href="/inspecci-n-contenedores/manifest.json">
 <meta name="theme-color" content="#1a3a5c">
+<meta name="format-detection" content="telephone=no">
 <link rel="apple-touch-icon" href="/inspecci-n-contenedores/icon-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -174,7 +175,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app" autocomplete="off">
   <!-- ENCABEZADO CORPORATIVO CON LOGO -->
   <div class="corp-header" style="padding:0;overflow:hidden;border-radius:14px;box-shadow:0 4px 12px rgba(26,58,92,0.25);margin-bottom:8px">
     <!-- Logo banner -->
@@ -576,8 +577,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     <div class="card">
       <div class="section-title">Firma almacén / Warehouse signature</div>
       <div class="grid2" style="margin-bottom:12px">
-        <div class="field"><label>Nombre / Name</label><input id="firmaAlmNombre" type="text" placeholder="Nombre completo"></div>
-        <div class="field"><label>Cargo / Role</label><input id="firmaAlmCargo" type="text" placeholder="Jefe de almacén"></div>
+        <div class="field"><label>Nombre / Name</label><input id="firmaAlmNombre" type="text" placeholder="Nombre completo" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" oninput="saveNow()"></div>
+        <div class="field"><label>Cargo / Role</label><input id="firmaAlmCargo" type="text" placeholder="Jefe de almacén" autocomplete="off" autocorrect="off" spellcheck="false" oninput="saveNow()"></div>
       </div>
       <canvas class="sig-area" id="sigAlmacen" height="120"></canvas>
       <div class="sig-actions"><button class="btn-sm" onclick="clearSig('sigAlmacen','statusAlm')">🗑 Limpiar</button></div>
@@ -586,8 +587,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     <div class="card">
       <div class="section-title">Firma calidad / Quality signature</div>
       <div class="grid2" style="margin-bottom:12px">
-        <div class="field"><label>Nombre / Name</label><input id="firmaCalNombre" type="text" placeholder="Nombre completo"></div>
-        <div class="field"><label>Cargo / Role</label><input id="firmaCalCargo" type="text" placeholder="Inspector de calidad"></div>
+        <div class="field"><label>Nombre / Name</label><input id="firmaCalNombre" type="text" placeholder="Nombre completo" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" oninput="saveNow()"></div>
+        <div class="field"><label>Cargo / Role</label><input id="firmaCalCargo" type="text" placeholder="Inspector de calidad" autocomplete="off" autocorrect="off" spellcheck="false" oninput="saveNow()"></div>
       </div>
       <canvas class="sig-area" id="sigCalidad" height="120"></canvas>
       <div class="sig-actions"><button class="btn-sm" onclick="clearSig('sigCalidad','statusCal')">🗑 Limpiar</button></div>
@@ -924,10 +925,13 @@ function pickFromCamera(){
 function pickFromGallery(){
   closeFotoSourceModal();
   const fi=document.getElementById('hiddenFileGallery');
-  fi.onchange=(e)=>{if(e.target.files[0])readFile(e.target.files[0]);fi.value='';};
+  fi.onchange=(e)=>{
+    if(e.target.files[0]) readFile(e.target.files[0], true); // true = viene de galería, no descargar
+    fi.value='';
+  };
   fi.click();
 }
-function readFile(file){
+function readFile(file, fromGallery=false){
   const reader=new FileReader();
   reader.onload=async(e)=>{
     const {ns,key,slot}=pendingTarget;const dataUrl=e.target.result;
@@ -939,8 +943,17 @@ function readFile(file){
     const fec=(document.getElementById('fecha').value||new Date().toISOString().split('T')[0]).replace(/-/g,'');
     const fname='Insp_'+fnum+'_'+fec+'_'+ns+'_'+key+'.jpg';
     await dbSavePhoto(ns+':'+key,dataUrl,fname);
-    saveToGallery(dataUrl,fname);
-    updateCounts();saveProgress();showSaveConfirm();
+    // Solo descargar a galería si vino de cámara (no duplicar si vino de galería)
+    if(!fromGallery) saveToGallery(dataUrl,fname);
+    updateCounts();saveProgress();
+    if(!fromGallery) showSaveConfirm();
+    else {
+      // Mostrar confirmación diferente para galería
+      let el=document.getElementById('saveConfirm');
+      if(!el){el=document.createElement('div');el.id='saveConfirm';el.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a3a5c;color:white;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;transition:opacity 0.5s;box-shadow:0 4px 12px rgba(0,0,0,0.2);white-space:nowrap';document.body.appendChild(el);}
+      el.textContent='✅ Foto cargada desde galería';el.style.opacity='1';
+      clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2000);
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -1391,7 +1404,31 @@ function addObs(){
 // ══════════════════════════════════════════════
 function setupSig(cid,sid){
   const c=document.getElementById(cid);if(!c)return;const ctx=c.getContext('2d');
-  function resize(){c.width=c.offsetWidth||600;}resize();window.addEventListener('resize',resize);
+  // Resize preservando el contenido de la firma
+  function resize(){
+    const prev=c.toDataURL();
+    const hadContent=c.width>0 && !isCanvasBlank(c);
+    c.width=c.offsetWidth||600;
+    // Restaurar firma si había contenido
+    if(hadContent){
+      const img=new Image();
+      img.onload=()=>ctx.drawImage(img,0,0,c.width,c.height);
+      img.src=prev;
+    }
+  }
+  function isCanvasBlank(canvas){
+    const ctx2=canvas.getContext('2d');
+    const data=ctx2.getImageData(0,0,canvas.width,canvas.height).data;
+    return !data.some(v=>v!==0);
+  }
+  resize();
+  // Usar ResizeObserver en vez de window.resize para no reaccionar al teclado
+  if(window.ResizeObserver){
+    const ro=new ResizeObserver(()=>resize());
+    ro.observe(c);
+  } else {
+    window.addEventListener('resize',resize);
+  }
   let drawing=false;
   function pos(e){const r=c.getBoundingClientRect();const sx=c.width/r.width;const sy=c.height/r.height;if(e.touches)return{x:(e.touches[0].clientX-r.left)*sx,y:(e.touches[0].clientY-r.top)*sy};return{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};}
   function start(e){e.preventDefault();drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);}
@@ -1518,8 +1555,26 @@ function nextStep(){
     document.getElementById('page'+currentStep).classList.remove('active');
     currentStep++;
     document.getElementById('page'+currentStep).classList.add('active');
-    updateNav();if(currentStep===6)buildSummary();
+    updateNav();
+    if(currentStep===6){
+      buildSummary();
+      // Al llegar al paso 7, limpiar campos de firma si tienen texto no deseado
+      // (autocompletado del móvil que pega texto de escaneo anterior)
+      setTimeout(()=>{
+        ['firmaAlmNombre','firmaAlmCargo','firmaCalNombre','firmaCalCargo'].forEach(id=>{
+          const el=document.getElementById(id);
+          if(!el||!el.value) return;
+          // Si el valor parece un código de barras (solo mayúsculas+números sin espacios >8 chars)
+          // probablemente es autocompletado no deseado → limpiar
+          if(/^[A-Z0-9]{8,}$/.test(el.value.trim())){
+            el.value='';
+            saveNow();
+          }
+        });
+      }, 300);
+    }
     window.scrollTo({top:0,behavior:'smooth'});
+    saveNow();
   }
 }
 function prevStep(){
@@ -1604,6 +1659,13 @@ function _doSave(){
         series:[...bl.querySelectorAll('.g1-input')].map(i=>i.value)
       });
     });
+    // Guardar firmas como imagen base64
+    try{
+      const sigAlm=document.getElementById('sigAlmacen');
+      const sigCal=document.getElementById('sigCalidad');
+      if(sigAlm&&sigAlm.width>0) data.firmaAlmacenImg=sigAlm.toDataURL('image/png');
+      if(sigCal&&sigCal.width>0) data.firmaCalidadImg=sigCal.toDataURL('image/png');
+    }catch(e){}
     // Bloques G2
     data.g2Bloques=[];
     document.querySelectorAll('.g2-codigo-block').forEach(bl=>{
@@ -1849,6 +1911,31 @@ function restoreProgress(){
         const seriesBody=div.querySelector('.g2-series-body');
         (bl.series&&bl.series.length?bl.series:['']).forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
       });
+    }
+    // Restaurar firmas guardadas
+    if(data.firmaAlmacenImg){
+      const cAlm=document.getElementById('sigAlmacen');
+      if(cAlm){
+        if(!cAlm.width||cAlm.width<10) cAlm.width=cAlm.offsetWidth||600;
+        const ctxAlm=cAlm.getContext('2d');
+        const img=new Image();
+        img.onload=()=>{ctxAlm.drawImage(img,0,0,cAlm.width,cAlm.height);};
+        img.src=data.firmaAlmacenImg;
+        const st=document.getElementById('statusAlm');
+        if(st){st.textContent='✅ Firma restaurada';st.className='sig-status signed';}
+      }
+    }
+    if(data.firmaCalidadImg){
+      const cCal=document.getElementById('sigCalidad');
+      if(cCal){
+        if(!cCal.width||cCal.width<10) cCal.width=cCal.offsetWidth||600;
+        const ctxCal=cCal.getContext('2d');
+        const img2=new Image();
+        img2.onload=()=>{ctxCal.drawImage(img2,0,0,cCal.width,cCal.height);};
+        img2.src=data.firmaCalidadImg;
+        const st2=document.getElementById('statusCal');
+        if(st2){st2.textContent='✅ Firma restaurada';st2.className='sig-status signed';}
+      }
     }
     // Ir al paso guardado
     if(data.step&&data.step>0){document.getElementById('page'+currentStep).classList.remove('active');currentStep=data.step;document.getElementById('page'+currentStep).classList.add('active');updateNav();}
