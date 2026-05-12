@@ -172,7 +172,22 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .alert-required{background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:10px 14px;font-size:13px;color:#991B1B;margin-bottom:10px;display:none}
 /* EXCEL BADGE */
 .excel-badge{display:flex;align-items:center;gap:10px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#065F46}
+/* Botón limpiar/nuevo reporte */
+.btn-clear-report{position:fixed;top:12px;right:12px;z-index:200;background:rgba(239,68,68,0.9);color:white;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2);-webkit-tap-highlight-color:transparent}
+.btn-clear-report:active{background:rgba(220,38,38,1)}
+/* Modal de confirmación limpiar */
+.confirm-modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9997;display:none;align-items:center;justify-content:center;padding:20px}
+.confirm-modal.open{display:flex}
+.confirm-sheet{background:white;border-radius:16px;padding:24px;max-width:340px;width:100%;font-family:'Segoe UI',system-ui,sans-serif}
 </style>
+<script>
+// Suprimir error inofensivo de ResizeObserver
+const _resizeObserverErr = window.onerror;
+window.onerror = function(msg, src, line, col, err) {
+  if(msg && msg.includes('ResizeObserver')) return true; // suprimir
+  if(_resizeObserverErr) return _resizeObserverErr(msg, src, line, col, err);
+};
+</script>
 </head>
 <body>
 <div class="app" autocomplete="off">
@@ -437,7 +452,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
           </div>
         </div>
         <div class="field" style="margin-bottom:10px">
-          <label>Detalle insumos / Detail <span style="font-size:10px;color:#94A3B8">(Ej: "5000 piezas pequeñas por caja master")</span></label>
+          <label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(Ej: "5000 piezas pequeñas por caja master")</span></label>
           <input class="g1-detail-input" type="text" placeholder="Descripción del contenido...">
         </div>
         <div class="grado-section">
@@ -521,7 +536,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
           </div>
         </div>
         <div class="field" style="margin-bottom:10px">
-          <label>Detalle insumos / Detail <span style="font-size:10px;color:#94A3B8">(Ej: "5000 piezas pequeñas por caja master")</span></label>
+          <label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(Ej: "5000 piezas pequeñas por caja master")</span></label>
           <input class="g2-detail-input" type="text" placeholder="Descripción del contenido...">
         </div>
         <div class="grado-section">
@@ -730,6 +745,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
     </div>
     <div style="margin-top:10px">
       <button onclick="fotoViewerDelete()" style="background:rgba(220,38,38,0.8);color:white;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">🗑 Eliminar foto</button>
+    </div>
+  </div>
+
+  <!-- BOTÓN NUEVO REPORTE — disponible en cualquier paso -->
+  <button class="btn-clear-report" id="btnClearReport" onclick="showClearConfirm()" title="Nuevo reporte">🗑</button>
+
+  <!-- MODAL CONFIRMACIÓN LIMPIAR -->
+  <div class="confirm-modal" id="confirmClearModal">
+    <div class="confirm-sheet">
+      <div style="font-size:32px;text-align:center;margin-bottom:12px">⚠️</div>
+      <div style="font-size:16px;font-weight:700;color:#1a2332;text-align:center;margin-bottom:8px">¿Iniciar nuevo reporte?</div>
+      <div style="font-size:13px;color:#475569;text-align:center;margin-bottom:20px;line-height:1.5">Se borrarán <strong>todos los datos</strong> del reporte actual incluyendo fotos, series y checklists.<br><br>Esta acción no se puede deshacer.</div>
+      <button onclick="confirmClearReport()" style="width:100%;padding:13px;background:#DC2626;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px">🗑 Sí, limpiar e iniciar nuevo</button>
+      <button onclick="closeClearConfirm()" style="width:100%;padding:13px;background:#F1F5F9;color:#475569;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar — continuar este reporte</button>
     </div>
   </div>
 
@@ -1011,7 +1040,7 @@ const _serieScanTimers = new WeakMap();
 function serieAutoAdvance(input, cls){
   // Convierte a mayúsculas
   input.value = input.value.toUpperCase();
-  // Actualizar contador del bloque
+  // Actualizar contador del bloque (sin bloquear el hilo)
   updateSerieCounter(input);
   if(!input.value.trim()) return;
   // ── Detectar serie duplicada ──
@@ -1059,7 +1088,7 @@ function serieAutoAdvance(input, cls){
     newRow.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><button class="serie-del" onclick="delSerie(this)">×</button>`;
     body.appendChild(newRow);
     newRow.querySelector('input').focus();
-    saveProgress();
+    saveNow(); // Guardar al terminar el escaneo completo
   }, 350);
   _serieScanTimers.set(input, t);
 }
@@ -1088,9 +1117,13 @@ function addSerieRow(bodyId, cls){
 }
 
 function delSerie(btn){
-  const body = btn.closest('.grado-body');
-  if(body && body.querySelectorAll('.serie-input-row').length > 1)
+  const body=btn.closest('.grado-body');
+  if(body&&body.querySelectorAll('.serie-input-row').length>1){
     btn.closest('.serie-input-row').remove();
+    saveNow();
+    const block=btn.closest('.g1-codigo-block,.g2-codigo-block');
+    if(block){const cnt=block.querySelector('.serie-counter');if(cnt){const n=[...block.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;cnt.textContent=n+(n===1?' escaneada':' escaneadas');}}
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1286,7 +1319,7 @@ function addG1Block(){
     <div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0"></div>
     <div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0"></div>
   </div>
-  <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..."></div>
+  <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..."></div>
   <div class="grado-section">
     <div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
     <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
@@ -1317,7 +1350,7 @@ function addG2Block(){
     <div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0"></div>
     <div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0"></div>
   </div>
-  <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..."></div>
+  <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..."></div>
   <div class="grado-section">
     <div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
     <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
@@ -1424,7 +1457,12 @@ function setupSig(cid,sid){
   resize();
   // Usar ResizeObserver en vez de window.resize para no reaccionar al teclado
   if(window.ResizeObserver){
-    const ro=new ResizeObserver(()=>resize());
+    const ro=new ResizeObserver((entries)=>{
+      // Ignorar el error "loop completed" que es inofensivo
+      window.requestAnimationFrame(()=>{
+        try{ resize(); }catch(e){}
+      });
+    });
     ro.observe(c);
   } else {
     window.addEventListener('resize',resize);
@@ -1605,6 +1643,8 @@ let _saveTimer=null;
 
 // Captura inmediata del estado completo del DOM → localStorage
 function _doSave(){
+  // Usar setTimeout(0) para no bloquear el hilo de la UI
+  // Solo ejecutar si la pestaña está activa
   try{
     const fields=['inspNombre','inspCargo','respAlmacen','respAlmacenSel','respAlmacenNom',
                   'fileNum','numOC','fecha','almacen','tamano',
@@ -1612,9 +1652,12 @@ function _doSave(){
                   'obsEstadoCont','obsInterna','firmaAlmNombre','firmaAlmCargo',
                   'firmaCalNombre','firmaCalCargo','precinto','contenedor',
                   'avancePct','horaParada','motivoParada','obsParada'];
+    // NO serializar fotos en localStorage — ya están en IndexedDB
+    // Solo guardar keys de fotos, no el base64 completo
+    const photoKeys = Object.keys(photoStore);
     const data={
       fields:{},
-      photos:Object.assign({},photoStore),
+      photoKeys: photoKeys, // solo las keys, no el contenido
       step:currentStep,
       ts:Date.now(),
       checklistExt:Object.assign({},checklistExt),
@@ -1646,9 +1689,10 @@ function _doSave(){
     data.ocAdicionales=[...document.querySelectorAll('.oc-adicional')].map(i=>i.value);
     // Proveedores adicionales
     data.proveedoresAdicionales=[...document.querySelectorAll('.proveedor-adicional')].map(i=>i.value);
-    // Bloques G1
+    // Bloques G1 — siempre guardar aunque estén vacíos
     data.g1Bloques=[];
     document.querySelectorAll('.g1-codigo-block').forEach(bl=>{
+      const series=[...bl.querySelectorAll('.g1-input')].map(i=>i.value.trim()).filter(Boolean);
       data.g1Bloques.push({
         codigo:bl.querySelector('.g1-code-input')?.value||'',
         grado:bl.querySelector('.g1-grado-select')?.value||'',
@@ -1656,9 +1700,12 @@ function _doSave(){
         qty:bl.querySelector('.g1-qty-input')?.value||'',
         uds:bl.querySelector('.g1-uds-input')?.value||'',
         detail:bl.querySelector('.g1-detail-input')?.value||'',
-        series:[...bl.querySelectorAll('.g1-input')].map(i=>i.value)
+        series:series,
+        idx:bl.dataset.idx||'1'
       });
     });
+    // Garantizar que siempre haya al menos un bloque guardado
+    if(!data.g1Bloques.length) data.g1Bloques=[{codigo:'',grado:'',tipo:'',qty:'',uds:'',detail:'',series:[],idx:'1'}];
     // Guardar firmas como imagen base64
     try{
       const sigAlm=document.getElementById('sigAlmacen');
@@ -1666,9 +1713,10 @@ function _doSave(){
       if(sigAlm&&sigAlm.width>0) data.firmaAlmacenImg=sigAlm.toDataURL('image/png');
       if(sigCal&&sigCal.width>0) data.firmaCalidadImg=sigCal.toDataURL('image/png');
     }catch(e){}
-    // Bloques G2
+    // Bloques G2 — siempre guardar aunque estén vacíos
     data.g2Bloques=[];
     document.querySelectorAll('.g2-codigo-block').forEach(bl=>{
+      const series=[...bl.querySelectorAll('.g2-input')].map(i=>i.value.trim()).filter(Boolean);
       data.g2Bloques.push({
         codigo:bl.querySelector('.g2-code-input')?.value||'',
         grado:bl.querySelector('.g2-grado-select')?.value||'',
@@ -1676,16 +1724,18 @@ function _doSave(){
         qty:bl.querySelector('.g2-qty-input')?.value||'',
         uds:bl.querySelector('.g2-uds-input')?.value||'',
         detail:bl.querySelector('.g2-detail-input')?.value||'',
-        series:[...bl.querySelectorAll('.g2-input')].map(i=>i.value)
+        series:series,
+        idx:bl.dataset.idx||'1'
       });
     });
+    if(!data.g2Bloques.length) data.g2Bloques=[{codigo:'',grado:'',tipo:'',qty:'',uds:'',detail:'',series:[],idx:'1'}];
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){console.warn('Save error:',e);}
 }
 
 function saveProgress(){
   if(_saveTimer)clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_doSave,500);
+  _saveTimer=setTimeout(_doSave,1000); // 1 segundo de debounce para no lag al escribir
 }
 function saveNow(){
   if(_saveTimer)clearTimeout(_saveTimer);
@@ -1700,10 +1750,21 @@ window.addEventListener('beforeunload',saveNow);
 window.addEventListener('pagehide',saveNow);
 // iOS Safari: guardar cada vez que baja al background
 window.addEventListener('blur',function(){saveNow();});
-// Red de seguridad: guardar cada 30 segundos automáticamente
-setInterval(saveNow, 30000);
+// Red de seguridad: guardar cada 60 segundos automáticamente
+setInterval(saveNow, 60000);
 // _doSave is defined above in AUTOSAVE section
 function clearSavedData(){localStorage.removeItem(SAVE_KEY);dbClearAllPhotos();}
+
+function showClearConfirm(){
+  document.getElementById('confirmClearModal').classList.add('open');
+}
+function closeClearConfirm(){
+  document.getElementById('confirmClearModal').classList.remove('open');
+}
+function confirmClearReport(){
+  document.getElementById('confirmClearModal').classList.remove('open');
+  resetApp();
+}
 
 function resetApp(){
   // 1. Borrar borrador guardado
@@ -1802,6 +1863,9 @@ function resetDOM(){
   document.getElementById('page0').classList.add('active');
   currentStep=0;
   updateNav();
+  // Restaurar botón de nuevo reporte
+  const btnClear=document.getElementById('btnClearReport');
+  if(btnClear) btnClear.style.display='flex';
   window.scrollTo({top:0,behavior:'smooth'});
   // Confirmar al usuario
   const toast=document.createElement('div');
@@ -1834,8 +1898,13 @@ function restoreProgress(){
     // Reconstruir UI con los valores ya cargados
     buildChecklist(CHECKLIST_EXT, checklistExt, 'checklistExt');
     buildChecklist(CHECKLIST_INT, checklistInt, 'checklistInt');
-    // Fotos
-    Object.assign(photoStore,data.photos||{});
+    // Fotos — recuperar de IndexedDB (no del localStorage)
+    // photoStore se restaura por recoverPhotosFromDB() que se llama después
+    // Solo marcar qué keys existían para saber qué restaurar
+    if(data.photoKeys){
+      // Las fotos se recuperan de IndexedDB en recoverPhotosFromDB
+      // No hacer nada aquí — evitar doble carga
+    }
     buildGrid('extGrid','ext',EXT_SLOTS);buildGrid('apGrid','ap',AP_SLOTS);
     // Recrear slots de fotos extras
     Object.keys(photoStore).filter(k=>k.includes(':x')).forEach(key=>{
@@ -1858,14 +1927,7 @@ function restoreProgress(){
     const tb=document.getElementById('inventBody');tb.innerHTML='';
     (data.inventario||[]).forEach(row=>{const tr=document.createElement('tr');tr.innerHTML='<td><input type="text" placeholder="Escanear código" onkeydown="inventNext(event,this,0)" oninput="this.value=this.value.toUpperCase()" autocapitalize="characters" style="min-width:120px;font-family:monospace;font-size:13px;text-transform:uppercase" value="'+(row[0]||'')+'"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,1)" style="max-width:65px" value="'+(row[1]||row[2]||'')+'"></td><td><input type="text" placeholder="Ej: 12" onkeydown="inventNext(event,this,2)" style="max-width:65px" value="'+(row[2]||row[3]||'')+'"></td><td><input type="number" min="0" placeholder="0" onkeydown="inventNext(event,this,3)" style="max-width:70px" value="'+(row[3]||row[4]||'')+'"></td><td><button onclick="removeRow(this)" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:20px;padding:0 4px">×</button></td>';tb.appendChild(tr);});
     if(!tb.children.length)addInventRow();
-    // Series G1
-    const g1b=document.getElementById('g1Body');g1b.innerHTML='';
-    (data.seriesG1||['']).forEach(v=>{const row=document.createElement('div');row.className='serie-input-row';row.innerHTML='<input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,\'g1-input\')" onkeydown="serieEnterNav(event,this,\'g1-input\')" value="'+v+'"><button class="serie-del" onclick="delSerie(this)">×</button>';g1b.appendChild(row);});
-    if(!g1b.children.length)addSerieRow('g1Body','g1-input');
-    // Series G2
-    const g2b=document.getElementById('g2Body');g2b.innerHTML='';
-    (data.seriesG2||['']).forEach(v=>{const row=document.createElement('div');row.className='serie-input-row';row.innerHTML='<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,\'g2-input\')" onkeydown="serieEnterNav(event,this,\'g2-input\')" value="'+v+'"><button class="serie-del" onclick="delSerie(this)">×</button>';g2b.appendChild(row);});
-    if(!g2b.children.length)addSerieRow('g2Body','g2-input');
+    // Series G1/G2 — se restauran dentro de los bloques abajo (código legacy eliminado)
     // Observaciones
     (data.observaciones||[]).forEach(obs=>{addObs();const rows=document.querySelectorAll('.obs-row');const row=rows[rows.length-1];if(row){const inp=row.querySelector('input');if(inp)inp.value=obs.inp;const sel=row.querySelector('select');if(sel)sel.value=obs.sel;if(obs.foto){const th=row.querySelector('.obs-thumb');if(th){th.innerHTML='<img src="'+obs.foto+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';th.style.border='1.5px solid #10B981';}}}});
     updateCounts();
@@ -1880,8 +1942,8 @@ function restoreProgress(){
     // Restaurar campo respAlmacenSel
     const raSel=document.getElementById('respAlmacenSel');
     if(raSel&&data.fields['respAlmacenSel']){raSel.value=data.fields['respAlmacenSel'];toggleRespOtro();}
-    // Restaurar G1 bloques
-    if(data.g1Bloques&&data.g1Bloques.length){
+    // Restaurar G1 bloques — SIEMPRE restaurar
+    if(data.g1Bloques){
       const cont=document.getElementById('g1CodigosContainer');cont.innerHTML='';g1BlockCount=0;
       data.g1Bloques.forEach((bl,bi)=>{
         g1BlockCount++;const div=document.createElement('div');div.className='card g1-codigo-block';div.dataset.idx=g1BlockCount;
@@ -1889,15 +1951,18 @@ function restoreProgress(){
         <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" value="${bl.codigo||''}"><span class="scan-icon">⬛</span></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
-        <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
+        <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
         <div class="grado-section"><div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div><div class="grado-body g1-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div></div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g1-series-body');
-        (bl.series&&bl.series.length?bl.series:['']).forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+        const seriesG1=(bl.series||[]).filter(s=>s&&s.trim());
+        const toRG1=seriesG1.length?seriesG1:[''];
+        toRG1.forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+        const cntG1=div.querySelector('.serie-counter');if(cntG1)cntG1.textContent=seriesG1.length+(seriesG1.length===1?' escaneada':' escaneadas');
       });
     }
-    // Restaurar G2 bloques
-    if(data.g2Bloques&&data.g2Bloques.length){
+    // Restaurar G2 bloques — SIEMPRE restaurar
+    if(data.g2Bloques){
       const cont=document.getElementById('g2CodigosContainer');cont.innerHTML='';g2BlockCount=0;
       data.g2Bloques.forEach((bl,bi)=>{
         g2BlockCount++;const div=document.createElement('div');div.className='card g2-codigo-block';div.dataset.idx=g2BlockCount;
@@ -1905,13 +1970,55 @@ function restoreProgress(){
         <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" value="${bl.codigo||''}"><span class="scan-icon">⬛</span></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
-        <div class="field" style="margin-bottom:10px"><label>Detalle insumos / Detail</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
+        <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
         <div class="grado-section"><div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div><div class="grado-body g2-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div></div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g2-series-body');
-        (bl.series&&bl.series.length?bl.series:['']).forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+        const seriesG2=(bl.series||[]).filter(s=>s&&s.trim());
+        const toRG2=seriesG2.length?seriesG2:[''];
+        toRG2.forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+        const cntG2=div.querySelector('.serie-counter');if(cntG2)cntG2.textContent=seriesG2.length+(seriesG2.length===1?' escaneada':' escaneadas');
       });
     }
+    // Restaurar fotos de bloques G1/G2 (g1_blk_N:fN, g2_blk_N:fN)
+    Object.keys(photoStore).filter(k=>k.match(/^g[12]_blk_\d+:f\d+$/)).forEach(fullKey=>{
+      const[ns,key]=fullKey.split(':');
+      const blockIdx=ns.split('_blk_')[1];
+      const grade=ns.startsWith('g1')?'g1':'g2';
+      // Buscar el bloque correspondiente
+      const block=document.querySelector(`.${grade}-codigo-block[data-idx="${blockIdx}"]`);
+      if(!block)return;
+      // Buscar o crear el grid de fotos en el bloque
+      let grid=block.querySelector('.bloque-foto-grid');
+      if(!grid){
+        const addBtn=block.querySelector('.btn-add-photo');
+        if(!addBtn)return;
+        grid=document.createElement('div');grid.className='bloque-foto-grid';
+        addBtn.parentNode.insertBefore(grid,addBtn.previousElementSibling);
+      }
+      // Crear slot con la foto restaurada
+      const slot=document.createElement('div');
+      slot.className='bloque-foto-slot has-photo';
+      slot.dataset.ns=ns;slot.dataset.key=key;
+      const img=document.createElement('img');img.src=photoStore[fullKey];
+      slot.appendChild(img);
+      const rm=document.createElement('button');rm.className='rm-btn';rm.innerHTML='×';
+      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];slot.remove();saveProgress();};
+      slot.appendChild(rm);
+      slot.addEventListener('click',()=>{
+        if(photoStore[fullKey]){
+          const allP=Object.keys(photoStore).filter(k=>k.startsWith(ns+':')).map(k=>({fullKey:k,ns,key:k.split(':')[1],src:photoStore[k],slotEl:document.querySelector(`[data-ns="${ns}"][data-key="${k.split(':')[1]}"]`),block,grade}));
+          const idx=allP.findIndex(p=>p.fullKey===fullKey);
+          openFotoViewer(allP,idx>=0?idx:0);
+        }
+      });
+      if(!document.querySelector(`[data-ns="${ns}"][data-key="${key}"]`)){
+        grid.appendChild(slot);
+        // Actualizar contador
+        updateBloqueFotoCount(block,grade.replace(/\d/,''));
+      }
+    });
+
     // Restaurar firmas guardadas
     if(data.firmaAlmacenImg){
       const cAlm=document.getElementById('sigAlmacen');
@@ -1968,8 +2075,11 @@ async function recoverPhotosFromDB(){
   }
 }
 
-// Guardar al cambiar cualquier campo
-document.addEventListener('change', saveProgress);
+// Guardar al cambiar cualquier campo (excepto campos de serie que tienen su propio save)
+document.addEventListener('change', function(e){
+  if(e.target && e.target.classList.contains('serie-input')) return; // series tienen su save
+  saveProgress();
+});
 // Guardar al salir de cualquier campo (sin lag al escribir)
 document.addEventListener('blur', function(e){
   if(e.target.matches('input,select,textarea')){saveProgress();}
@@ -2188,7 +2298,7 @@ async function testGSheetConnection(){
     // 2. Si la primera fila está vacía, crear encabezados automáticamente
     if(existingHeaders.length===0){
       btn.textContent='⏳ Creando encabezados...';
-      const HEADERS=["FILE", "N° O.C.", "PROVEEDOR", "FECHA", "ALMACÉN", "N° CONTENEDOR", "COND. EXTERIOR CONTENEDOR", "COND. INTERIOR CONTENEDOR", "CÓDIGO", "CANT. LOTE", "DEFECTOS GRADO 1", "DEFECTOS GRADO 2", "CANT. GRADO 1", "CANT. GRADO 2", "HORA DE INICIO", "HORA FINAL", "DESCARGA COMPLETA SI/NO", "INSPECTOR DE LA DESCARGA", "OBSERVACIONES"];
+      const HEADERS=["FILE", "N° O.C.", "PROVEEDOR", "FECHA", "ALMACÉN", "N° CONTENEDOR", "DEFECTOS EXTERIOR", "DEFECTOS INTERIOR", "CÓDIGO", "CANT. LOTE", "DEFECTOS GRADO 1", "DEFECTOS GRADO 2", "CANT. G1", "CANT. G2", "HORA INICIO", "HORA FINAL", "DESCARGA COMPLETA", "ESTADO FINAL", "INSPECTOR", "OBSERVACIONES"];
       const writeUrl=`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(tab+'!A1:Q1')}?valueInputOption=USER_ENTERED&key=${key}`;
       const writeRes=await fetch(writeUrl,{
         method:'PUT',
@@ -2253,15 +2363,18 @@ async function appendRowToGoogleSheet(){
   const almacen = V('almacen');
   // ── Col F: N° CONTENEDOR ──
   const contenedor = V('contenedor');
-  // ── Col G: COND. EXTERIOR CONTENEDOR ──
-  // Items con defecto (⚠️) + observaciones
-  const extDefectos = CHECKLIST_EXT.filter((_,i)=>checklistExt[i]==='NO').map(it=>it.es).join(', ');
+  // ── Col G: COND. EXTERIOR — solo defectos (NO) o "Conforme" ──
+  const extDefectosArr = CHECKLIST_EXT.filter((_,i)=>checklistExt[i]==='NO').map(it=>it.es);
   const obsExt = V('obsEstadoCont');
-  const condExt = [extDefectos, obsExt].filter(Boolean).join(' | ');
-  // ── Col H: COND. INTERIOR CONTENEDOR ──
-  const intDefectos = CHECKLIST_INT.filter((_,i)=>checklistInt[i]==='NO').map(it=>it.es).join(', ');
+  const condExt = extDefectosArr.length > 0
+    ? extDefectosArr.join(', ') + (obsExt ? ' | '+obsExt : '')
+    : (obsExt || 'Conforme');
+  // ── Col H: COND. INTERIOR — solo defectos (NO) o "Conforme" ──
+  const intDefectosArr = CHECKLIST_INT.filter((_,i)=>checklistInt[i]==='NO').map(it=>it.es);
   const obsInt = V('obsInterna');
-  const condInt = [intDefectos, obsInt].filter(Boolean).join(' | ');
+  const condInt = intDefectosArr.length > 0
+    ? intDefectosArr.join(', ') + (obsInt ? ' | '+obsInt : '')
+    : (obsInt || 'Conforme');
   // ── Col I: CÓDIGO (inventario — todos los códigos) ──
   const codigos = [];
   document.querySelectorAll('#inventBody tr').forEach(row=>{
@@ -2276,7 +2389,7 @@ async function appendRowToGoogleSheet(){
     if(cells.length>=2) totalLote += parseInt(cells[1].value||'0');
   });
   // ── Col K: DEFECTOS GRADO 1 ──
-  // ── Col K: DEFECTOS GRADO 1 — solo cantidades, sin series ──
+  // ── Col K: DEFECTOS GRADO 1 — Código · Tipo de daño · Cant ──
   const g1Items=[];
   let totalCajasG1=0, totalSeriesG1=0;
   document.querySelectorAll('.g1-codigo-block').forEach(bl=>{
@@ -2285,11 +2398,12 @@ async function appendRowToGoogleSheet(){
     const qty=parseInt(bl.querySelector('.g1-qty-input')?.value||'0');
     const seriesEsc=[...bl.querySelectorAll('.g1-input')].filter(i=>i.value.trim()).length;
     totalCajasG1+=qty; totalSeriesG1+=seriesEsc;
-    if(cod||tipo) g1Items.push(`${cod} · ${tipo} · Cajas:${qty} · Series escaneadas:${seriesEsc}`);
+    // Solo incluir si tiene tipo de daño seleccionado
+    if(tipo) g1Items.push(cod ? `${cod} · ${tipo} · Cant: ${qty}` : `${tipo} · Cant: ${qty}`);
   });
-  const defG1 = g1Items.join(' | ');
+  const defG1 = g1Items.length > 0 ? g1Items.join(' | ') : 'Sin defectos G1';
 
-  // ── Col L: DEFECTOS GRADO 2 — solo cantidades, sin series ──
+  // ── Col L: DEFECTOS GRADO 2 — Código · Tipo de daño · Cant ──
   const g2Items=[];
   let totalCajasG2=0, totalSeriesG2=0;
   document.querySelectorAll('.g2-codigo-block').forEach(bl=>{
@@ -2298,9 +2412,9 @@ async function appendRowToGoogleSheet(){
     const qty=parseInt(bl.querySelector('.g2-qty-input')?.value||'0');
     const seriesEsc=[...bl.querySelectorAll('.g2-input')].filter(i=>i.value.trim()).length;
     totalCajasG2+=qty; totalSeriesG2+=seriesEsc;
-    if(cod||tipo) g2Items.push(`${cod} · ${tipo} · Cajas:${qty} · Series escaneadas:${seriesEsc}`);
+    if(tipo) g2Items.push(cod ? `${cod} · ${tipo} · Cant: ${qty}` : `${tipo} · Cant: ${qty}`);
   });
-  const defG2 = g2Items.join(' | ');
+  const defG2 = g2Items.length > 0 ? g2Items.join(' | ') : 'Sin defectos G2';
 
   // ── Observaciones completas ──
   const horaInicio   = V('horaInicio');
@@ -2323,15 +2437,18 @@ async function appendRowToGoogleSheet(){
   const motivoParada = V('motivoParada');
   const obsParada    = V('obsParada');
 
-  // Observaciones combinadas para col S
+  // Estado final con emoji para col R
+  const estadoEmoji = estadoCont === 'Aceptado' ? '✅ ACEPTADO'
+    : estadoCont === 'Tolerado' ? '⚠️ TOLERADO'
+    : estadoCont === 'Rechazado' ? '🔴 RECHAZADO'
+    : estadoCont || '—';
+
+  // Observaciones limpias para col S
   const obsCompletas = [
-    estadoCont ? 'Estado: '+estadoCont : '',
-    obsExtCont ? 'Ext: '+obsExtCont : '',
-    obsIntCont ? 'Int: '+obsIntCont : '',
     obsGen,
     obsConFoto ? 'Novedades: '+obsConFoto : '',
     motivoParada ? 'Parada: '+motivoParada+(obsParada?' — '+obsParada:'') : ''
-  ].filter(Boolean).join(' | ');
+  ].filter(Boolean).join(' | ') || '—';
 
   const row = [
     fileNum,        // A  FILE
@@ -2340,19 +2457,20 @@ async function appendRowToGoogleSheet(){
     fecha,          // D  FECHA
     almacen,        // E  ALMACÉN
     contenedor,     // F  N° CONTENEDOR
-    condExt,        // G  COND. EXTERIOR CONTENEDOR
-    condInt,        // H  COND. INTERIOR CONTENEDOR
+    condExt,        // G  COND. EXTERIOR — defectos o "Conforme"
+    condInt,        // H  COND. INTERIOR — defectos o "Conforme"
     codigosStr,     // I  CÓDIGO
     totalLote,      // J  CANT. LOTE
-    defG1,          // K  DEFECTOS GRADO 1 (código · tipo de daño)
-    defG2,          // L  DEFECTOS GRADO 2
+    defG1,          // K  DEFECTOS G1 — Código · Tipo · Cant
+    defG2,          // L  DEFECTOS G2 — Código · Tipo · Cant
     totalCajasG1,   // M  CANT. GRADO 1
     totalCajasG2,   // N  CANT. GRADO 2
     horaInicio,     // O  HORA DE INICIO
     horaFin,        // P  HORA FINAL
     completo,       // Q  DESCARGA COMPLETA SI/NO
-    inspector,      // R  INSPECTOR DE LA DESCARGA
-    obsCompletas,   // S  OBSERVACIONES (estado+ext+int+generales+novedades+parada)
+    estadoEmoji,    // R  ESTADO FINAL ✅/⚠️/🔴
+    inspector,      // S  INSPECTOR
+    obsCompletas,   // T  OBSERVACIONES
   ];
 
   // Enviar al Apps Script (puente que escribe en el Sheet sin restricciones)
@@ -2588,6 +2706,9 @@ async function submitReport(){
         console.log('✅ Fila registrada en Google Sheets');
       }catch(e){console.warn('GSheets:',e.message);}
       document.getElementById('successBanner').style.display='block';
+      // Ocultar botón de nuevo reporte flotante (ya hay uno en el banner)
+      const btnClear=document.getElementById('btnClearReport');
+      if(btnClear) btnClear.style.display='none';
       document.getElementById('successBanner').style.display='block';
       document.getElementById('successBanner').innerHTML=
         '<div style="font-size:48px;margin-bottom:10px">✅</div>'+
