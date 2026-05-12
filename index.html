@@ -2363,18 +2363,23 @@ async function appendRowToGoogleSheet(){
   const almacen = V('almacen');
   // ── Col F: N° CONTENEDOR ──
   const contenedor = V('contenedor');
-  // ── Col G: COND. EXTERIOR — solo defectos (NO) o "Conforme" ──
-  const extDefectosArr = CHECKLIST_EXT.filter((_,i)=>checklistExt[i]==='NO').map(it=>it.es);
+  // ── Col G: COND. EXTERIOR — solo ítems defectuosos marcados SÍ (excl. "Limpio") ──
+  // Los ítems del checklist son defectos cuando se marcan SÍ (excepto "Limpio" que es el último)
+  const extDefectosArr = CHECKLIST_EXT.filter((it,i)=>
+    checklistExt[i]==='SI' && it.es !== 'Limpio'
+  ).map(it=>it.es);
   const obsExt = V('obsEstadoCont');
   const condExt = extDefectosArr.length > 0
     ? extDefectosArr.join(', ') + (obsExt ? ' | '+obsExt : '')
-    : (obsExt || 'Conforme');
-  // ── Col H: COND. INTERIOR — solo defectos (NO) o "Conforme" ──
-  const intDefectosArr = CHECKLIST_INT.filter((_,i)=>checklistInt[i]==='NO').map(it=>it.es);
+    : (obsExt || 'Sin defectos');
+  // ── Col H: COND. INTERIOR — solo ítems defectuosos marcados SÍ (excl. "Limpio") ──
+  const intDefectosArr = CHECKLIST_INT.filter((it,i)=>
+    checklistInt[i]==='SI' && it.es !== 'Limpio'
+  ).map(it=>it.es);
   const obsInt = V('obsInterna');
   const condInt = intDefectosArr.length > 0
     ? intDefectosArr.join(', ') + (obsInt ? ' | '+obsInt : '')
-    : (obsInt || 'Conforme');
+    : (obsInt || 'Sin defectos');
   // ── Col I: CÓDIGO (inventario — todos los códigos) ──
   const codigos = [];
   document.querySelectorAll('#inventBody tr').forEach(row=>{
