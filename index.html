@@ -112,8 +112,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .grado-header-1{background:#EBF4FF;padding:10px 14px;font-size:12px;font-weight:700;color:#1E40AF;display:flex;align-items:center;gap:8px}
 .grado-header-2{background:#FEF9EC;padding:10px 14px;font-size:12px;font-weight:700;color:#92400E;display:flex;align-items:center;gap:8px}
 .grado-body{padding:10px 12px;background:white}
-.serie-input-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.serie-input{flex:1;font-family:'Courier New',monospace;font-size:13px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;background:#F8FAFC;color:#1a2332;letter-spacing:0.03em;text-transform:uppercase}
+.serie-input-row{display:flex;align-items:center;gap:4px;margin-bottom:6px}
+.serie-input{flex:1;min-width:0;font-family:'Courier New',monospace;font-size:12px;padding:8px 8px;border:1.5px solid #E2E8F0;border-radius:8px;background:#F8FAFC;color:#1a2332;letter-spacing:0.03em;text-transform:uppercase}
+.serie-defecto-sel{width:120px;flex-shrink:0;padding:7px 4px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:11px;font-family:inherit;background:white;color:#475569}
+.serie-defecto-sel:focus{border-color:#378ADD;outline:none}
 .serie-input:focus{outline:none;border-color:#378ADD;background:white}
 .serie-del{background:none;border:none;cursor:pointer;color:#CBD5E1;font-size:18px;padding:0 4px;line-height:1}
 /* FIRMAS */
@@ -844,6 +846,34 @@ const CHECKLIST_INT=[
   {es:'Limpio',en:'Clean'}
 ];
 
+// Nombres cortos para Google Sheets (sin inglés, sin barras)
+const EXT_CORTO={
+  'Golpes visibles':'Golpes',
+  'Oxidación':'Oxidación',
+  'Sello roto / distinto al informado':'Sello roto',
+  'Dificultad al abrir puertas':'Puerta difícil',
+  'Manchas / pintura fresca':'Manchas',
+  'Presencia de grasa / aceite':'Grasa/aceite',
+  'Brea / alquitrán':'Brea',
+  'Abolladura / agrietado':'Abolladura',
+  'Precinto manipulado':'Precinto manipulado',
+  'Precinto cambiado':'Precinto cambiado',
+  'Puerta trabada':'Puerta trabada',
+  'No cierra por completo':'No cierra',
+  'Agujereado / desoldado':'Agujeros',
+  'Limpio':'Limpio',
+};
+const INT_CORTO={
+  'Humedad visible':'Humedad',
+  'Olores anormales (químico / moho / putrefacción)':'Olores anormales',
+  'Paredes sucias / despintadas / con polvo':'Paredes sucias',
+  'Filtraciones de agua / condensación en techo':'Filtraciones',
+  'Restos de aceite / grasa':'Aceite/grasa',
+  'Brea / alquitrán':'Brea',
+  'Plastificado':'Plastificado',
+  'Limpio':'Limpio',
+};
+
 const photoStore={};
 const checklistExt={};
 const checklistInt={};
@@ -1085,7 +1115,7 @@ function serieAutoAdvance(input, cls){
     if(!body) return;
     const newRow = document.createElement('div');
     newRow.className = 'serie-input-row';
-    newRow.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><button class="serie-del" onclick="delSerie(this)">×</button>`;
+    newRow.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
     body.appendChild(newRow);
     newRow.querySelector('input').focus();
     saveNow(); // Guardar al terminar el escaneo completo
@@ -1112,7 +1142,7 @@ function addSerieRow(bodyId, cls){
   if(!body) return;
   const row = document.createElement('div');
   row.className = 'serie-input-row';
-  row.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><button class="serie-del" onclick="delSerie(this)">×</button>`;
+  row.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
   body.appendChild(row);
 }
 
@@ -1322,7 +1352,7 @@ function addG1Block(){
   <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..."></div>
   <div class="grado-section">
     <div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
-    <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
+    <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
     <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div>
   </div>
   <div style="margin-top:10px;background:#F8FAFC;border:1px solid #BFDBFE;border-radius:12px;padding:12px">
@@ -1353,7 +1383,7 @@ function addG2Block(){
   <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..."></div>
   <div class="grado-section">
     <div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
-    <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')"><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
+    <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
     <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div>
   </div>
   <div style="margin-top:10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px">
@@ -1565,7 +1595,7 @@ function buildSummary(){
   // Leer estado contenedor del radio (fix del bug)
   const estadoCont=document.querySelector('input[name="estadoCont"]:checked')?.value||'—';
   const completo=document.querySelector('input[name="completo"]:checked')?.value||'—';
-  const g1s=[...document.querySelectorAll('.g1-input')].map(i=>i.value).filter(Boolean);
+  const g1s=[...document.querySelectorAll('.g1-input')].map(i=>i.value.trim()).filter(Boolean);
   const g2s=[...document.querySelectorAll('.g2-input')].map(i=>i.value).filter(Boolean);
   document.getElementById('summaryCard').innerHTML=
     '<div class="section-title">Resumen / Summary</div><table class="summary-table">'+
@@ -1955,9 +1985,16 @@ function restoreProgress(){
         <div class="grado-section"><div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div><div class="grado-body g1-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div></div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g1-series-body');
-        const seriesG1=(bl.series||[]).filter(s=>s&&s.trim());
-        const toRG1=seriesG1.length?seriesG1:[''];
-        toRG1.forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+        const seriesG1=(bl.series||[]).filter(s=>s&&(typeof s==='object'?s.serie:s));
+        const toRG1=seriesG1.length?seriesG1:[{serie:'',defecto:''}];
+        toRG1.forEach(sv=>{
+          const val=typeof sv==='object'?sv.serie:sv;
+          const def=typeof sv==='object'?sv.defecto:'';
+          const sr=document.createElement('div');sr.className='serie-input-row';
+          sr.innerHTML=`<input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')" value="${val}"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
+          if(def){const sel=sr.querySelector('.serie-defecto-sel');if(sel)sel.value=def;}
+          seriesBody.appendChild(sr);
+        });
         const cntG1=div.querySelector('.serie-counter');if(cntG1)cntG1.textContent=seriesG1.length+(seriesG1.length===1?' escaneada':' escaneadas');
       });
     }
@@ -1974,9 +2011,16 @@ function restoreProgress(){
         <div class="grado-section"><div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div><div class="grado-body g2-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div></div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g2-series-body');
-        const seriesG2=(bl.series||[]).filter(s=>s&&s.trim());
-        const toRG2=seriesG2.length?seriesG2:[''];
-        toRG2.forEach(sv=>{const sr=document.createElement('div');sr.className='serie-input-row';sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')" value="${sv}"><button class="serie-del" onclick="delSerie(this)">×</button>`;seriesBody.appendChild(sr);});
+        const seriesG2=(bl.series||[]).filter(s=>s&&(typeof s==='object'?s.serie:s));
+        const toRG2=seriesG2.length?seriesG2:[{serie:'',defecto:''}];
+        toRG2.forEach(sv=>{
+          const val=typeof sv==='object'?sv.serie:sv;
+          const def=typeof sv==='object'?sv.defecto:'';
+          const sr=document.createElement('div');sr.className='serie-input-row';
+          sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')" value="${val}"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
+          if(def){const sel=sr.querySelector('.serie-defecto-sel');if(sel)sel.value=def;}
+          seriesBody.appendChild(sr);
+        });
         const cntG2=div.querySelector('.serie-counter');if(cntG2)cntG2.textContent=seriesG2.length+(seriesG2.length===1?' escaneada':' escaneadas');
       });
     }
@@ -2116,7 +2160,7 @@ function exportToExcel(){
     const inspector=document.getElementById('inspNombre').value||'—';
     const estadoCont=document.querySelector('input[name="estadoCont"]:checked')?.value||'—';
     const completo=document.querySelector('input[name="completo"]:checked')?.value||'—';
-    const g1s=[...document.querySelectorAll('.g1-input')].map(i=>i.value).filter(Boolean);
+    const g1s=[...document.querySelectorAll('.g1-input')].map(i=>i.value.trim()).filter(Boolean);
     const g2s=[...document.querySelectorAll('.g2-input')].map(i=>i.value).filter(Boolean);
     const g1Qty=document.getElementById('g1Qty').value||'0';
     const g2Qty=document.getElementById('g2Qty').value||'0';
@@ -2363,23 +2407,22 @@ async function appendRowToGoogleSheet(){
   const almacen = V('almacen');
   // ── Col F: N° CONTENEDOR ──
   const contenedor = V('contenedor');
-  // ── Col G: COND. EXTERIOR — solo ítems defectuosos marcados SÍ (excl. "Limpio") ──
-  // Los ítems del checklist son defectos cuando se marcan SÍ (excepto "Limpio" que es el último)
+  // ── Col G: DEFECTOS EXTERIOR — nombres cortos, solo defectos marcados SÍ ──
   const extDefectosArr = CHECKLIST_EXT.filter((it,i)=>
     checklistExt[i]==='SI' && it.es !== 'Limpio'
-  ).map(it=>it.es);
+  ).map(it=> EXT_CORTO[it.es] || it.es);
   const obsExt = V('obsEstadoCont');
   const condExt = extDefectosArr.length > 0
     ? extDefectosArr.join(', ') + (obsExt ? ' | '+obsExt : '')
-    : (obsExt || 'Sin defectos');
-  // ── Col H: COND. INTERIOR — solo ítems defectuosos marcados SÍ (excl. "Limpio") ──
+    : 'Sin defectos';
+  // ── Col H: DEFECTOS INTERIOR — nombres cortos, solo defectos marcados SÍ ──
   const intDefectosArr = CHECKLIST_INT.filter((it,i)=>
     checklistInt[i]==='SI' && it.es !== 'Limpio'
-  ).map(it=>it.es);
+  ).map(it=> INT_CORTO[it.es] || it.es);
   const obsInt = V('obsInterna');
   const condInt = intDefectosArr.length > 0
     ? intDefectosArr.join(', ') + (obsInt ? ' | '+obsInt : '')
-    : (obsInt || 'Sin defectos');
+    : 'Sin defectos';
   // ── Col I: CÓDIGO (inventario — todos los códigos) ──
   const codigos = [];
   document.querySelectorAll('#inventBody tr').forEach(row=>{
@@ -2742,7 +2785,7 @@ function generateReport(){
   const sigAlm=document.getElementById('sigAlmacen').toDataURL('image/png');
   const sigCal=document.getElementById('sigCalidad').toDataURL('image/png');
   const totalFotos=Object.keys(photoStore).length;
-  const g1s=[...document.querySelectorAll('.g1-input')].map(i=>i.value).filter(Boolean);
+  const g1s=[...document.querySelectorAll('.g1-input')].map(i=>i.value.trim()).filter(Boolean);
   const g2s=[...document.querySelectorAll('.g2-input')].map(i=>i.value).filter(Boolean);
   const g1TipoDano=V('g1TipoDano'),g2TipoDano=V('g2TipoDano');
   const g1Qty=V('g1Qty'),g2Qty=V('g2Qty');
@@ -2856,8 +2899,26 @@ ${(()=>{
       const bgColor=grade==='G2'||isg2?'#FEF9EC':'#EBF4FF';
       const txColor=grade==='G2'||isg2?'#92400E':'#1E40AF';
       dmgH+=`<tr><td style="padding:8px;border:1px solid #E2E8F0;background:${bgColor};font-weight:700;color:${txColor}">${grade}</td><td style="padding:8px;border:1px solid #E2E8F0;font-family:monospace">${code}</td><td style="padding:8px;border:1px solid #E2E8F0">${tipo}</td><td style="padding:8px;border:1px solid #E2E8F0;text-align:center">${qty}</td><td style="padding:8px;border:1px solid #E2E8F0;text-align:center">${uds}</td><td style="padding:8px;border:1px solid #E2E8F0;font-size:12px">${detail}</td></tr>`;
-      const series=[...bl.querySelectorAll('[class*="-input"].serie-input')].map(i=>i.value).filter(Boolean);
-      if(series.length){dmgH+=`<tr><td colspan="6" style="padding:8px;border:1px solid #E2E8F0;background:#F8FAFC"><span style="font-size:11px;font-weight:700;color:${txColor}">Serials / Series:</span> ${series.map(s=>`<span style="font-family:monospace;font-size:12px;background:${bgColor};color:${txColor};border-radius:6px;padding:3px 7px;display:inline-block;margin:2px">${s}</span>`).join('')}</td></tr>`;}
+      // Tabla Serie | Defecto por bloque
+      const seriesDef=[...bl.querySelectorAll('.serie-input-row')].map(row=>{
+        const v=row.querySelector('.serie-input')?.value.trim()||'';
+        const d=row.querySelector('.serie-defecto-sel')?.value||'—';
+        return v?{serie:v,defecto:d}:null;
+      }).filter(Boolean);
+      if(seriesDef.length){
+        dmgH+=`<tr><td colspan="6" style="padding:8px;border:1px solid #E2E8F0;background:#F8FAFC">
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <tr style="background:${bgColor}">
+              <th style="padding:4px 8px;border:1px solid #E2E8F0;text-align:left;color:${txColor}">Serie / Serial</th>
+              <th style="padding:4px 8px;border:1px solid #E2E8F0;text-align:left;color:${txColor}">Defecto / Damage</th>
+            </tr>
+            ${seriesDef.map((s,i)=>`<tr style="background:${i%2===0?'white':'#F8FAFC'}">
+              <td style="padding:4px 8px;border:1px solid #E2E8F0;font-family:monospace;font-size:12px">${s.serie}</td>
+              <td style="padding:4px 8px;border:1px solid #E2E8F0;color:${s.defecto==='—'?'#94A3B8':txColor};font-weight:${s.defecto==='—'?'400':'600'}">${s.defecto}</td>
+            </tr>`).join('')}
+          </table>
+        </td></tr>`;
+      }
     });
     dmgH+='</tbody></table>';
   }
