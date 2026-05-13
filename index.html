@@ -457,6 +457,12 @@ window.onerror = function(msg, src, line, col, err) {
           <label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(Ej: "5000 piezas pequeñas por caja master")</span></label>
           <input class="g1-detail-input" type="text" placeholder="Descripción del contenido...">
         </div>
+        <!-- FOTOS DEL DEFECTO — visibles antes de las series -->
+        <div style="margin-bottom:10px;background:#EBF4FF;border:1.5px solid #BFDBFE;border-radius:12px;padding:12px">
+          <div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g1-foto-count" style="background:#1E40AF;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div>
+          <div class="g1-fotos-section"></div>
+          <button class="btn-add-photo" onclick="addFotoBloque(this,'g1')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G1</button>
+        </div>
         <div class="grado-section">
           <div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center">
             <span>📦 Números de serie G1 / Serial numbers</span>
@@ -471,13 +477,6 @@ window.onerror = function(msg, src, line, col, err) {
           <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
             <button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button>
           </div>
-        </div>
-        <!-- FOTOS DEL DEFECTO vinculadas a este bloque G1 -->
-        <div style="margin-top:10px;background:#F8FAFC;border:1px solid #BFDBFE;border-radius:12px;padding:12px">
-          <div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">📷 Fotos del defecto / Evidence photos</div>
-          <div class="photo-count-badge" style="margin-bottom:6px">Fotos: <span class="cnt g1-foto-count">0</span></div>
-          <div class="g1-fotos-section"></div>
-          <button class="btn-add-photo" onclick="addFotoBloque(this,'g1')" style="font-size:12px;padding:8px 12px">📷 + Foto de evidencia G1</button>
         </div>
       </div>
     </div>
@@ -541,6 +540,12 @@ window.onerror = function(msg, src, line, col, err) {
           <label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(Ej: "5000 piezas pequeñas por caja master")</span></label>
           <input class="g2-detail-input" type="text" placeholder="Descripción del contenido...">
         </div>
+        <!-- FOTOS DEL DEFECTO G2 — visibles antes de las series -->
+        <div style="margin-bottom:10px;background:#FEF9EC;border:1.5px solid #FCD34D;border-radius:12px;padding:12px">
+          <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g2-foto-count" style="background:#92400E;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div>
+          <div class="g2-fotos-section"></div>
+          <button class="btn-add-photo" onclick="addFotoBloque(this,'g2')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G2</button>
+        </div>
         <div class="grado-section">
           <div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center">
             <span>🔴 Números de serie G2 / Serial numbers</span>
@@ -555,13 +560,6 @@ window.onerror = function(msg, src, line, col, err) {
           <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
             <button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button>
           </div>
-        </div>
-        <!-- FOTOS DEL DEFECTO vinculadas a este bloque G2 -->
-        <div style="margin-top:10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px">
-          <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">📷 Fotos del defecto / Evidence photos</div>
-          <div class="photo-count-badge" style="margin-bottom:6px">Fotos: <span class="cnt g2-foto-count">0</span></div>
-          <div class="g2-fotos-section"></div>
-          <button class="btn-add-photo" onclick="addFotoBloque(this,'g2')" style="font-size:12px;padding:8px 12px">📷 + Foto de evidencia G2</button>
         </div>
       </div>
     </div>
@@ -1241,12 +1239,11 @@ function addFotoBloque(btn, grade){
   const fullKey = ns+':'+key;
 
   // Buscar o crear el grid de fotos
-  let grid = btn.previousElementSibling.previousElementSibling;
-  if(!grid || !grid.classList.contains('bloque-foto-grid')){
-    grid = document.createElement('div');
-    grid.className = 'bloque-foto-grid';
-    btn.parentNode.insertBefore(grid, btn.previousElementSibling);
-  }
+  // Buscar la sección de fotos del bloque y su grid
+  const fotoSec = block.querySelector(grade==='g1'?'.g1-fotos-section':'.g2-fotos-section');
+  if(!fotoSec) return;
+  let grid = fotoSec.querySelector('.bloque-foto-grid');
+  if(!grid){ grid=document.createElement('div'); grid.className='bloque-foto-grid'; fotoSec.appendChild(grid); }
 
   // Crear slot grande
   const slot = document.createElement('div');
@@ -1982,6 +1979,7 @@ function restoreProgress(){
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
         <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
+        <div style="margin-bottom:10px;background:#EBF4FF;border:1.5px solid #BFDBFE;border-radius:12px;padding:12px"><div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g1-foto-count" style="background:#1E40AF;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div><div class="g1-fotos-section"></div><button class="btn-add-photo" onclick="addFotoBloque(this,'g1')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G1</button></div>
         <div class="grado-section"><div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div><div class="grado-body g1-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div></div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g1-series-body');
@@ -2008,6 +2006,7 @@ function restoreProgress(){
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
         <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..." value="${bl.detail||''}"></div>
+        <div style="margin-bottom:10px;background:#FEF9EC;border:1.5px solid #FCD34D;border-radius:12px;padding:12px"><div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g2-foto-count" style="background:#92400E;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div><div class="g2-fotos-section"></div><button class="btn-add-photo" onclick="addFotoBloque(this,'g2')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G2</button></div>
         <div class="grado-section"><div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div><div class="grado-body g2-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div></div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g2-series-body');
@@ -2025,7 +2024,7 @@ function restoreProgress(){
       });
     }
     // Restaurar fotos de bloques G1/G2 (g1_blk_N:fN, g2_blk_N:fN)
-    Object.keys(photoStore).filter(k=>k.match(/^g[12]_blk_\d+:f\d+$/)).forEach(fullKey=>{
+    Object.keys(photoStore).filter(k=>/^g[12]_blk_\d+:f\d+$/.test(k)).forEach(fullKey=>{
       const[ns,key]=fullKey.split(':');
       const blockIdx=ns.split('_blk_')[1];
       const grade=ns.startsWith('g1')?'g1':'g2';
