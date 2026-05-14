@@ -1113,7 +1113,7 @@ function serieAutoAdvance(input, cls){
     if(!body) return;
     const newRow = document.createElement('div');
     newRow.className = 'serie-input-row';
-    newRow.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
+    newRow.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
     body.appendChild(newRow);
     newRow.querySelector('input').focus();
     saveNow(); // Guardar al terminar el escaneo completo
@@ -1140,7 +1140,7 @@ function addSerieRow(bodyId, cls){
   if(!body) return;
   const row = document.createElement('div');
   row.className = 'serie-input-row';
-  row.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
+  row.innerHTML = `<input type="text" class="serie-input ${cls}" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${cls}')" onkeydown="serieEnterNav(event,this,'${cls}')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
   body.appendChild(row);
 }
 
@@ -1349,7 +1349,7 @@ function addG1Block(){
   <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g1-detail-input" type="text" placeholder="Descripción del contenido..."></div>
   <div class="grado-section">
     <div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
-    <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
+    <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
     <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div>
   </div>
   <div style="margin-top:10px;background:#F8FAFC;border:1px solid #BFDBFE;border-radius:12px;padding:12px">
@@ -1380,7 +1380,7 @@ function addG2Block(){
   <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g2-detail-input" type="text" placeholder="Descripción del contenido..."></div>
   <div class="grado-section">
     <div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
-    <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
+    <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
     <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div>
   </div>
   <div style="margin-top:10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px">
@@ -1989,7 +1989,7 @@ function restoreProgress(){
           const val=typeof sv==='object'?sv.serie:sv;
           const def=typeof sv==='object'?sv.defecto:'';
           const sr=document.createElement('div');sr.className='serie-input-row';
-          sr.innerHTML=`<input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')" value="${val}"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
+          sr.innerHTML=`<input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')" value="${val}"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
           if(def){const sel=sr.querySelector('.serie-defecto-sel');if(sel)sel.value=def;}
           seriesBody.appendChild(sr);
         });
@@ -2016,7 +2016,7 @@ function restoreProgress(){
           const val=typeof sv==='object'?sv.serie:sv;
           const def=typeof sv==='object'?sv.defecto:'';
           const sr=document.createElement('div');sr.className='serie-input-row';
-          sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')" value="${val}"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
+          sr.innerHTML=`<input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')" value="${val}"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button>`;
           if(def){const sel=sr.querySelector('.serie-defecto-sel');if(sel)sel.value=def;}
           seriesBody.appendChild(sr);
         });
@@ -2112,7 +2112,54 @@ async function recoverPhotosFromDB(){
         const slot=makeSlot(ns,k,null,'Foto extra',true);grid.appendChild(slot);}
       }
     });
-    Object.keys(photoStore).forEach(key=>{const[ns,k]=key.split(':');const slot=document.querySelector('[data-ns="'+ns+'"][data-key="'+k+'"]');if(slot){let img=slot.querySelector('img');if(!img){img=document.createElement('img');slot.insertBefore(img,slot.firstChild);}img.src=photoStore[key];slot.classList.add('has-photo');if(!slot.querySelector('.check-badge')){const chk=document.createElement('div');chk.className='check-badge';chk.textContent='✓';slot.appendChild(chk);}}});
+    // Restaurar fotos estándar (ext, ap, desc, etc.)
+    Object.keys(photoStore).forEach(key=>{
+      const[ns,k]=key.split(':');
+      // Skip bloque photos — handled below
+      if(ns.match(/^g[12]_blk_/)) return;
+      const slot=document.querySelector('[data-ns="'+ns+'"][data-key="'+k+'"]');
+      if(slot){
+        let img=slot.querySelector('img');
+        if(!img){img=document.createElement('img');slot.insertBefore(img,slot.firstChild);}
+        img.src=photoStore[key];
+        slot.classList.add('has-photo');
+        if(!slot.querySelector('.check-badge')){const chk=document.createElement('div');chk.className='check-badge';chk.textContent='✓';slot.appendChild(chk);}
+      }
+    });
+    // Restaurar fotos de bloques G1/G2 (g1_blk_N:fN, g2_blk_N:fN)
+    Object.keys(photoStore).filter(k=>/^g[12]_blk_\d+:f\d+$/.test(k)).forEach(fullKey=>{
+      const[ns,key]=fullKey.split(':');
+      const blockIdx=ns.split('_blk_')[1];
+      const grade=ns.startsWith('g1')?'g1':'g2';
+      const block=document.querySelector('.'+grade+'-codigo-block[data-idx="'+blockIdx+'"]');
+      if(!block) return;
+      const fotoSec=block.querySelector('.'+grade+'-fotos-section');
+      if(!fotoSec) return;
+      // Check if slot already exists
+      if(document.querySelector('[data-ns="'+ns+'"][data-key="'+key+'"]')) return;
+      let grid=fotoSec.querySelector('.bloque-foto-grid');
+      if(!grid){grid=document.createElement('div');grid.className='bloque-foto-grid';fotoSec.appendChild(grid);}
+      const slot=document.createElement('div');
+      slot.className='bloque-foto-slot has-photo';
+      slot.dataset.ns=ns;slot.dataset.key=key;
+      const img=document.createElement('img');img.src=photoStore[fullKey];
+      slot.appendChild(img);
+      const rm=document.createElement('button');rm.className='rm-btn';rm.innerHTML='×';
+      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];slot.remove();saveProgress();};
+      slot.appendChild(rm);
+      slot.addEventListener('click',(e)=>{
+        if(e.target===rm)return;
+        if(photoStore[fullKey]){
+          const allP=Object.keys(photoStore).filter(k=>k.startsWith(ns+':')).map(k=>({fullKey:k,ns,key:k.split(':')[1],src:photoStore[k],slotEl:document.querySelector('[data-ns="'+ns+'"][data-key="'+k.split(':')[1]+'"]'),block,grade}));
+          const idx=allP.findIndex(p=>p.fullKey===fullKey);
+          openFotoViewer(allP,idx>=0?idx:0);
+        }
+      });
+      grid.appendChild(slot);
+      // Update counter
+      const cnt=block.querySelector('.'+grade+'-foto-count');
+      if(cnt) cnt.textContent=String(grid.querySelectorAll('.bloque-foto-slot').length);
+    });
     updateCounts();
     const av=document.createElement('div');av.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#059669;color:white;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);white-space:nowrap';av.innerHTML='📸 '+restored+' foto(s) recuperada(s) del respaldo';document.body.appendChild(av);setTimeout(()=>av.remove(),4000);
   }
@@ -2916,6 +2963,19 @@ ${(()=>{
               <td style="padding:4px 8px;border:1px solid #E2E8F0;color:${s.defecto==='—'?'#94A3B8':txColor};font-weight:${s.defecto==='—'?'400':'600'}">${s.defecto}</td>
             </tr>`).join('')}
           </table>
+        </td></tr>`;
+      }
+      // Fotos de evidencia del bloque
+      const blkIdx=bl.dataset.idx||'0';
+      const gradePrefix=bl.classList.contains('g1-codigo-block')?'g1':'g2';
+      const ns=gradePrefix+'_blk_'+blkIdx;
+      const blkPhotos=Object.keys(photoStore).filter(k=>k.startsWith(ns+':')).map(k=>photoStore[k]).filter(Boolean);
+      if(blkPhotos.length){
+        dmgH+=`<tr><td colspan="6" style="padding:8px;border:1px solid #E2E8F0;background:white">
+          <div style="font-size:11px;font-weight:700;color:${txColor};margin-bottom:6px">📷 Fotos de evidencia del defecto (${blkPhotos.length}):</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${blkPhotos.map(src=>`<img src="${src}" style="width:180px;height:135px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0">`).join('')}
+          </div>
         </td></tr>`;
       }
     });
