@@ -3097,16 +3097,22 @@ ${(()=>{
     }
   });
   const totalCodigos=g1Codigos+g2Codigos;
-  // Color del resultado
-  const resColor=estadoCont==='Aceptado'?'#16a34a':estadoCont==='Tolerado'?'#f59e0b':estadoCont==='Rechazado'?'#dc2626':'#64748b';
-  const resBg=estadoCont==='Aceptado'?'#dcfce7':estadoCont==='Tolerado'?'#fef3c7':estadoCont==='Rechazado'?'#fee2e2':'#f1f5f9';
+  // Resultado de la mercadería (independiente del estado del contenedor)
+  let mercaResult,resColor,resBg;
+  if(g2Series>0){
+    mercaResult='Con Rechazo'; resColor='#dc2626'; resBg='#fee2e2';
+  } else if(g1Series>0){
+    mercaResult='Con Observaciones'; resColor='#f59e0b'; resBg='#fef3c7';
+  } else {
+    mercaResult='Conforme'; resColor='#16a34a'; resBg='#dcfce7';
+  }
   // Hallazgo: 1ra oración de obsGenerales, o auto-generada
   let hallazgo='';
   if(obsGenerales&&obsGenerales!=='—'){
     const firstSentence=obsGenerales.split(/[.!?]/)[0].trim();
     hallazgo=firstSentence.length>180?firstSentence.substring(0,180)+'…':firstSentence;
   } else if(totalCodigos>0){
-    hallazgo=`Se detectaron ${totalCodigos} código(s) con observaciones — ${g1Series} serie(s) G1 y ${g2Series} serie(s) G2. Ver detalle en sección 8.`;
+    hallazgo=`Se detectaron ${totalCodigos} código(s) con observaciones — ${g1Series} serie(s) G1 y ${g2Series} serie(s) G2. Ver detalle en sección 8 y consolidado en sección 9.`;
   } else {
     hallazgo='Inspección sin observaciones de daños. Contenedor recibido en condiciones esperadas.';
   }
@@ -3114,8 +3120,8 @@ ${(()=>{
     <div class="exec-hdr">📋 Resumen Ejecutivo / Executive Summary</div>
     <div class="exec-body">
       <div class="exec-result" style="background:${resBg};border-left:4px solid ${resColor}">
-        <div class="exec-result-lbl">Resultado / Result</div>
-        <div class="exec-result-val" style="color:${resColor}">${estadoCont}</div>
+        <div class="exec-result-lbl">Estado de Mercadería / Cargo Status</div>
+        <div class="exec-result-val" style="color:${resColor}">${mercaResult}</div>
       </div>
       <div class="exec-stats">
         <div class="stat-cell"><span class="stat-lbl">Series Grado 1</span><span class="stat-val" style="color:#1e40af">${g1Series}</span></div>
@@ -3204,7 +3210,48 @@ ${inventH?`<div class="section">
   <table class="inv-table"><thead><tr><th>Código / Code</th><th style="width:70px;text-align:center">Cant. Lote</th><th style="width:70px;text-align:center">Uds/Caja</th><th style="width:80px;text-align:center">Muestra QC</th></tr></thead><tbody>${inventH}</tbody></table>
 </div>`:''}
 
-<!-- 8. RESUMEN DE DEFECTOS POR CÓDIGO -->
+<!-- 8. DETALLE DE DAÑOS (G1+G2, series con defectos traducidos + fotos de evidencia) -->
+${(()=>{
+  const allBlocks=[...document.querySelectorAll('.g1-codigo-block'),...document.querySelectorAll('.g2-codigo-block')];
+  // Filtrar bloques realmente con contenido
+  const filledBlocks=allBlocks.filter(bl=>{
+    const code=bl.querySelector('[class*="code-input"]')?.value||'';
+    const grade=bl.querySelector('[class*="grado-select"]')?.value||'';
+    const tipo=bl.querySelector('[class*="tipo-select"]')?.value||'';
+    const series=[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
+    return code||grade||tipo||series>0;
+  });
+  if(!filledBlocks.length) return '';
+  let dmgH='<div class="section"><div class="sec-title"><span class="num">8</span> Detalle de Daños Observados / Damage Details</div>';
+  dmgH+='<table class="dmg-table"><thead><tr><th style="width:42px;text-align:center">Grado</th><th>Código / Code</th><th>Tipo de Daño</th><th style="width:42px;text-align:center">Cant.</th><th style="width:52px;text-align:center">Uds.</th><th>Detalle</th></tr></thead><tbody>';
+  filledBlocks.forEach(bl=>{
+    const isg2=bl.classList.contains('g2-codigo-block');
+    const code=bl.querySelector('[class*="code-input"]')?.value||'—';
+    const grade=bl.querySelector('[class*="grado-select"]')?.value||'—';
+    const tipo=bl.querySelector('[class*="tipo-select"]')?.value||'—';
+    const qty=bl.querySelector('[class*="qty-input"]')?.value||'—';
+    const uds=bl.querySelector('[class*="uds-input"]')?.value||'—';
+    const detail=bl.querySelector('[class*="detail-input"]')?.value||'—';
+    const gradeCls=grade==='G2'||isg2?'grade-g2':'grade-g1';
+    dmgH+='<tr><td class="'+gradeCls+'">'+grade+'</td><td style="font-family:monospace">'+code+'</td><td>'+tipo+'</td><td style="text-align:center">'+qty+'</td><td style="text-align:center">'+uds+'</td><td style="font-size:8pt">'+(detail||'—')+'</td></tr>';
+    const seriesDef=[...bl.querySelectorAll('.serie-input-row')].map(row=>{const v=row.querySelector('.serie-input')?.value.trim()||'';const d=row.querySelector('.serie-defecto-sel')?.value||'';return v?{serie:v,defecto:d}:null;}).filter(Boolean);
+    if(seriesDef.length){
+      dmgH+='<tr><td colspan="6" style="padding:4px 8px;background:#f7f9fc"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Series / Serials:</div><table style="width:100%;border-collapse:collapse;font-size:8pt"><tr style="background:#e8eef5"><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Serie / Serial</th><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Defecto / Damage</th></tr>'+seriesDef.map((s,i)=>{const en=DEFECTO_EN[s.defecto]||'';const defText=(!s.defecto||s.defecto==='—')?'—':(en?s.defecto+' <span style="color:#94a3b8;font-style:italic;font-size:7.5pt">/ '+en+'</span>':s.defecto);return '<tr style="background:'+(i%2===0?'#fff':'#f7f9fc')+'"><td style="padding:3px 6px;border:1px solid #c9d4e0;font-family:monospace">'+s.serie+'</td><td style="padding:3px 6px;border:1px solid #c9d4e0">'+defText+'</td></tr>';}).join('')+'</table></td></tr>';
+    }
+    // Fotos del bloque
+    const blkIdx=bl.dataset.idx||'0';
+    const gradePrefix=bl.classList.contains('g1-codigo-block')?'g1':'g2';
+    const ns=gradePrefix+'_blk_'+blkIdx;
+    const blkPhotos=Object.keys(photoStore).filter(k=>k.startsWith(ns+':')).map(k=>photoStore[k]).filter(Boolean);
+    if(blkPhotos.length){
+      dmgH+='<tr><td colspan="6" style="padding:5px 8px;background:#fff"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Fotos de evidencia ('+blkPhotos.length+'):</div><div class="photo-grid-evidence">'+blkPhotos.map(src=>'<div class="photo-cell"><div class="ph"><img src="'+src+'"></div></div>').join('')+'</div></td></tr>';
+    }
+  });
+  dmgH+='</tbody></table></div>';
+  return dmgH;
+})()}
+
+<!-- 9. CONSOLIDADO DE DEFECTOS POR CÓDIGO -->
 ${(()=>{
   // Construir mapa de defectos por código: {codigo: {g1, g2, ...}}
   const defMap={};
@@ -3242,7 +3289,7 @@ ${(()=>{
     if(aHasG2!==bHasG2) return bHasG2-aHasG2;
     return b.total-a.total;
   });
-  let html='<div class="section"><div class="sec-title"><span class="num">8</span> Resumen de Defectos / Damage Summary</div>';
+  let html='<div class="section"><div class="sec-title"><span class="num">9</span> Consolidado de Defectos / Damage Consolidation</div>';
   html+='<table class="resumen-defectos"><thead><tr>';
   html+='<th style="width:6px;padding:0;background:#1a3a5c"></th>';
   html+='<th>Código / Code</th>';
@@ -3274,47 +3321,6 @@ ${(()=>{
   html+='</div>';
   html+='</div>';
   return html;
-})()}
-
-<!-- 9. DETALLE DE DAÑOS (G1+G2, series con defectos traducidos + fotos de evidencia) -->
-${(()=>{
-  const allBlocks=[...document.querySelectorAll('.g1-codigo-block'),...document.querySelectorAll('.g2-codigo-block')];
-  // Filtrar bloques realmente con contenido
-  const filledBlocks=allBlocks.filter(bl=>{
-    const code=bl.querySelector('[class*="code-input"]')?.value||'';
-    const grade=bl.querySelector('[class*="grado-select"]')?.value||'';
-    const tipo=bl.querySelector('[class*="tipo-select"]')?.value||'';
-    const series=[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
-    return code||grade||tipo||series>0;
-  });
-  if(!filledBlocks.length) return '';
-  let dmgH='<div class="section"><div class="sec-title"><span class="num">9</span> Detalle de Daños Observados / Damage Details</div>';
-  dmgH+='<table class="dmg-table"><thead><tr><th style="width:42px;text-align:center">Grado</th><th>Código / Code</th><th>Tipo de Daño</th><th style="width:42px;text-align:center">Cant.</th><th style="width:52px;text-align:center">Uds.</th><th>Detalle</th></tr></thead><tbody>';
-  filledBlocks.forEach(bl=>{
-    const isg2=bl.classList.contains('g2-codigo-block');
-    const code=bl.querySelector('[class*="code-input"]')?.value||'—';
-    const grade=bl.querySelector('[class*="grado-select"]')?.value||'—';
-    const tipo=bl.querySelector('[class*="tipo-select"]')?.value||'—';
-    const qty=bl.querySelector('[class*="qty-input"]')?.value||'—';
-    const uds=bl.querySelector('[class*="uds-input"]')?.value||'—';
-    const detail=bl.querySelector('[class*="detail-input"]')?.value||'—';
-    const gradeCls=grade==='G2'||isg2?'grade-g2':'grade-g1';
-    dmgH+='<tr><td class="'+gradeCls+'">'+grade+'</td><td style="font-family:monospace">'+code+'</td><td>'+tipo+'</td><td style="text-align:center">'+qty+'</td><td style="text-align:center">'+uds+'</td><td style="font-size:8pt">'+(detail||'—')+'</td></tr>';
-    const seriesDef=[...bl.querySelectorAll('.serie-input-row')].map(row=>{const v=row.querySelector('.serie-input')?.value.trim()||'';const d=row.querySelector('.serie-defecto-sel')?.value||'';return v?{serie:v,defecto:d}:null;}).filter(Boolean);
-    if(seriesDef.length){
-      dmgH+='<tr><td colspan="6" style="padding:4px 8px;background:#f7f9fc"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Series / Serials:</div><table style="width:100%;border-collapse:collapse;font-size:8pt"><tr style="background:#e8eef5"><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Serie / Serial</th><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Defecto / Damage</th></tr>'+seriesDef.map((s,i)=>{const en=DEFECTO_EN[s.defecto]||'';const defText=(!s.defecto||s.defecto==='—')?'—':(en?s.defecto+' <span style="color:#94a3b8;font-style:italic;font-size:7.5pt">/ '+en+'</span>':s.defecto);return '<tr style="background:'+(i%2===0?'#fff':'#f7f9fc')+'"><td style="padding:3px 6px;border:1px solid #c9d4e0;font-family:monospace">'+s.serie+'</td><td style="padding:3px 6px;border:1px solid #c9d4e0">'+defText+'</td></tr>';}).join('')+'</table></td></tr>';
-    }
-    // Fotos del bloque
-    const blkIdx=bl.dataset.idx||'0';
-    const gradePrefix=bl.classList.contains('g1-codigo-block')?'g1':'g2';
-    const ns=gradePrefix+'_blk_'+blkIdx;
-    const blkPhotos=Object.keys(photoStore).filter(k=>k.startsWith(ns+':')).map(k=>photoStore[k]).filter(Boolean);
-    if(blkPhotos.length){
-      dmgH+='<tr><td colspan="6" style="padding:5px 8px;background:#fff"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Fotos de evidencia ('+blkPhotos.length+'):</div><div class="photo-grid-evidence">'+blkPhotos.map(src=>'<div class="photo-cell"><div class="ph"><img src="'+src+'"></div></div>').join('')+'</div></td></tr>';
-    }
-  });
-  dmgH+='</tbody></table></div>';
-  return dmgH;
 })()}
 
 <!-- 9. OBSERVACIONES GENERALES + adicionales -->
