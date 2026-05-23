@@ -2035,7 +2035,7 @@ function restoreProgress(){
       data.g1Bloques.forEach((bl,bi)=>{
         g1BlockCount++;const div=document.createElement('div');div.className='card g1-codigo-block';div.dataset.idx=g1BlockCount;
         div.innerHTML=`<div class="section-title">Código #${g1BlockCount} / Code #${g1BlockCount} &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
-        <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" value="${bl.codigo||''}"><span class="scan-icon">⬛</span></div></div>
+        <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase" value="${(bl.codigo||'').toUpperCase()}"><span class="scan-icon">⬛</span></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
         <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g1-detail-input" type="text" placeholder="Ej: cajas mal estibadas en origen" value="${bl.detail||''}"></div>
@@ -2062,7 +2062,7 @@ function restoreProgress(){
       data.g2Bloques.forEach((bl,bi)=>{
         g2BlockCount++;const div=document.createElement('div');div.className='card g2-codigo-block';div.dataset.idx=g2BlockCount;
         div.innerHTML=`<div class="section-title">Código #${g2BlockCount} / Code #${g2BlockCount} &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
-        <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" value="${bl.codigo||''}"><span class="scan-icon">⬛</span></div></div>
+        <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase" value="${(bl.codigo||'').toUpperCase()}"><span class="scan-icon">⬛</span></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
         <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
         <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g2-detail-input" type="text" placeholder="Ej: golpe severo durante descarga" value="${bl.detail||''}"></div>
@@ -3000,13 +3000,13 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 .grade-g1{background:#dbeafe;color:#1e40af;font-weight:800;text-align:center}
 .grade-g2{background:#fef3c7;color:#92400e;font-weight:800;text-align:center}
 /* FOTOS — sin recortar, fondo blanco, altura mayor */
-.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:5px}
-.photo-cell{border:1px solid #c9d4e0;padding:3px;background:#fff;display:flex;flex-direction:column}
-.photo-cell .ph{width:100%;height:120px;display:flex;align-items:center;justify-content:center;background:#f7f9fc;overflow:hidden}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:5px}
+.photo-cell{border:1px solid #c9d4e0;padding:4px;background:#fff;display:flex;flex-direction:column}
+.photo-cell .ph{width:100%;height:165px;display:flex;align-items:center;justify-content:center;background:#f7f9fc;overflow:hidden}
 .photo-cell .ph img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
-.photo-cell .cap{font-size:7.5pt;color:#475569;text-align:center;padding:3px 0 1px;font-weight:600}
-.photo-grid-evidence{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:5px}
-.photo-grid-evidence .photo-cell .ph{height:110px}
+.photo-cell .cap{font-size:8pt;color:#475569;text-align:center;padding:4px 0 2px;font-weight:600}
+.photo-grid-evidence{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:5px}
+.photo-grid-evidence .photo-cell .ph{height:145px}
 /* OBSERVACIONES */
 .obs-list{width:100%;border-collapse:collapse;border:1px solid #1a3a5c;font-size:8.5pt}
 .obs-list th{background:#1a3a5c;color:#fff;padding:4px 7px;text-align:left;font-size:8pt;font-weight:700}
@@ -3206,7 +3206,7 @@ ${(()=>{
   // Construir mapa de defectos por código: {codigo: {g1, g2, ...}}
   const defMap={};
   const procesar=(bl,defaultGrado)=>{
-    const code=(bl.querySelector('[class*="code-input"]')?.value||'').trim();
+    const code=(bl.querySelector('[class*="code-input"]')?.value||'').trim().toUpperCase();
     if(!code) return;
     const grado=bl.querySelector('[class*="grado-select"]')?.value||defaultGrado;
     const series=[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
@@ -3217,19 +3217,19 @@ ${(()=>{
   };
   document.querySelectorAll('.g1-codigo-block').forEach(bl=>procesar(bl,'G1'));
   document.querySelectorAll('.g2-codigo-block').forEach(bl=>procesar(bl,'G2'));
-  // Mapa de cantidades del inventario por código
+  // Mapa de cantidades del inventario por código (normalizado a UPPER+trim)
   const lotMap={};
   document.querySelectorAll('#inventBody tr').forEach(row=>{
     const cells=row.querySelectorAll('input');
     if(cells.length>=2){
-      const c=(cells[0]?.value||'').trim();
+      const c=(cells[0]?.value||'').trim().toUpperCase();
       const q=parseInt(cells[1]?.value)||0;
       if(c) lotMap[c]=q;
     }
   });
   const rows=Object.keys(defMap).map(code=>({
     code, g1:defMap[code].g1, g2:defMap[code].g2,
-    lote:lotMap[code]||0,
+    lote:lotMap[code.toUpperCase()]||0,
     total:defMap[code].g1+defMap[code].g2
   }));
   if(!rows.length) return '';
@@ -3398,14 +3398,39 @@ async function sharePDF(){
   hint.textContent='Generando archivo PDF, espera un momento...';
   try{
     const el=document.querySelector('.page');
-    const opt={
-      margin:[8,6,10,6],
-      filename:pdfFileName,
-      image:{type:'jpeg',quality:0.85},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff',logging:false},
-      jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true}
+    // Forzar ancho A4 fijo (210mm = ~794px a 96dpi) ANTES de capturar.
+    // Sin esto, en PC el navegador renderiza más ancho y el html2canvas captura un layout que NO cabe en A4 → sale cortado.
+    const A4_WIDTH_PX=794;
+    const prevStyle={
+      width:el.style.width, maxWidth:el.style.maxWidth, margin:el.style.margin,
+      padding:el.style.padding, boxShadow:el.style.boxShadow
     };
-    const blob=await html2pdf().set(opt).from(el).outputPdf('blob');
+    el.style.width=A4_WIDTH_PX+'px';
+    el.style.maxWidth=A4_WIDTH_PX+'px';
+    el.style.margin='0';
+    el.style.padding='38px 28px';
+    el.style.boxShadow='none';
+    // Dar tiempo al navegador a re-renderizar antes de capturar
+    await new Promise(r=>setTimeout(r,100));
+    const opt={
+      margin:[6,5,8,5],
+      filename:pdfFileName,
+      image:{type:'jpeg',quality:0.88},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff',logging:false,windowWidth:A4_WIDTH_PX,width:A4_WIDTH_PX},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
+      pagebreak:{mode:['css','legacy'],avoid:['.section','.photo-cell','.sig-box','tr']}
+    };
+    let blob;
+    try{
+      blob=await html2pdf().set(opt).from(el).outputPdf('blob');
+    } finally {
+      // Restaurar estilos originales pase lo que pase
+      el.style.width=prevStyle.width;
+      el.style.maxWidth=prevStyle.maxWidth;
+      el.style.margin=prevStyle.margin;
+      el.style.padding=prevStyle.padding;
+      el.style.boxShadow=prevStyle.boxShadow;
+    }
     const file=new File([blob],pdfFileName,{type:'application/pdf'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       btn.textContent='📤 Abriendo menú...';
