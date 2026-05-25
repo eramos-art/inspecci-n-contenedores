@@ -468,13 +468,26 @@ window.onerror = function(msg, src, line, col, err) {
             <span>📦 Números de serie G1 / Serial numbers</span>
             <span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span>
           </div>
+          <div style="padding:8px 12px;background:#EBF4FF;border-bottom:1px solid #BFDBFE;display:flex;align-items:center;gap:10px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#1E40AF;font-weight:600;cursor:pointer">
+              <input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g1')" style="width:18px;height:18px;accent-color:#1E40AF">
+              Sin número de serie (insumo / caja master)
+            </label>
+          </div>
           <div class="grado-body g1-series-body">
             <div class="serie-input-row">
               <input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')">
               <button class="serie-del" onclick="delSerie(this)">×</button>
             </div>
           </div>
-          <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
+          <div class="sin-serie-panel" style="display:none;padding:10px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
+            <div style="font-size:12px;color:#64748B;margin-bottom:6px;font-weight:500">📦 Insumo sin serie — ingresa cantidad de cajas máster afectadas:</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" class="sin-serie-qty" min="1" placeholder="Ej: 10" style="width:90px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:inherit">
+              <span style="font-size:12px;color:#475569">cajas máster dañadas</span>
+            </div>
+          </div>
+          <div class="add-serie-footer" style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
             <button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button>
           </div>
         </div>
@@ -956,6 +969,7 @@ function openDB(){return new Promise((resolve,reject)=>{if(db){resolve(db);retur
 async function dbSavePhoto(key,dataUrl,filename){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').put({id:key,dataUrl,filename,ts:Date.now()});}catch(e){}}
 async function dbGetAllPhotos(){try{const d=await openDB();return new Promise((resolve)=>{const tx=d.transaction('fotos','readonly');const req=tx.objectStore('fotos').getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>resolve([]);});}catch(e){return[];}}
 async function dbClearAllPhotos(){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').clear();}catch(e){}}
+async function dbDeletePhoto(key){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').delete(key);}catch(e){}}
 
 // ══════════════════════════════════════════════
 // GALERÍA
@@ -1060,7 +1074,7 @@ function readFile(file, fromGallery=false){
   };
   reader.readAsDataURL(file);
 }
-function removeSlotPhoto(ns,key,slot,removable){delete photoStore[ns+':'+key];const img=slot.querySelector('img');if(img)img.remove();const chk=slot.querySelector('.check-badge');if(chk)chk.remove();slot.classList.remove('has-photo');if(removable&&slot.parentElement)slot.parentElement.removeChild(slot);updateCounts();saveProgress();}
+function removeSlotPhoto(ns,key,slot,removable){const fk=ns+':'+key;delete photoStore[fk];dbDeletePhoto(fk);const img=slot.querySelector('img');if(img)img.remove();const chk=slot.querySelector('.check-badge');if(chk)chk.remove();slot.classList.remove('has-photo');if(removable&&slot.parentElement)slot.parentElement.removeChild(slot);updateCounts();saveProgress();}
 function buildGrid(containerId,ns,slots){const g=document.getElementById(containerId);if(!g)return;g.innerHTML='';slots.forEach((s,i)=>{g.appendChild(makeSlot(ns,String(i),s.num,s.label,false));});}
 function addExtraPhoto(ns,sectionId,counterId,simple){
   extraCounters[ns]=(extraCounters[ns]||0)+1;const key='x'+extraCounters[ns];
@@ -1379,6 +1393,23 @@ function addSerieToBlock(btn,cls){
   body.querySelector('input:last-of-type').focus();
 }
 let g1BlockCount=1,g2BlockCount=1;
+function toggleSinSerie(chk, grade){
+  const block = chk.closest('.g1-codigo-block, .g2-codigo-block');
+  if(!block) return;
+  const seriesBody = block.querySelector('.'+grade+'-series-body, .grado-body');
+  const addFooter = block.querySelector('.add-serie-footer');
+  const sinSeriePanel = block.querySelector('.sin-serie-panel');
+  if(chk.checked){
+    if(seriesBody) seriesBody.style.display='none';
+    if(addFooter) addFooter.style.display='none';
+    if(sinSeriePanel) sinSeriePanel.style.display='block';
+  } else {
+    if(seriesBody) seriesBody.style.display='';
+    if(addFooter) addFooter.style.display='';
+    if(sinSeriePanel) sinSeriePanel.style.display='none';
+  }
+  saveProgress();
+}
 function addG1Block(){
   g1BlockCount++;
   const container=document.getElementById('g1CodigosContainer');
@@ -1396,8 +1427,10 @@ function addG1Block(){
   <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g1-detail-input" type="text" placeholder="Ej: cajas mal estibadas en origen"></div>
   <div class="grado-section">
     <div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
+    <div style="padding:8px 12px;background:#EBF4FF;border-bottom:1px solid #BFDBFE;display:flex;align-items:center;gap:10px"><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#1E40AF;font-weight:600;cursor:pointer"><input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g1')" style="width:16px;height:16px;accent-color:#1E40AF"> Sin número de serie (insumo / caja master)</label></div>
     <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
-    <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div>
+    <div class="sin-serie-panel" style="display:none;padding:10px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><div style="font-size:12px;color:#64748B;margin-bottom:6px;font-weight:500">📦 Insumo sin serie — cantidad de cajas máster afectadas:</div><div style="display:flex;align-items:center;gap:8px"><input type="number" class="sin-serie-qty" min="1" placeholder="Ej: 10" style="width:90px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:inherit" onchange="saveProgress()"><span style="font-size:12px;color:#475569">cajas máster dañadas</span></div></div>
+    <div class="add-serie-footer" style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div>
   </div>
   <div style="margin-top:10px;background:#F8FAFC;border:1px solid #BFDBFE;border-radius:12px;padding:12px">
     <div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">📷 Fotos del defecto / Evidence photos</div>
@@ -1427,8 +1460,10 @@ function addG2Block(){
   <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g2-detail-input" type="text" placeholder="Ej: golpe severo durante descarga"></div>
   <div class="grado-section">
     <div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
+    <div style="padding:8px 12px;background:#FEF9EC;border-bottom:1px solid #FCD34D;display:flex;align-items:center;gap:10px"><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#92400E;font-weight:600;cursor:pointer"><input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g2')" style="width:16px;height:16px;accent-color:#92400E"> Sin número de serie (insumo / caja master)</label></div>
     <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
-    <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div>
+    <div class="sin-serie-panel" style="display:none;padding:10px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><div style="font-size:12px;color:#64748B;margin-bottom:6px;font-weight:500">📦 Insumo sin serie — cantidad de cajas máster afectadas:</div><div style="display:flex;align-items:center;gap:8px"><input type="number" class="sin-serie-qty" min="1" placeholder="Ej: 10" style="width:90px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:inherit" onchange="saveProgress()"><span style="font-size:12px;color:#475569">cajas máster dañadas</span></div></div>
+    <div class="add-serie-footer" style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div>
   </div>
   <div style="margin-top:10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px">
     <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">📷 Fotos del defecto / Evidence photos</div>
@@ -2106,7 +2141,7 @@ function restoreProgress(){
       const img=document.createElement('img');img.src=photoStore[fullKey];
       slot.appendChild(img);
       const rm=document.createElement('button');rm.className='rm-btn';rm.innerHTML='×';
-      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];slot.remove();saveProgress();};
+      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];dbDeletePhoto(fullKey);slot.remove();updateCounts();saveProgress();};
       slot.appendChild(rm);
       slot.addEventListener('click',()=>{
         if(photoStore[fullKey]){
@@ -2199,7 +2234,7 @@ async function recoverPhotosFromDB(){
       const img=document.createElement('img');img.src=photoStore[fullKey];
       slot.appendChild(img);
       const rm=document.createElement('button');rm.className='rm-btn';rm.innerHTML='×';
-      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];slot.remove();saveProgress();};
+      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];dbDeletePhoto(fullKey);slot.remove();updateCounts();saveProgress();};
       slot.appendChild(rm);
       slot.addEventListener('click',(e)=>{
         if(e.target===rm)return;
@@ -3044,18 +3079,17 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 .resumen-defectos td{padding:5px 8px;border:1px solid #c9d4e0;vertical-align:middle}
 .resumen-defectos tbody tr:nth-child(even) td:not(:first-child){background:#f7f9fc}
 @media screen{
-  body{background:#e5e7eb;padding:14px 0;display:flex;justify-content:center}
-  .page{background:#fff;padding:12mm 9mm;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin-bottom:18px;width:210mm;max-width:210mm}
-  body{padding-bottom:80px}
-  /* Escalado responsive: en pantallas chicas (móvil/tablet) deja que ocupe el ancho */
+  body{background:#e5e7eb;padding:14px 0}
+  .page{background:#fff;padding:12mm 9mm;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin:0 auto 18px;width:100%;max-width:210mm;box-sizing:border-box}
+  /* Móvil/tablet */
   @media (max-width:820px){
-    body{padding:0;display:block}
-    .page{width:auto;max-width:100%;padding:8mm 5mm;box-shadow:none;margin:0}
+    body{padding:0}
+    .page{padding:8mm 5mm;box-shadow:none;max-width:100%}
   }
-  /* En pantallas anchas (PC) centra y agrega aire alrededor */
+  /* PC: centrado con aire, nunca corta */
   @media (min-width:821px){
-    body{padding:24px 0 100px}
-    .page{margin:0 auto;border:1px solid #d1d5db}
+    body{padding:24px 16px 100px}
+    .page{border:1px solid #d1d5db}
   }
 }
 @media print{
@@ -3184,9 +3218,15 @@ ${(()=>{
     const detail=bl.querySelector('[class*="detail-input"]')?.value||'—';
     const gradeCls=grade==='G2'||isg2?'grade-g2':'grade-g1';
     dmgH+='<tr><td class="'+gradeCls+'">'+grade+'</td><td style="font-family:monospace">'+code+'</td><td>'+tipo+'</td><td style="text-align:center">'+qty+'</td><td style="text-align:center">'+uds+'</td><td style="font-size:8pt">'+(detail||'—')+'</td></tr>';
-    const seriesDef=[...bl.querySelectorAll('.serie-input-row')].map(row=>{const v=row.querySelector('.serie-input')?.value.trim()||'';const d=row.querySelector('.serie-defecto-sel')?.value||'';return v?{serie:v,defecto:d}:null;}).filter(Boolean);
-    if(seriesDef.length){
-      dmgH+='<tr><td colspan="6" style="padding:4px 8px;background:#f7f9fc"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Series / Serials:</div><table style="width:100%;border-collapse:collapse;font-size:8pt"><tr style="background:#e8eef5"><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Serie / Serial</th><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Defecto / Damage</th></tr>'+seriesDef.map((s,i)=>{const en=DEFECTO_EN[s.defecto]||'';const defText=(!s.defecto||s.defecto==='—')?'—':(en?s.defecto+' <span style="color:#94a3b8;font-style:italic;font-size:7.5pt">/ '+en+'</span>':s.defecto);return '<tr style="background:'+(i%2===0?'#fff':'#f7f9fc')+'"><td style="padding:3px 6px;border:1px solid #c9d4e0;font-family:monospace">'+s.serie+'</td><td style="padding:3px 6px;border:1px solid #c9d4e0">'+defText+'</td></tr>';}).join('')+'</table></td></tr>';
+    const sinSerie=bl.querySelector('.sin-serie-check')?.checked;
+    const sinSerieQty=parseInt(bl.querySelector('.sin-serie-qty')?.value||'0')||0;
+    if(sinSerie){
+      dmgH+='<tr><td colspan="6" style="padding:5px 8px;background:#f7f9fc"><div style="font-size:8pt;color:#475569">📦 <b>Sin número de serie</b> — Insumo / Caja máster. Cantidad afectada: <b>'+sinSerieQty+'</b> caja(s) máster</div></td></tr>';
+    } else {
+      const seriesDef=[...bl.querySelectorAll('.serie-input-row')].map(row=>{const v=row.querySelector('.serie-input')?.value.trim()||'';const d=row.querySelector('.serie-defecto-sel')?.value||'';return v?{serie:v,defecto:d}:null;}).filter(Boolean);
+      if(seriesDef.length){
+        dmgH+='<tr><td colspan="6" style="padding:4px 8px;background:#f7f9fc"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Series / Serials:</div><table style="width:100%;border-collapse:collapse;font-size:8pt"><tr style="background:#e8eef5"><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Serie / Serial</th><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Defecto / Damage</th></tr>'+seriesDef.map((s,i)=>{const en=DEFECTO_EN[s.defecto]||'';const defText=(!s.defecto||s.defecto==='—')?'—':(en?s.defecto+' <span style="color:#94a3b8;font-style:italic;font-size:7.5pt">/ '+en+'</span>':s.defecto);return '<tr style="background:'+(i%2===0?'#fff':'#f7f9fc')+'"><td style="padding:3px 6px;border:1px solid #c9d4e0;font-family:monospace">'+s.serie+'</td><td style="padding:3px 6px;border:1px solid #c9d4e0">'+defText+'</td></tr>';}).join('')+'</table></td></tr>';
+      }
     }
     // Fotos del bloque
     const blkIdx=bl.dataset.idx||'0';
@@ -3209,7 +3249,9 @@ ${(()=>{
     const code=(bl.querySelector('[class*="code-input"]')?.value||'').trim().toUpperCase();
     if(!code) return;
     const grado=bl.querySelector('[class*="grado-select"]')?.value||defaultGrado;
-    const series=[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
+    const sinSerie=bl.querySelector('.sin-serie-check')?.checked;
+    const sinSerieQty=parseInt(bl.querySelector('.sin-serie-qty')?.value||'0')||0;
+    const series=sinSerie?sinSerieQty:[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
     if(series===0) return;
     if(!defMap[code]) defMap[code]={g1:0,g2:0};
     if(grado==='G2') defMap[code].g2+=series;
@@ -3262,11 +3304,23 @@ ${(()=>{
     html+='<td style="text-align:center;font-weight:700;color:'+pctColor+'">'+pct+'</td>';
     html+='</tr>';
   });
+  // Fila TOTAL
+  const totalLoteGlobal=rows.reduce((s,r)=>s+(r.lote||0),0);
+  const totalG1Global=rows.reduce((s,r)=>s+r.g1,0);
+  const totalG2Global=rows.reduce((s,r)=>s+r.g2,0);
+  html+='<tr style="border-top:2px solid #1a3a5c">';
+  html+='<td style="padding:0;background:#1a3a5c"></td>';
+  html+='<td style="font-weight:800;color:#1a3a5c;font-size:8pt;text-transform:uppercase;letter-spacing:.03em">TOTAL GENERAL</td>';
+  html+='<td style="text-align:center;font-weight:700">'+(totalLoteGlobal||'—')+'</td>';
+  html+='<td style="text-align:center;background:#dbeafe;color:#1e40af;font-weight:800">'+totalG1Global+'</td>';
+  html+='<td style="text-align:center;background:#fee2e2;color:#b91c1c;font-weight:800">'+totalG2Global+'</td>';
+  html+='<td style="text-align:center;color:#64748b">—</td>';
+  html+='</tr>';
   html+='</tbody></table>';
   // Leyenda
   html+='<div style="margin-top:4px;font-size:7.5pt;color:#64748b;display:flex;gap:14px;flex-wrap:wrap">';
-  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#dc2626;vertical-align:middle;margin-right:3px"></span>Con Grado 2 (rechazado)</span>';
-  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#1e40af;vertical-align:middle;margin-right:3px"></span>Solo Grado 1 (tolerable)</span>';
+  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#dc2626;vertical-align:middle;margin-right:3px"></span>Con Grado 2 (con daños severos)</span>';
+  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#1e40af;vertical-align:middle;margin-right:3px"></span>Solo Grado 1 (daños leves)</span>';
   html+='<span style="font-style:italic">% = (defectos / cantidad del lote) × 100</span>';
   html+='</div>';
   html+='</div>';
@@ -3280,7 +3334,9 @@ ${(()=>{
   document.querySelectorAll('.g1-codigo-block').forEach(bl=>{
     const code=bl.querySelector('.g1-code-input')?.value||'';
     const grado=bl.querySelector('.g1-grado-select')?.value||'';
-    const series=[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
+    const sinSerie=bl.querySelector('.sin-serie-check')?.checked;
+    const sinSerieQty=parseInt(bl.querySelector('.sin-serie-qty')?.value||'0')||0;
+    const series=sinSerie?sinSerieQty:[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
     if(code||grado||series>0){
       if(grado==='G2'){g2Codigos++;g2Series+=series;}
       else {g1Codigos++;g1Series+=series;}
@@ -3289,7 +3345,9 @@ ${(()=>{
   document.querySelectorAll('.g2-codigo-block').forEach(bl=>{
     const code=bl.querySelector('.g2-code-input')?.value||'';
     const grado=bl.querySelector('.g2-grado-select')?.value||'';
-    const series=[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
+    const sinSerie=bl.querySelector('.sin-serie-check')?.checked;
+    const sinSerieQty=parseInt(bl.querySelector('.sin-serie-qty')?.value||'0')||0;
+    const series=sinSerie?sinSerieQty:[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
     if(code||grado||series>0){
       if(grado==='G1'){g1Codigos++;g1Series+=series;}
       else {g2Codigos++;g2Series+=series;}
@@ -3314,10 +3372,6 @@ ${(()=>{
   return `<div class="section">
     <div class="sec-title"><span class="num">10</span> Análisis de Defectos Encontrados / Damage Analysis</div>
     <div class="exec-body">
-      <div class="exec-result" style="background:${resBg};border-left:4px solid ${resColor}">
-        <div class="exec-result-lbl">Estado de Mercadería / Cargo Status</div>
-        <div class="exec-result-val" style="color:${resColor}">${mercaResult}</div>
-      </div>
       <div class="exec-stats">
         <div class="stat-cell"><span class="stat-lbl">Series Grado 1</span><span class="stat-val" style="color:#1e40af">${g1Series}</span></div>
         <div class="stat-cell"><span class="stat-lbl">Series Grado 2</span><span class="stat-val" style="color:#92400e">${g2Series}</span></div>
