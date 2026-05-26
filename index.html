@@ -966,7 +966,24 @@ function setCheck(idx,val,containerId){
 // ══════════════════════════════════════════════
 const DB_NAME='InspeccionFotos';let db=null;
 function openDB(){return new Promise((resolve,reject)=>{if(db){resolve(db);return;}const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=(e)=>{const d=e.target.result;if(!d.objectStoreNames.contains('fotos'))d.createObjectStore('fotos',{keyPath:'id'});};req.onsuccess=(e)=>{db=e.target.result;resolve(db);};req.onerror=reject;});}
-async function dbSavePhoto(key,dataUrl,filename){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').put({id:key,dataUrl,filename,ts:Date.now()});}catch(e){}}
+async function dbSavePhoto(key,dataUrl,filename){
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const d=await openDB();
+      await new Promise((res,rej)=>{
+        const tx=d.transaction('fotos','readwrite');
+        const req=tx.objectStore('fotos').put({id:key,dataUrl,filename,ts:Date.now()});
+        req.onsuccess=()=>res();
+        req.onerror=()=>rej(req.error);
+        tx.onerror=()=>rej(tx.error);
+      });
+      return; // éxito
+    }catch(e){
+      if(attempt===2) console.warn('dbSavePhoto failed after 3 attempts:',key,e);
+      else await new Promise(r=>setTimeout(r,150));
+    }
+  }
+}
 async function dbGetAllPhotos(){try{const d=await openDB();return new Promise((resolve)=>{const tx=d.transaction('fotos','readonly');const req=tx.objectStore('fotos').getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>resolve([]);});}catch(e){return[];}}
 async function dbClearAllPhotos(){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').clear();}catch(e){}}
 async function dbDeletePhoto(key){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').delete(key);}catch(e){}}
@@ -1039,6 +1056,9 @@ function compressDataUrl(dataUrl, maxDim=1600, quality=0.82){
 }
 // Pinta la imagen en el slot esperando a que esté decodificada (fix Android)
 async function paintSlotPhoto(slot, dataUrl){
+  // Asegurar guardado en IndexedDB cuando se pinta una foto
+  const ns=slot.dataset.ns, key=slot.dataset.key;
+  if(ns&&key&&dataUrl) dbSavePhoto(ns+':'+key,dataUrl,'foto');
   let img=slot.querySelector('img');
   if(!img){img=document.createElement('img');slot.insertBefore(img,slot.firstChild);}
   img.src=dataUrl;
@@ -2254,6 +2274,18 @@ async function recoverPhotosFromDB(){
   }
 }
 
+// Sincronizar todo photoStore a IndexedDB (por si algo no se guardó)
+async function syncPhotosToIDB(){
+  const keys=Object.keys(photoStore);
+  for(const key of keys){
+    if(photoStore[key]) await dbSavePhoto(key,photoStore[key],'foto');
+  }
+}
+// Sincronizar al entrar en background o cerrar
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden') syncPhotosToIDB();});
+window.addEventListener('pagehide',()=>syncPhotosToIDB());
+window.addEventListener('beforeunload',()=>syncPhotosToIDB());
+
 // Guardar al cambiar cualquier campo (excepto campos de serie que tienen su propio save)
 document.addEventListener('change', function(e){
   if(e.target && e.target.classList.contains('serie-input')) return; // series tienen su save
@@ -2619,6 +2651,8 @@ async function appendRowToGoogleSheet(){
   // Observación de parada (si aplica)
   const motivoParada = V('motivoParada');
   const obsParada    = V('obsParada');
+  const avancePct    = V('avancePct');
+  const horaParada   = V('horaParada');
 
   // Estado final con emoji para col R
   const estadoEmoji = estadoCont === 'Aceptado' ? '✅ ACEPTADO'
@@ -3127,8 +3161,21 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
     <tr><td class="lbl">Almacén / Warehouse</td><td class="val">${almacen}</td><td class="lbl">Tamaño / Size</td><td class="val">${tamano}</td></tr>
     <tr><td class="lbl">Placa / Plate</td><td class="val">${placa}</td><td class="lbl">N° Estibadores</td><td class="val">${estibadores}</td></tr>
     <tr><td class="lbl">Hora Inicio / Start</td><td class="val">${horaInicio}</td><td class="lbl">Hora Fin / End</td><td class="val">${horaFin}</td></tr>
-    <tr><td class="lbl">Descarga Completa</td><td class="val" colspan="3" style="color:${completo==='Sí'||completo==='SI'||completo==='Si'?'#15803d':'#b91c1c'};font-weight:700">${completo}</td></tr>
+    <tr><td class="lbl">Descarga Completa</td><td class="val" colspan="3" style="color:${completo==='Sí'||completo==='SI'||completo==='Si'?'#15803d':'#b91c1c'};font-weight:700">${completo}${(()=>{const ap=document.getElementById('avancePct')?.value;return ap&&ap!=='—'?' — Avance: '+ap:'';})()}</td></tr>
   </table>
+  ${(()=>{
+    const mp=document.getElementById('motivoParada')?.value||'';
+    const op=document.getElementById('obsParada')?.value||'';
+    const hp=document.getElementById('horaParada')?.value||'';
+    if((completo!=='NO'&&completo!=='No')||(!mp&&!op&&!hp)) return '';
+    let txt='<div style="margin-top:5px;background:#FFF7ED;border:1px solid #FED7AA;border-left:4px solid #F59E0B;padding:5px 9px;font-size:8pt">';
+    txt+='<b>Motivo de parada / Stop reason:</b><br>';
+    if(hp) txt+='⏱ Hora parada: '+hp+'&nbsp;&nbsp;';
+    if(mp) txt+=mp;
+    if(op) txt+='<br><span style="color:#92400E">'+op+'</span>';
+    txt+='</div>';
+    return txt;
+  })()}
 </div>
 
 <!-- 2. EQUIPO QC -->
@@ -3147,8 +3194,8 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
     <tr><td class="lbl">N° Contenedor</td><td class="val" style="font-family:'Consolas',monospace;font-size:10pt">${contenedor}</td><td class="lbl">N° Precinto / Seal</td><td class="val" style="font-family:'Consolas',monospace;font-size:10pt">${precinto}</td></tr>
   </table>
   <div class="estado-row">
-    <span class="lbl">Condición / Condition:</span>
-    <span class="estado-badge">${estadoCont}</span>
+    <span class="lbl">Estado del Contenedor / Container Status:</span>
+    <span class="estado-badge" style="background:${estadoCont==='Aceptado'?'#16a34a':estadoCont==='Tolerado'?'#d97706':'#dc2626'}">${estadoCont}</span>
   </div>
   <div class="sub-title">Checklist condición externa / External condition checklist</div>
   <table class="check-table"><thead><tr><th>Descripción / Description</th><th class="ans">Resultado</th></tr></thead><tbody>${extRows}</tbody></table>
@@ -3467,12 +3514,17 @@ async function sharePDF(){
     // Dar tiempo al navegador a re-renderizar antes de capturar
     await new Promise(r=>setTimeout(r,100));
     const opt={
-      margin:[6,5,8,5],
+      margin:[8,8,10,8],
       filename:pdfFileName,
-      image:{type:'jpeg',quality:0.88},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff',logging:false,windowWidth:A4_WIDTH_PX,width:A4_WIDTH_PX},
+      image:{type:'jpeg',quality:0.92},
+      html2canvas:{scale:1.8,useCORS:true,backgroundColor:'#ffffff',logging:false,
+                   windowWidth:794,width:794,scrollX:0,scrollY:0,
+                   onclone:(doc)=>{
+                     const p=doc.querySelector('.page');
+                     if(p){p.style.width='794px';p.style.maxWidth='794px';p.style.margin='0';p.style.padding='28px 24px';p.style.boxSizing='border-box';}
+                   }},
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
-      pagebreak:{mode:['css','legacy'],avoid:['.section','.photo-cell','.sig-box','tr']}
+      pagebreak:{mode:['css','legacy'],avoid:['.section','.photo-cell','.sig-box']}
     };
     let blob;
     try{
