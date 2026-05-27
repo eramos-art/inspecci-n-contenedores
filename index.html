@@ -3019,7 +3019,7 @@ function generateReport(){
 
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte de Inspección — Grupo Sole — ${fileNum}</title>
 <style>
-@page{size:A4 portrait;margin:11mm 9mm 13mm 9mm}
+@page{size:A4 portrait;margin:14mm 14mm 16mm 14mm}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:10pt;line-height:1.38;background:#fff}
 .page{max-width:192mm;margin:0 auto}
@@ -3035,17 +3035,17 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 .corp-band{background:#1a3a5c;color:#fff;padding:4px 12px;font-size:8.5pt;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;border:1.5px solid #1a3a5c;border-top:none;margin-bottom:7px}
 .corp-band .right{font-weight:400;opacity:0.85;font-size:8pt}
 /* SECCIONES */
-.section{margin-bottom:7px;page-break-inside:avoid}
+.section{margin-bottom:7px;border:1.5px solid #1a3a5c;border-radius:3px;overflow:hidden}
 .sec-title{background:#1a3a5c;color:#fff;padding:5px 11px;font-size:9.5pt;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;display:flex;align-items:center;gap:7px}
 .sec-title .num{background:#fff;color:#1a3a5c;width:18px;height:18px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:9.5pt}
 .sub-title{background:#e8eef5;color:#1a3a5c;padding:4px 10px;font-size:9pt;font-weight:700;letter-spacing:0.03em;border-left:3px solid #1a3a5c;margin:6px 0 4px}
 /* TABLA DE DATOS */
-.data-table{width:100%;border-collapse:collapse;border:1px solid #1a3a5c}
+.data-table{width:100%;border-collapse:collapse;border:1.5px solid #1a3a5c}
 .data-table td{padding:4px 8px;border:1px solid #c9d4e0;font-size:9pt;vertical-align:top}
 .data-table td.lbl{background:#e8eef5;font-weight:700;color:#1a3a5c;width:22%;font-size:8pt;letter-spacing:0.02em;text-transform:uppercase}
 .data-table td.val{background:#fff;width:28%;font-weight:500}
 /* CHECKLIST */
-.check-table{width:100%;border-collapse:collapse;border:1px solid #1a3a5c;font-size:9pt}
+.check-table{width:100%;border-collapse:collapse;border:1.5px solid #1a3a5c;font-size:9pt}
 .check-table th{background:#1a3a5c;color:#fff;padding:4px 8px;text-align:left;font-size:8.5pt;font-weight:700;letter-spacing:0.03em}
 .check-table th.ans{text-align:center;width:70px}
 .check-table td{padding:4px 8px;border:1px solid #c9d4e0}
@@ -3128,9 +3128,15 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 }
 @media print{
   body{background:#fff;padding:0}
-  .page{box-shadow:none;padding:0}
+  .page{box-shadow:none;padding:10mm 10mm}
   #pdfBtn{display:none!important}
-  .section{page-break-inside:avoid}
+  #shareBtn{display:none!important}
+  /* Solo evitar corte en secciones pequeñas */
+  .section.no-break{page-break-inside:avoid}
+  .sig-box{page-break-inside:avoid}
+  .photo-cell{page-break-inside:avoid}
+  /* Encabezado siempre junto */
+  .corp-header,.corp-band{page-break-after:avoid}
 }
 </style>
 </head><body><div class="page">
@@ -3365,10 +3371,10 @@ ${(()=>{
   html+='</tr>';
   html+='</tbody></table>';
   // Leyenda
-  html+='<div style="margin-top:4px;font-size:7.5pt;color:#64748b;display:flex;gap:14px;flex-wrap:wrap">';
-  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#dc2626;vertical-align:middle;margin-right:3px"></span>Con Grado 2 (con daños severos)</span>';
+  html+='<div style="margin-top:5px;font-size:7.5pt;color:#64748b;display:flex;gap:12px;flex-wrap:wrap;line-height:1.6">';
+  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#dc2626;vertical-align:middle;margin-right:3px"></span>Con Grado 2 (daños severos)</span>';
   html+='<span><span style="display:inline-block;width:8px;height:8px;background:#1e40af;vertical-align:middle;margin-right:3px"></span>Solo Grado 1 (daños leves)</span>';
-  html+='<span style="font-style:italic">% = (defectos / cantidad del lote) × 100</span>';
+  html+='<span style="font-style:italic">% = (defectos / cant. lote) × 100 &nbsp;·&nbsp; (—) Sin cant. lote registrada</span>';
   html+='</div>';
   html+='</div>';
   return html;
@@ -3412,17 +3418,16 @@ ${(()=>{
     const firstSentence=obsGenerales.split(/[.!?]/)[0].trim();
     hallazgo=firstSentence.length>200?firstSentence.substring(0,200)+'…':firstSentence;
   } else if(totalCodigos>0){
-    hallazgo=`Se detectaron ${totalCodigos} código(s) con observaciones — ${g1Series} serie(s) G1 y ${g2Series} serie(s) G2. Ver detalle en sección 8 y consolidado en sección 9.`;
+    hallazgo=`Se detectaron ${g1Series} serie(s) con daño leve (G1) y ${g2Series} serie(s) con daño severo (G2). Ver detalle en sección 8 y consolidado en sección 9.`;
   } else {
     hallazgo='Inspección sin observaciones de daños en la mercadería recibida.';
   }
   return `<div class="section">
     <div class="sec-title"><span class="num">10</span> Análisis de Defectos Encontrados / Damage Analysis</div>
     <div class="exec-body">
-      <div class="exec-stats">
+      <div class="exec-stats" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat-cell"><span class="stat-lbl">Series Grado 1</span><span class="stat-val" style="color:#1e40af">${g1Series}</span></div>
         <div class="stat-cell"><span class="stat-lbl">Series Grado 2</span><span class="stat-val" style="color:#92400e">${g2Series}</span></div>
-        <div class="stat-cell"><span class="stat-lbl">Códigos con daños</span><span class="stat-val">${totalCodigos}</span></div>
         <div class="stat-cell"><span class="stat-lbl">Fotos de evidencia</span><span class="stat-val">${totalFotos}</span></div>
       </div>
       <div class="exec-finding"><b>Hallazgo principal / Main finding:</b> ${hallazgo}</div>
@@ -3504,27 +3509,37 @@ async function sharePDF(){
     const A4_WIDTH_PX=794;
     const prevStyle={
       width:el.style.width, maxWidth:el.style.maxWidth, margin:el.style.margin,
-      padding:el.style.padding, boxShadow:el.style.boxShadow
+      padding:el.style.padding, boxShadow:el.style.boxShadow, boxSizing:el.style.boxSizing
     };
-    el.style.width=A4_WIDTH_PX+'px';
-    el.style.maxWidth=A4_WIDTH_PX+'px';
-    el.style.margin='0';
-    el.style.padding='38px 28px';
+    el.style.width='760px';
+    el.style.maxWidth='760px';
+    el.style.margin='0 auto';
+    el.style.padding='20px 20px';
     el.style.boxShadow='none';
+    el.style.boxSizing='border-box';
     // Dar tiempo al navegador a re-renderizar antes de capturar
-    await new Promise(r=>setTimeout(r,100));
+    await new Promise(r=>setTimeout(r,180));
     const opt={
-      margin:[8,8,10,8],
+      margin:[10,10,12,10],
       filename:pdfFileName,
-      image:{type:'jpeg',quality:0.92},
-      html2canvas:{scale:1.8,useCORS:true,backgroundColor:'#ffffff',logging:false,
-                   windowWidth:794,width:794,scrollX:0,scrollY:0,
+      image:{type:'jpeg',quality:0.94},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
+                   windowWidth:800,width:760,scrollX:0,scrollY:0,
                    onclone:(doc)=>{
                      const p=doc.querySelector('.page');
-                     if(p){p.style.width='794px';p.style.maxWidth='794px';p.style.margin='0';p.style.padding='28px 24px';p.style.boxSizing='border-box';}
+                     if(p){
+                       p.style.width='760px';
+                       p.style.maxWidth='760px';
+                       p.style.margin='0';
+                       p.style.padding='20px 20px';
+                       p.style.boxSizing='border-box';
+                       p.style.boxShadow='none';
+                     }
+                     // Ocultar botones en el clon
+                     doc.querySelectorAll('#pdfBtn,#shareBtn,.pdfBtn,button[onclick*="PDF"]').forEach(b=>b.style.display='none');
                    }},
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
-      pagebreak:{mode:['css','legacy'],avoid:['.section','.photo-cell','.sig-box']}
+      pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box','.photo-cell']}
     };
     let blob;
     try{
@@ -3536,6 +3551,7 @@ async function sharePDF(){
       el.style.margin=prevStyle.margin;
       el.style.padding=prevStyle.padding;
       el.style.boxShadow=prevStyle.boxShadow;
+      el.style.boxSizing=prevStyle.boxSizing;
     }
     const file=new File([blob],pdfFileName,{type:'application/pdf'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
