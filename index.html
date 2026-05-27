@@ -3022,7 +3022,7 @@ function generateReport(){
 @page{size:A4 portrait;margin:14mm 14mm 16mm 14mm}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:10pt;line-height:1.38;background:#fff}
-.page{max-width:192mm;margin:0 auto}
+.page{max-width:182mm;margin:0 auto;padding:0 4mm}
 /* ENCABEZADO */
 .corp-header{display:flex;align-items:stretch;border:1.5px solid #1a3a5c;margin-bottom:0;page-break-inside:avoid;min-height:90px}
 .corp-logo{width:42%;background:#4c5f80;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;border-right:1.5px solid #1a3a5c}
@@ -3511,32 +3511,35 @@ async function sharePDF(){
       width:el.style.width, maxWidth:el.style.maxWidth, margin:el.style.margin,
       padding:el.style.padding, boxShadow:el.style.boxShadow, boxSizing:el.style.boxSizing
     };
-    el.style.width='760px';
-    el.style.maxWidth='760px';
+    el.style.width='720px';
+    el.style.maxWidth='720px';
     el.style.margin='0 auto';
-    el.style.padding='20px 20px';
+    el.style.padding='8px 28px';
     el.style.boxShadow='none';
     el.style.boxSizing='border-box';
     // Dar tiempo al navegador a re-renderizar antes de capturar
     await new Promise(r=>setTimeout(r,180));
     const opt={
-      margin:[10,10,12,10],
+      margin:[12,14,14,14],
       filename:pdfFileName,
       image:{type:'jpeg',quality:0.94},
       html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
-                   windowWidth:800,width:760,scrollX:0,scrollY:0,
+                   windowWidth:776,width:720,scrollX:0,scrollY:0,
                    onclone:(doc)=>{
+                     // Ajustar body y page para captura limpia
+                     const b=doc.body;
+                     if(b){b.style.margin='0';b.style.padding='0';b.style.background='#fff';}
                      const p=doc.querySelector('.page');
                      if(p){
-                       p.style.width='760px';
-                       p.style.maxWidth='760px';
-                       p.style.margin='0';
-                       p.style.padding='20px 20px';
+                       p.style.width='720px';
+                       p.style.maxWidth='720px';
+                       p.style.margin='0 auto';
+                       p.style.padding='8px 28px';
                        p.style.boxSizing='border-box';
                        p.style.boxShadow='none';
                      }
                      // Ocultar botones en el clon
-                     doc.querySelectorAll('#pdfBtn,#shareBtn,.pdfBtn,button[onclick*="PDF"]').forEach(b=>b.style.display='none');
+                     doc.querySelectorAll('#pdfBtn,#shareBtn').forEach(b=>b.style.display='none');
                    }},
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
       pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box','.photo-cell']}
