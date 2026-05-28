@@ -3496,7 +3496,32 @@ function savePDF(){
   setTimeout(()=>document.getElementById('pdfBtn').style.display='flex',2000);
 }
 
+function validarCantLote(){
+  // Recopilar todos los códigos con daños
+  const codigosConDanos=new Set();
+  document.querySelectorAll('.g1-codigo-block,.g2-codigo-block').forEach(bl=>{
+    const code=(bl.querySelector('[class*="code-input"]')?.value||'').trim().toUpperCase();
+    if(code) codigosConDanos.add(code);
+  });
+  // Verificar si esos códigos tienen cant. lote en la tabla de productos
+  const warnings=[];
+  document.querySelectorAll('.producto-row').forEach(row=>{
+    const cod=(row.querySelector('.prod-code')?.value||'').trim().toUpperCase();
+    const lote=(row.querySelector('.prod-lote')?.value||'').trim();
+    if(codigosConDanos.has(cod)&&!lote){
+      warnings.push(cod);
+    }
+  });
+  return warnings;
+}
+
 async function sharePDF(){
+  // Validar cant. lote antes de generar
+  const sinLote=validarCantLote();
+  if(sinLote.length>0){
+    const continuar=confirm('⚠️ Los siguientes códigos tienen daños registrados pero no tienen "Cant. Lote" en la sección 7:\n\n'+sinLote.join('\n')+'\n\n¿Deseas continuar de todas formas? El % del lote no podrá calcularse.');
+    if(!continuar) return;
+  }
   const btn=document.getElementById('shareBtn');
   const hint=document.getElementById('pdfHint');
   const orig=btn.textContent;
@@ -3526,20 +3551,23 @@ async function sharePDF(){
       html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
                    windowWidth:776,width:720,scrollX:0,scrollY:0,
                    onclone:(doc)=>{
-                     // Ajustar body y page para captura limpia
                      const b=doc.body;
                      if(b){b.style.margin='0';b.style.padding='0';b.style.background='#fff';}
                      const p=doc.querySelector('.page');
                      if(p){
-                       p.style.width='720px';
-                       p.style.maxWidth='720px';
-                       p.style.margin='0 auto';
-                       p.style.padding='8px 28px';
-                       p.style.boxSizing='border-box';
-                       p.style.boxShadow='none';
+                       p.style.width='720px';p.style.maxWidth='720px';
+                       p.style.margin='0 auto';p.style.padding='8px 28px';
+                       p.style.boxSizing='border-box';p.style.boxShadow='none';
                      }
-                     // Ocultar botones en el clon
                      doc.querySelectorAll('#pdfBtn,#shareBtn').forEach(b=>b.style.display='none');
+                     // Forzar carga de todas las imágenes (data: URLs)
+                     return Promise.all([...doc.querySelectorAll('img')].map(img=>{
+                       if(img.complete&&img.naturalWidth>0) return Promise.resolve();
+                       return new Promise(res=>{
+                         img.onload=res; img.onerror=res;
+                         if(img.src) img.src=img.src; // re-trigger
+                       });
+                     }));
                    }},
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
       pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box','.photo-cell']}
@@ -3557,13 +3585,23 @@ async function sharePDF(){
       el.style.boxSizing=prevStyle.boxSizing;
     }
     const file=new File([blob],pdfFileName,{type:'application/pdf'});
+    // IMPORTANTE: navigator.share DEBE llamarse sin await intermedio después del gesto
+    // El blob ya está listo — share inmediato
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       btn.textContent='📤 Abriendo menú...';
       hint.textContent='Elige "OneDrive" en el menú que aparece';
-      await navigator.share({files:[file],title:pdfFileName,text:'Reporte de Inspección — Grupo Sole'});
-      hint.textContent='✅ Archivo enviado a OneDrive (verifica en tu app)';
+      // Llamada SÍNCRONA al share (sin await extra) para mantener el gesto activo
+      navigator.share({files:[file],title:pdfFileName,text:'Reporte de Inspección — Grupo Sole'})
+        .then(()=>{hint.textContent='✅ Archivo compartido correctamente';})
+        .catch(e=>{
+          if(e.name==='AbortError'){hint.textContent='Compartir cancelado';return;}
+          // Fallback si share falla
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');a.href=url;a.download=pdfFileName;a.click();
+          setTimeout(()=>URL.revokeObjectURL(url),3000);
+          hint.textContent='✅ PDF descargado. Súbelo manualmente a OneDrive.';
+        });
     } else {
-      // Fallback: descarga el PDF para que el usuario lo suba manual
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');a.href=url;a.download=pdfFileName;a.click();
       setTimeout(()=>URL.revokeObjectURL(url),3000);
