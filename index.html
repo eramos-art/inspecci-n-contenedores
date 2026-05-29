@@ -3814,7 +3814,7 @@ try{
   
     // IMPORTANTE: navigator.share DEBE llamarse sin await intermedio después del gesto
     // El blob ya está listo — share inmediato
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
+ 
       btn.textContent='📤 Abriendo menú...';
       hint.textContent='Elige "OneDrive" en el menú que aparece';
       // Llamada SÍNCRONA al share (sin await extra) para mantener el gesto activo
