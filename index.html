@@ -1785,6 +1785,8 @@ function nextStep(){
     updateNav();
     if(currentStep===6){
       buildSummary();
+      // Mostrar barra PDF al llegar al último paso
+      setTimeout(mostrarBarraPDF, 400);
       // Al llegar al paso 7, limpiar campos de firma si tienen texto no deseado
       // (autocompletado del móvil que pega texto de escaneo anterior)
       setTimeout(()=>{
@@ -3529,7 +3531,7 @@ ${(()=>{
 
 </div>
 <div id="pdfBtn" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a3a5c;padding:10px 16px;z-index:9999;box-shadow:0 -4px 16px rgba(0,0,0,0.35);justify-content:center;gap:8px;align-items:center;flex-wrap:wrap">
-  <button onclick="savePDF()" id="savePdfBtn" style="background:#fff;color:#1a3a5c;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">💾 Descargar PDF</button>
+  <button onclick="savePDF()" id="savePdfBtn" style="background:#fff;color:#1a3a5c;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap;min-width:130px">💾 Descargar PDF</button>
   <button onclick="sharePDF()" id="shareBtn" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">📤 OneDrive</button>
   <button onclick="emergenciaPDF()" id="emergBtn" style="background:#DC2626;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">🆘 Emergencia</button>
   <span id="pdfHint" style="font-size:10.5px;color:rgba(255,255,255,0.8);font-family:Arial,sans-serif;width:100%;text-align:center;margin-top:2px">💾 Descarga PDF &nbsp;·&nbsp; 📤 Comparte a OneDrive &nbsp;·&nbsp; 🆘 Si falla todo: usa Emergencia</span>
@@ -3542,16 +3544,7 @@ const pdfFileName='Insp_'+(cleanName('${fileNum}')||'FILE')+'_'+(cleanName('${fe
 document.title=pdfFileName.replace('.pdf','');
 
 // Mostrar barra con múltiples métodos para máxima compatibilidad
-function mostrarBarraPDF(){
-  const bar=document.getElementById('pdfBtn');
-  if(bar) bar.style.display='flex';
-}
-window.onload=mostrarBarraPDF;
-document.addEventListener('DOMContentLoaded',mostrarBarraPDF);
-setTimeout(mostrarBarraPDF,500);
-setTimeout(mostrarBarraPDF,1500);
 window.onload=function(){
-  mostrarBarraPDF();
   // Si el navegador no soporta Web Share o no soporta compartir archivos, oculta el botón Compartir
   if(!navigator.canShare||!navigator.canShare({files:[new File([new Blob(['x'])],'x.pdf',{type:'application/pdf'})]})){
     const sb=document.getElementById('shareBtn');
@@ -3990,6 +3983,8 @@ function calcAQL(val){
 }
 
 recoverPhotosFromDB();
+// Si al cargar ya estamos en el paso 7 (datos recuperados), mostrar barra
+setTimeout(()=>{if(currentStep===6) mostrarBarraPDF();}, 2000);
 </script>
 </body>
 </html>
