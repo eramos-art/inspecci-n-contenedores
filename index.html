@@ -357,65 +357,6 @@ window.onerror = function(msg, src, line, col, err) {
     </div>
     <div class="card">
       <div class="section-title">Productos recibidos / Received products</div>
-
-      <!-- ══ PANEL AQL / TABLA MILITAR ══ -->
-      <div style="margin-bottom:14px">
-        <button onclick="toggleAQL()" id="aqlToggleBtn"
-          style="width:100%;background:#EBF4FF;border:1.5px solid #BFDBFE;border-radius:10px;
-                 padding:10px 14px;font-size:13px;font-weight:700;color:#1E40AF;cursor:pointer;
-                 display:flex;align-items:center;justify-content:space-between;font-family:inherit">
-          <span>📊 Consultar Tabla Militar AQL — ¿Cuántas unidades inspeccionar?</span>
-          <span id="aqlArrow" style="font-size:16px;transition:transform .25s">▼</span>
-        </button>
-        <div id="aqlPanel" style="display:none;margin-top:6px;border:1.5px solid #BFDBFE;border-radius:10px;overflow:hidden">
-
-          <!-- Calculadora rápida -->
-          <div style="background:#EBF4FF;padding:10px 14px;border-bottom:1px solid #BFDBFE">
-            <div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">🔢 Calculadora rápida — ingresa tu cant. lote:</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <input type="number" id="aqlLoteInput" min="1" placeholder="Ej: 500"
-                style="width:110px;padding:8px 10px;border:1.5px solid #93C5FD;border-radius:8px;
-                       font-size:14px;font-family:inherit;font-weight:700;color:#1E3A5C"
-                oninput="calcAQL(this.value)">
-              <div id="aqlResult" style="font-size:13px;color:#1E40AF;font-weight:600">← Ingresa la cantidad</div>
-            </div>
-          </div>
-
-          <!-- Tabla AQL -->
-          <div style="overflow-x:auto;background:#fff">
-            <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:inherit">
-              <thead>
-                <tr style="background:#1a3a5c">
-                  <th colspan="2" style="color:#fff;padding:6px 8px;text-align:center;border:1px solid #1a3a5c;font-size:11px">TAMAÑO DE LOTE</th>
-                  <th colspan="3" style="color:#fff;padding:6px 8px;text-align:center;border:1px solid #1a3a5c;font-size:11px">INSPECCIONES</th>
-                  <th style="color:#FFD700;padding:6px 8px;text-align:center;border:1px solid #1a3a5c;font-size:11px">MUESTRA<br>CON LOGO</th>
-                </tr>
-                <tr style="background:#2a4a6c">
-                  <th style="color:#93C5FD;padding:5px 8px;border:1px solid #1a3a5c;font-size:10px">Desde</th>
-                  <th style="color:#93C5FD;padding:5px 8px;border:1px solid #1a3a5c;font-size:10px">Hasta</th>
-                  <th style="color:#86EFAC;padding:5px 8px;text-align:center;border:1px solid #1a3a5c;font-size:10px">NORMAL</th>
-                  <th style="color:#FDE68A;padding:5px 8px;text-align:center;border:1px solid #1a3a5c;font-size:10px">REDUCIDA</th>
-                  <th style="color:#FCA5A5;padding:5px 8px;text-align:center;border:1px solid #1a3a5c;font-size:10px">FUNCIONAL</th>
-                  <th style="color:#FFD700;padding:5px 8px;text-align:center;border:1px solid #1a3a5c;font-size:10px">★</th>
-                </tr>
-              </thead>
-              <tbody id="aqlTableBody">
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Notas AQL -->
-          <div style="background:#F8FAFC;padding:8px 12px;border-top:1px solid #E2E8F0;font-size:10px;color:#475569;line-height:1.6">
-            <b style="color:#1a3a5c">Notas:</b><br>
-            1) <b>Reducida:</b> aplica si hubo inspección en origen.<br>
-            2) <b>Normal:</b> aplica si NO hubo inspección en origen.<br>
-            3) Cajas a granel sin OC → registrar manualmente.<br>
-            4) Cajas sueltas → anotar: cantidad / código / fotos.
-          </div>
-        </div>
-      </div>
-      <!-- ══ FIN PANEL AQL ══ -->
-
       <div style="overflow-x:auto">
         <table class="invent-table">
           <thead><tr>
@@ -527,26 +468,13 @@ window.onerror = function(msg, src, line, col, err) {
             <span>📦 Números de serie G1 / Serial numbers</span>
             <span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span>
           </div>
-          <div style="padding:8px 12px;background:#EBF4FF;border-bottom:1px solid #BFDBFE;display:flex;align-items:center;gap:10px">
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#1E40AF;font-weight:600;cursor:pointer">
-              <input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g1')" style="width:18px;height:18px;accent-color:#1E40AF">
-              Sin número de serie (insumo / caja master)
-            </label>
-          </div>
           <div class="grado-body g1-series-body">
             <div class="serie-input-row">
               <input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')">
               <button class="serie-del" onclick="delSerie(this)">×</button>
             </div>
           </div>
-          <div class="sin-serie-panel" style="display:none;padding:10px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
-            <div style="font-size:12px;color:#64748B;margin-bottom:6px;font-weight:500">📦 Insumo sin serie — ingresa cantidad de cajas máster afectadas:</div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <input type="number" class="sin-serie-qty" min="1" placeholder="Ej: 10" style="width:90px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:inherit">
-              <span style="font-size:12px;color:#475569">cajas máster dañadas</span>
-            </div>
-          </div>
-          <div class="add-serie-footer" style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
+          <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
             <button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button>
           </div>
         </div>
@@ -844,6 +772,8 @@ window.onerror = function(msg, src, line, col, err) {
 <input type="file" accept="image/*" id="hiddenFileGallery" style="display:none">
 
 <script>
+function mostrarBarraPDF(){var b=document.getElementById('pdfBtn');if(b){b.style.display='flex';b.style.position='fixed';b.style.bottom='0';b.style.left='0';b.style.right='0';b.style.zIndex='9999';b.style.background='#1a3a5c';b.style.padding='10px 16px';b.style.justifyContent='center';b.style.gap='8px';b.style.alignItems='center';b.style.flexWrap='wrap';b.style.boxShadow='0 -4px 16px rgba(0,0,0,0.35)';}}
+function ocultarBarraPDF(){var b=document.getElementById('pdfBtn');if(b)b.style.display='none';}
 // ══════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════
@@ -1025,27 +955,9 @@ function setCheck(idx,val,containerId){
 // ══════════════════════════════════════════════
 const DB_NAME='InspeccionFotos';let db=null;
 function openDB(){return new Promise((resolve,reject)=>{if(db){resolve(db);return;}const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=(e)=>{const d=e.target.result;if(!d.objectStoreNames.contains('fotos'))d.createObjectStore('fotos',{keyPath:'id'});};req.onsuccess=(e)=>{db=e.target.result;resolve(db);};req.onerror=reject;});}
-async function dbSavePhoto(key,dataUrl,filename){
-  for(let attempt=0;attempt<3;attempt++){
-    try{
-      const d=await openDB();
-      await new Promise((res,rej)=>{
-        const tx=d.transaction('fotos','readwrite');
-        const req=tx.objectStore('fotos').put({id:key,dataUrl,filename,ts:Date.now()});
-        req.onsuccess=()=>res();
-        req.onerror=()=>rej(req.error);
-        tx.onerror=()=>rej(tx.error);
-      });
-      return; // éxito
-    }catch(e){
-      if(attempt===2) console.warn('dbSavePhoto failed after 3 attempts:',key,e);
-      else await new Promise(r=>setTimeout(r,150));
-    }
-  }
-}
+async function dbSavePhoto(key,dataUrl,filename){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').put({id:key,dataUrl,filename,ts:Date.now()});}catch(e){}}
 async function dbGetAllPhotos(){try{const d=await openDB();return new Promise((resolve)=>{const tx=d.transaction('fotos','readonly');const req=tx.objectStore('fotos').getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>resolve([]);});}catch(e){return[];}}
 async function dbClearAllPhotos(){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').clear();}catch(e){}}
-async function dbDeletePhoto(key){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').delete(key);}catch(e){}}
 
 // ══════════════════════════════════════════════
 // GALERÍA
@@ -1115,9 +1027,6 @@ function compressDataUrl(dataUrl, maxDim=1600, quality=0.82){
 }
 // Pinta la imagen en el slot esperando a que esté decodificada (fix Android)
 async function paintSlotPhoto(slot, dataUrl){
-  // Asegurar guardado en IndexedDB cuando se pinta una foto
-  const ns=slot.dataset.ns, key=slot.dataset.key;
-  if(ns&&key&&dataUrl) dbSavePhoto(ns+':'+key,dataUrl,'foto');
   let img=slot.querySelector('img');
   if(!img){img=document.createElement('img');slot.insertBefore(img,slot.firstChild);}
   img.src=dataUrl;
@@ -1153,7 +1062,7 @@ function readFile(file, fromGallery=false){
   };
   reader.readAsDataURL(file);
 }
-function removeSlotPhoto(ns,key,slot,removable){const fk=ns+':'+key;delete photoStore[fk];dbDeletePhoto(fk);const img=slot.querySelector('img');if(img)img.remove();const chk=slot.querySelector('.check-badge');if(chk)chk.remove();slot.classList.remove('has-photo');if(removable&&slot.parentElement)slot.parentElement.removeChild(slot);updateCounts();saveProgress();}
+function removeSlotPhoto(ns,key,slot,removable){delete photoStore[ns+':'+key];const img=slot.querySelector('img');if(img)img.remove();const chk=slot.querySelector('.check-badge');if(chk)chk.remove();slot.classList.remove('has-photo');if(removable&&slot.parentElement)slot.parentElement.removeChild(slot);updateCounts();saveProgress();}
 function buildGrid(containerId,ns,slots){const g=document.getElementById(containerId);if(!g)return;g.innerHTML='';slots.forEach((s,i)=>{g.appendChild(makeSlot(ns,String(i),s.num,s.label,false));});}
 function addExtraPhoto(ns,sectionId,counterId,simple){
   extraCounters[ns]=(extraCounters[ns]||0)+1;const key='x'+extraCounters[ns];
@@ -1472,23 +1381,6 @@ function addSerieToBlock(btn,cls){
   body.querySelector('input:last-of-type').focus();
 }
 let g1BlockCount=1,g2BlockCount=1;
-function toggleSinSerie(chk, grade){
-  const block = chk.closest('.g1-codigo-block, .g2-codigo-block');
-  if(!block) return;
-  const seriesBody = block.querySelector('.'+grade+'-series-body, .grado-body');
-  const addFooter = block.querySelector('.add-serie-footer');
-  const sinSeriePanel = block.querySelector('.sin-serie-panel');
-  if(chk.checked){
-    if(seriesBody) seriesBody.style.display='none';
-    if(addFooter) addFooter.style.display='none';
-    if(sinSeriePanel) sinSeriePanel.style.display='block';
-  } else {
-    if(seriesBody) seriesBody.style.display='';
-    if(addFooter) addFooter.style.display='';
-    if(sinSeriePanel) sinSeriePanel.style.display='none';
-  }
-  saveProgress();
-}
 function addG1Block(){
   g1BlockCount++;
   const container=document.getElementById('g1CodigosContainer');
@@ -1506,10 +1398,8 @@ function addG1Block(){
   <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g1-detail-input" type="text" placeholder="Ej: cajas mal estibadas en origen"></div>
   <div class="grado-section">
     <div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
-    <div style="padding:8px 12px;background:#EBF4FF;border-bottom:1px solid #BFDBFE;display:flex;align-items:center;gap:10px"><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#1E40AF;font-weight:600;cursor:pointer"><input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g1')" style="width:16px;height:16px;accent-color:#1E40AF"> Sin número de serie (insumo / caja master)</label></div>
     <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
-    <div class="sin-serie-panel" style="display:none;padding:10px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><div style="font-size:12px;color:#64748B;margin-bottom:6px;font-weight:500">📦 Insumo sin serie — cantidad de cajas máster afectadas:</div><div style="display:flex;align-items:center;gap:8px"><input type="number" class="sin-serie-qty" min="1" placeholder="Ej: 10" style="width:90px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:inherit" onchange="saveProgress()"><span style="font-size:12px;color:#475569">cajas máster dañadas</span></div></div>
-    <div class="add-serie-footer" style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div>
+    <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div>
   </div>
   <div style="margin-top:10px;background:#F8FAFC;border:1px solid #BFDBFE;border-radius:12px;padding:12px">
     <div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">📷 Fotos del defecto / Evidence photos</div>
@@ -1539,10 +1429,8 @@ function addG2Block(){
   <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g2-detail-input" type="text" placeholder="Ej: golpe severo durante descarga"></div>
   <div class="grado-section">
     <div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
-    <div style="padding:8px 12px;background:#FEF9EC;border-bottom:1px solid #FCD34D;display:flex;align-items:center;gap:10px"><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#92400E;font-weight:600;cursor:pointer"><input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g2')" style="width:16px;height:16px;accent-color:#92400E"> Sin número de serie (insumo / caja master)</label></div>
     <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
-    <div class="sin-serie-panel" style="display:none;padding:10px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><div style="font-size:12px;color:#64748B;margin-bottom:6px;font-weight:500">📦 Insumo sin serie — cantidad de cajas máster afectadas:</div><div style="display:flex;align-items:center;gap:8px"><input type="number" class="sin-serie-qty" min="1" placeholder="Ej: 10" style="width:90px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:inherit" onchange="saveProgress()"><span style="font-size:12px;color:#475569">cajas máster dañadas</span></div></div>
-    <div class="add-serie-footer" style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div>
+    <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div>
   </div>
   <div style="margin-top:10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px">
     <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">📷 Fotos del defecto / Evidence photos</div>
@@ -1785,8 +1673,7 @@ function nextStep(){
     updateNav();
     if(currentStep===6){
       buildSummary();
-      // Mostrar barra PDF al llegar al último paso
-      setTimeout(mostrarBarraPDF, 400);
+      setTimeout(mostrarBarraPDF,600);
       // Al llegar al paso 7, limpiar campos de firma si tienen texto no deseado
       // (autocompletado del móvil que pega texto de escaneo anterior)
       setTimeout(()=>{
@@ -1807,6 +1694,7 @@ function nextStep(){
   }
 }
 function prevStep(){
+  if(currentStep===6)ocultarBarraPDF();
   if(currentStep>0){
     document.getElementById('page'+currentStep).classList.remove('active');
     currentStep--;
@@ -2222,7 +2110,7 @@ function restoreProgress(){
       const img=document.createElement('img');img.src=photoStore[fullKey];
       slot.appendChild(img);
       const rm=document.createElement('button');rm.className='rm-btn';rm.innerHTML='×';
-      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];dbDeletePhoto(fullKey);slot.remove();updateCounts();saveProgress();};
+      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];slot.remove();saveProgress();};
       slot.appendChild(rm);
       slot.addEventListener('click',()=>{
         if(photoStore[fullKey]){
@@ -2315,7 +2203,7 @@ async function recoverPhotosFromDB(){
       const img=document.createElement('img');img.src=photoStore[fullKey];
       slot.appendChild(img);
       const rm=document.createElement('button');rm.className='rm-btn';rm.innerHTML='×';
-      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];dbDeletePhoto(fullKey);slot.remove();updateCounts();saveProgress();};
+      rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];slot.remove();saveProgress();};
       slot.appendChild(rm);
       slot.addEventListener('click',(e)=>{
         if(e.target===rm)return;
@@ -2334,18 +2222,6 @@ async function recoverPhotosFromDB(){
     const av=document.createElement('div');av.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#059669;color:white;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);white-space:nowrap';av.innerHTML='📸 '+restored+' foto(s) recuperada(s) del respaldo';document.body.appendChild(av);setTimeout(()=>av.remove(),4000);
   }
 }
-
-// Sincronizar todo photoStore a IndexedDB (por si algo no se guardó)
-async function syncPhotosToIDB(){
-  const keys=Object.keys(photoStore);
-  for(const key of keys){
-    if(photoStore[key]) await dbSavePhoto(key,photoStore[key],'foto');
-  }
-}
-// Sincronizar al entrar en background o cerrar
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden') syncPhotosToIDB();});
-window.addEventListener('pagehide',()=>syncPhotosToIDB());
-window.addEventListener('beforeunload',()=>syncPhotosToIDB());
 
 // Guardar al cambiar cualquier campo (excepto campos de serie que tienen su propio save)
 document.addEventListener('change', function(e){
@@ -2712,8 +2588,6 @@ async function appendRowToGoogleSheet(){
   // Observación de parada (si aplica)
   const motivoParada = V('motivoParada');
   const obsParada    = V('obsParada');
-  const avancePct    = V('avancePct');
-  const horaParada   = V('horaParada');
 
   // Estado final con emoji para col R
   const estadoEmoji = estadoCont === 'Aceptado' ? '✅ ACEPTADO'
@@ -3080,10 +2954,10 @@ function generateReport(){
 
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte de Inspección — Grupo Sole — ${fileNum}</title>
 <style>
-@page{size:A4 portrait;margin:14mm 14mm 16mm 14mm}
+@page{size:A4 portrait;margin:11mm 9mm 13mm 9mm}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:10pt;line-height:1.38;background:#fff}
-.page{max-width:182mm;margin:0 auto;padding:0 4mm}
+.page{max-width:192mm;margin:0 auto}
 /* ENCABEZADO */
 .corp-header{display:flex;align-items:stretch;border:1.5px solid #1a3a5c;margin-bottom:0;page-break-inside:avoid;min-height:90px}
 .corp-logo{width:42%;background:#4c5f80;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;border-right:1.5px solid #1a3a5c}
@@ -3096,17 +2970,17 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 .corp-band{background:#1a3a5c;color:#fff;padding:4px 12px;font-size:8.5pt;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;border:1.5px solid #1a3a5c;border-top:none;margin-bottom:7px}
 .corp-band .right{font-weight:400;opacity:0.85;font-size:8pt}
 /* SECCIONES */
-.section{margin-bottom:7px;border:1.5px solid #1a3a5c;border-radius:3px;overflow:hidden}
+.section{margin-bottom:7px;page-break-inside:avoid}
 .sec-title{background:#1a3a5c;color:#fff;padding:5px 11px;font-size:9.5pt;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;display:flex;align-items:center;gap:7px}
 .sec-title .num{background:#fff;color:#1a3a5c;width:18px;height:18px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:9.5pt}
 .sub-title{background:#e8eef5;color:#1a3a5c;padding:4px 10px;font-size:9pt;font-weight:700;letter-spacing:0.03em;border-left:3px solid #1a3a5c;margin:6px 0 4px}
 /* TABLA DE DATOS */
-.data-table{width:100%;border-collapse:collapse;border:1.5px solid #1a3a5c}
+.data-table{width:100%;border-collapse:collapse;border:1px solid #1a3a5c}
 .data-table td{padding:4px 8px;border:1px solid #c9d4e0;font-size:9pt;vertical-align:top}
 .data-table td.lbl{background:#e8eef5;font-weight:700;color:#1a3a5c;width:22%;font-size:8pt;letter-spacing:0.02em;text-transform:uppercase}
 .data-table td.val{background:#fff;width:28%;font-weight:500}
 /* CHECKLIST */
-.check-table{width:100%;border-collapse:collapse;border:1.5px solid #1a3a5c;font-size:9pt}
+.check-table{width:100%;border-collapse:collapse;border:1px solid #1a3a5c;font-size:9pt}
 .check-table th{background:#1a3a5c;color:#fff;padding:4px 8px;text-align:left;font-size:8.5pt;font-weight:700;letter-spacing:0.03em}
 .check-table th.ans{text-align:center;width:70px}
 .check-table td{padding:4px 8px;border:1px solid #c9d4e0}
@@ -3174,30 +3048,30 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 .resumen-defectos td{padding:5px 8px;border:1px solid #c9d4e0;vertical-align:middle}
 .resumen-defectos tbody tr:nth-child(even) td:not(:first-child){background:#f7f9fc}
 @media screen{
-  body{background:#e5e7eb;padding:14px 0}
-  .page{background:#fff;padding:12mm 9mm;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin:0 auto 18px;width:100%;max-width:210mm;box-sizing:border-box}
-  /* Móvil/tablet */
+  body{background:#e5e7eb;padding:14px 0;display:flex;justify-content:center}
+  .page{background:#fff;padding:12mm 9mm;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin-bottom:18px;width:210mm;max-width:210mm}
+  body{padding-bottom:80px}
+  /* Escalado responsive: en pantallas chicas (móvil/tablet) deja que ocupe el ancho */
   @media (max-width:820px){
-    body{padding:0}
-    .page{padding:8mm 5mm;box-shadow:none;max-width:100%}
+    body{padding:0;display:block}
+    .page{width:auto;max-width:100%;padding:8mm 5mm;box-shadow:none;margin:0}
   }
-  /* PC: centrado con aire, nunca corta */
+  /* En pantallas anchas (PC) centra y agrega aire alrededor */
   @media (min-width:821px){
-    body{padding:24px 16px 100px}
-    .page{border:1px solid #d1d5db}
+    body{padding:24px 0 100px}
+    .page{margin:0 auto;border:1px solid #d1d5db}
   }
 }
 @media print{
+  #pdfBtn,button,#btnNext,#btnPrev,.btn-nav{display:none!important}
+  .page{box-shadow:none!important;padding:10mm!important}
+  body{background:#fff!important}
+  .section{page-break-inside:avoid}
+
   body{background:#fff;padding:0}
-  .page{box-shadow:none;padding:10mm 10mm}
-  #pdfBtn{display:none!important}
-  #shareBtn{display:none!important}
-  /* Solo evitar corte en secciones pequeñas */
-  .section.no-break{page-break-inside:avoid}
-  .sig-box{page-break-inside:avoid}
-  .photo-cell{page-break-inside:avoid}
-  /* Encabezado siempre junto */
-  .corp-header,.corp-band{page-break-after:avoid}
+  .page{box-shadow:none;padding:0}
+  #pdfBtn{display:none}
+  .section{page-break-inside:avoid}
 }
 </style>
 </head><body><div class="page">
@@ -3228,21 +3102,8 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
     <tr><td class="lbl">Almacén / Warehouse</td><td class="val">${almacen}</td><td class="lbl">Tamaño / Size</td><td class="val">${tamano}</td></tr>
     <tr><td class="lbl">Placa / Plate</td><td class="val">${placa}</td><td class="lbl">N° Estibadores</td><td class="val">${estibadores}</td></tr>
     <tr><td class="lbl">Hora Inicio / Start</td><td class="val">${horaInicio}</td><td class="lbl">Hora Fin / End</td><td class="val">${horaFin}</td></tr>
-    <tr><td class="lbl">Descarga Completa</td><td class="val" colspan="3" style="color:${completo==='Sí'||completo==='SI'||completo==='Si'?'#15803d':'#b91c1c'};font-weight:700">${completo}${(()=>{const ap=document.getElementById('avancePct')?.value;return ap&&ap!=='—'?' — Avance: '+ap:'';})()}</td></tr>
+    <tr><td class="lbl">Descarga Completa</td><td class="val" colspan="3" style="color:${completo==='Sí'||completo==='SI'||completo==='Si'?'#15803d':'#b91c1c'};font-weight:700">${completo}</td></tr>
   </table>
-  ${(()=>{
-    const mp=document.getElementById('motivoParada')?.value||'';
-    const op=document.getElementById('obsParada')?.value||'';
-    const hp=document.getElementById('horaParada')?.value||'';
-    if((completo!=='NO'&&completo!=='No')||(!mp&&!op&&!hp)) return '';
-    let txt='<div style="margin-top:5px;background:#FFF7ED;border:1px solid #FED7AA;border-left:4px solid #F59E0B;padding:5px 9px;font-size:8pt">';
-    txt+='<b>Motivo de parada / Stop reason:</b><br>';
-    if(hp) txt+='⏱ Hora parada: '+hp+'&nbsp;&nbsp;';
-    if(mp) txt+=mp;
-    if(op) txt+='<br><span style="color:#92400E">'+op+'</span>';
-    txt+='</div>';
-    return txt;
-  })()}
 </div>
 
 <!-- 2. EQUIPO QC -->
@@ -3261,8 +3122,8 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
     <tr><td class="lbl">N° Contenedor</td><td class="val" style="font-family:'Consolas',monospace;font-size:10pt">${contenedor}</td><td class="lbl">N° Precinto / Seal</td><td class="val" style="font-family:'Consolas',monospace;font-size:10pt">${precinto}</td></tr>
   </table>
   <div class="estado-row">
-    <span class="lbl">Estado del Contenedor / Container Status:</span>
-    <span class="estado-badge" style="background:${estadoCont==='Aceptado'?'#16a34a':estadoCont==='Tolerado'?'#d97706':'#dc2626'}">${estadoCont}</span>
+    <span class="lbl">Condición / Condition:</span>
+    <span class="estado-badge">${estadoCont}</span>
   </div>
   <div class="sub-title">Checklist condición externa / External condition checklist</div>
   <table class="check-table"><thead><tr><th>Descripción / Description</th><th class="ans">Resultado</th></tr></thead><tbody>${extRows}</tbody></table>
@@ -3332,15 +3193,9 @@ ${(()=>{
     const detail=bl.querySelector('[class*="detail-input"]')?.value||'—';
     const gradeCls=grade==='G2'||isg2?'grade-g2':'grade-g1';
     dmgH+='<tr><td class="'+gradeCls+'">'+grade+'</td><td style="font-family:monospace">'+code+'</td><td>'+tipo+'</td><td style="text-align:center">'+qty+'</td><td style="text-align:center">'+uds+'</td><td style="font-size:8pt">'+(detail||'—')+'</td></tr>';
-    const sinSerie=bl.querySelector('.sin-serie-check')?.checked;
-    const sinSerieQty=parseInt(bl.querySelector('.sin-serie-qty')?.value||'0')||0;
-    if(sinSerie){
-      dmgH+='<tr><td colspan="6" style="padding:5px 8px;background:#f7f9fc"><div style="font-size:8pt;color:#475569">📦 <b>Sin número de serie</b> — Insumo / Caja máster. Cantidad afectada: <b>'+sinSerieQty+'</b> caja(s) máster</div></td></tr>';
-    } else {
-      const seriesDef=[...bl.querySelectorAll('.serie-input-row')].map(row=>{const v=row.querySelector('.serie-input')?.value.trim()||'';const d=row.querySelector('.serie-defecto-sel')?.value||'';return v?{serie:v,defecto:d}:null;}).filter(Boolean);
-      if(seriesDef.length){
-        dmgH+='<tr><td colspan="6" style="padding:4px 8px;background:#f7f9fc"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Series / Serials:</div><table style="width:100%;border-collapse:collapse;font-size:8pt"><tr style="background:#e8eef5"><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Serie / Serial</th><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Defecto / Damage</th></tr>'+seriesDef.map((s,i)=>{const en=DEFECTO_EN[s.defecto]||'';const defText=(!s.defecto||s.defecto==='—')?'—':(en?s.defecto+' <span style="color:#94a3b8;font-style:italic;font-size:7.5pt">/ '+en+'</span>':s.defecto);return '<tr style="background:'+(i%2===0?'#fff':'#f7f9fc')+'"><td style="padding:3px 6px;border:1px solid #c9d4e0;font-family:monospace">'+s.serie+'</td><td style="padding:3px 6px;border:1px solid #c9d4e0">'+defText+'</td></tr>';}).join('')+'</table></td></tr>';
-      }
+    const seriesDef=[...bl.querySelectorAll('.serie-input-row')].map(row=>{const v=row.querySelector('.serie-input')?.value.trim()||'';const d=row.querySelector('.serie-defecto-sel')?.value||'';return v?{serie:v,defecto:d}:null;}).filter(Boolean);
+    if(seriesDef.length){
+      dmgH+='<tr><td colspan="6" style="padding:4px 8px;background:#f7f9fc"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Series / Serials:</div><table style="width:100%;border-collapse:collapse;font-size:8pt"><tr style="background:#e8eef5"><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Serie / Serial</th><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Defecto / Damage</th></tr>'+seriesDef.map((s,i)=>{const en=DEFECTO_EN[s.defecto]||'';const defText=(!s.defecto||s.defecto==='—')?'—':(en?s.defecto+' <span style="color:#94a3b8;font-style:italic;font-size:7.5pt">/ '+en+'</span>':s.defecto);return '<tr style="background:'+(i%2===0?'#fff':'#f7f9fc')+'"><td style="padding:3px 6px;border:1px solid #c9d4e0;font-family:monospace">'+s.serie+'</td><td style="padding:3px 6px;border:1px solid #c9d4e0">'+defText+'</td></tr>';}).join('')+'</table></td></tr>';
     }
     // Fotos del bloque
     const blkIdx=bl.dataset.idx||'0';
@@ -3363,9 +3218,7 @@ ${(()=>{
     const code=(bl.querySelector('[class*="code-input"]')?.value||'').trim().toUpperCase();
     if(!code) return;
     const grado=bl.querySelector('[class*="grado-select"]')?.value||defaultGrado;
-    const sinSerie=bl.querySelector('.sin-serie-check')?.checked;
-    const sinSerieQty=parseInt(bl.querySelector('.sin-serie-qty')?.value||'0')||0;
-    const series=sinSerie?sinSerieQty:[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
+    const series=[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
     if(series===0) return;
     if(!defMap[code]) defMap[code]={g1:0,g2:0};
     if(grado==='G2') defMap[code].g2+=series;
@@ -3418,24 +3271,12 @@ ${(()=>{
     html+='<td style="text-align:center;font-weight:700;color:'+pctColor+'">'+pct+'</td>';
     html+='</tr>';
   });
-  // Fila TOTAL
-  const totalLoteGlobal=rows.reduce((s,r)=>s+(r.lote||0),0);
-  const totalG1Global=rows.reduce((s,r)=>s+r.g1,0);
-  const totalG2Global=rows.reduce((s,r)=>s+r.g2,0);
-  html+='<tr style="border-top:2px solid #1a3a5c">';
-  html+='<td style="padding:0;background:#1a3a5c"></td>';
-  html+='<td style="font-weight:800;color:#1a3a5c;font-size:8pt;text-transform:uppercase;letter-spacing:.03em">TOTAL GENERAL</td>';
-  html+='<td style="text-align:center;font-weight:700">'+(totalLoteGlobal||'—')+'</td>';
-  html+='<td style="text-align:center;background:#dbeafe;color:#1e40af;font-weight:800">'+totalG1Global+'</td>';
-  html+='<td style="text-align:center;background:#fee2e2;color:#b91c1c;font-weight:800">'+totalG2Global+'</td>';
-  html+='<td style="text-align:center;color:#64748b">—</td>';
-  html+='</tr>';
   html+='</tbody></table>';
   // Leyenda
-  html+='<div style="margin-top:5px;font-size:7.5pt;color:#64748b;display:flex;gap:12px;flex-wrap:wrap;line-height:1.6">';
-  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#dc2626;vertical-align:middle;margin-right:3px"></span>Con Grado 2 (daños severos)</span>';
-  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#1e40af;vertical-align:middle;margin-right:3px"></span>Solo Grado 1 (daños leves)</span>';
-  html+='<span style="font-style:italic">% = (defectos / cant. lote) × 100 &nbsp;·&nbsp; (—) Sin cant. lote registrada</span>';
+  html+='<div style="margin-top:4px;font-size:7.5pt;color:#64748b;display:flex;gap:14px;flex-wrap:wrap">';
+  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#dc2626;vertical-align:middle;margin-right:3px"></span>Con Grado 2 (rechazado)</span>';
+  html+='<span><span style="display:inline-block;width:8px;height:8px;background:#1e40af;vertical-align:middle;margin-right:3px"></span>Solo Grado 1 (tolerable)</span>';
+  html+='<span style="font-style:italic">% = (defectos / cantidad del lote) × 100</span>';
   html+='</div>';
   html+='</div>';
   return html;
@@ -3448,9 +3289,7 @@ ${(()=>{
   document.querySelectorAll('.g1-codigo-block').forEach(bl=>{
     const code=bl.querySelector('.g1-code-input')?.value||'';
     const grado=bl.querySelector('.g1-grado-select')?.value||'';
-    const sinSerie=bl.querySelector('.sin-serie-check')?.checked;
-    const sinSerieQty=parseInt(bl.querySelector('.sin-serie-qty')?.value||'0')||0;
-    const series=sinSerie?sinSerieQty:[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
+    const series=[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
     if(code||grado||series>0){
       if(grado==='G2'){g2Codigos++;g2Series+=series;}
       else {g1Codigos++;g1Series+=series;}
@@ -3459,9 +3298,7 @@ ${(()=>{
   document.querySelectorAll('.g2-codigo-block').forEach(bl=>{
     const code=bl.querySelector('.g2-code-input')?.value||'';
     const grado=bl.querySelector('.g2-grado-select')?.value||'';
-    const sinSerie=bl.querySelector('.sin-serie-check')?.checked;
-    const sinSerieQty=parseInt(bl.querySelector('.sin-serie-qty')?.value||'0')||0;
-    const series=sinSerie?sinSerieQty:[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
+    const series=[...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length;
     if(code||grado||series>0){
       if(grado==='G1'){g1Codigos++;g1Series+=series;}
       else {g2Codigos++;g2Series+=series;}
@@ -3479,16 +3316,21 @@ ${(()=>{
     const firstSentence=obsGenerales.split(/[.!?]/)[0].trim();
     hallazgo=firstSentence.length>200?firstSentence.substring(0,200)+'…':firstSentence;
   } else if(totalCodigos>0){
-    hallazgo=`Se detectaron ${g1Series} serie(s) con daño leve (G1) y ${g2Series} serie(s) con daño severo (G2). Ver detalle en sección 8 y consolidado en sección 9.`;
+    hallazgo=`Se detectaron ${totalCodigos} código(s) con observaciones — ${g1Series} serie(s) G1 y ${g2Series} serie(s) G2. Ver detalle en sección 8 y consolidado en sección 9.`;
   } else {
     hallazgo='Inspección sin observaciones de daños en la mercadería recibida.';
   }
   return `<div class="section">
     <div class="sec-title"><span class="num">10</span> Análisis de Defectos Encontrados / Damage Analysis</div>
     <div class="exec-body">
-      <div class="exec-stats" style="grid-template-columns:repeat(3,1fr)">
+      <div class="exec-result" style="background:${resBg};border-left:4px solid ${resColor}">
+        <div class="exec-result-lbl">Estado de Mercadería / Cargo Status</div>
+        <div class="exec-result-val" style="color:${resColor}">${mercaResult}</div>
+      </div>
+      <div class="exec-stats">
         <div class="stat-cell"><span class="stat-lbl">Series Grado 1</span><span class="stat-val" style="color:#1e40af">${g1Series}</span></div>
         <div class="stat-cell"><span class="stat-lbl">Series Grado 2</span><span class="stat-val" style="color:#92400e">${g2Series}</span></div>
+        <div class="stat-cell"><span class="stat-lbl">Códigos con daños</span><span class="stat-val">${totalCodigos}</span></div>
         <div class="stat-cell"><span class="stat-lbl">Fotos de evidencia</span><span class="stat-val">${totalFotos}</span></div>
       </div>
       <div class="exec-finding"><b>Hallazgo principal / Main finding:</b> ${hallazgo}</div>
@@ -3530,12 +3372,7 @@ ${(()=>{
 </div>
 
 </div>
-<div id="pdfBtn" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a3a5c;padding:10px 16px;z-index:9999;box-shadow:0 -4px 16px rgba(0,0,0,0.35);justify-content:center;gap:8px;align-items:center;flex-wrap:wrap">
-  <button onclick="savePDF()" id="savePdfBtn" style="background:#fff;color:#1a3a5c;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap;min-width:130px">💾 Descargar PDF</button>
-  <button onclick="sharePDF()" id="shareBtn" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">📤 OneDrive</button>
-  <button onclick="emergenciaPDF()" id="emergBtn" style="background:#DC2626;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">🆘 Emergencia</button>
-  <span id="pdfHint" style="font-size:10.5px;color:rgba(255,255,255,0.8);font-family:Arial,sans-serif;width:100%;text-align:center;margin-top:2px">💾 Descarga PDF &nbsp;·&nbsp; 📤 Comparte a OneDrive &nbsp;·&nbsp; 🆘 Si falla todo: usa Emergencia</span>
-</div>
+<div id="pdfBtn" style="display:none"><button onclick="savePDF()" id="savePdfBtn" style="background:#fff;color:#1a3a5c;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;min-width:150px">Descargar PDF</button> <button onclick="window.print()" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">Imprimir / Guardar</button><span id="pdfHint" style="font-size:10px;color:rgba(255,255,255,0.85);font-family:Arial,sans-serif;width:100%;text-align:center;margin-top:4px">Descargar PDF = archivo en Descargas &nbsp;|&nbsp; Imprimir = Ctrl+P o menu Imprimir del movil</span></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 // Nombre estandarizado del archivo: Insp_FILE_FECHA_CONTENEDOR.pdf
@@ -3543,8 +3380,8 @@ const cleanName=s=>(s||'').toString().replace(/[^A-Za-z0-9-]/g,'').substring(0,3
 const pdfFileName='Insp_'+(cleanName('${fileNum}')||'FILE')+'_'+(cleanName('${fecha}')||'FECHA')+'_'+(cleanName('${contenedor}')||'CONT')+'.pdf';
 document.title=pdfFileName.replace('.pdf','');
 
-// Mostrar barra con múltiples métodos para máxima compatibilidad
 window.onload=function(){
+  document.getElementById('pdfBtn').style.display='flex';
   // Si el navegador no soporta Web Share o no soporta compartir archivos, oculta el botón Compartir
   if(!navigator.canShare||!navigator.canShare({files:[new File([new Blob(['x'])],'x.pdf',{type:'application/pdf'})]})){
     const sb=document.getElementById('shareBtn');
@@ -3552,227 +3389,59 @@ window.onload=function(){
   }
 };
 
-// ── Función compartida para generar el blob del PDF ──
-async function generarBlob(hint){
-  // Preparar el elemento .page para captura
-  const el=document.querySelector('.page');
-  if(!el){alert('No se encontró el contenido del reporte.');return null;}
-
-  const prev={
-    width:el.style.width, maxWidth:el.style.maxWidth,
-    margin:el.style.margin, padding:el.style.padding,
-    boxShadow:el.style.boxShadow, boxSizing:el.style.boxSizing
-  };
-  el.style.width='720px'; el.style.maxWidth='720px';
-  el.style.margin='0 auto'; el.style.padding='8px 28px';
-  el.style.boxShadow='none'; el.style.boxSizing='border-box';
-
-  await new Promise(r=>setTimeout(r,180));
-
-  const fileNum=document.getElementById('fileNum')?.value||'REP';
-  const fecha=document.getElementById('fecha')?.value||new Date().toISOString().slice(0,10);
-  const contNum=(document.getElementById('contNum')?.value||'').replace(/[^A-Z0-9]/gi,'').toUpperCase();
-  const pdfFileName='Insp_'+fileNum+'_'+fecha+(contNum?'_'+contNum:'')+'.pdf';
-
-  const opt={
-    margin:[12,14,14,14],
-    filename:pdfFileName,
-    image:{type:'jpeg',quality:0.94},
-    html2canvas:{
-      scale:2, useCORS:true, backgroundColor:'#ffffff',
-      logging:false, windowWidth:776, width:720,
-      scrollX:0, scrollY:0,
-      onclone:(doc)=>{
-        const b=doc.body;
-        if(b){b.style.margin='0';b.style.padding='0';b.style.background='#fff';}
-        const p=doc.querySelector('.page');
-        if(p){p.style.width='720px';p.style.maxWidth='720px';
-              p.style.margin='0 auto';p.style.padding='8px 28px';
-              p.style.boxSizing='border-box';p.style.boxShadow='none';}
-        doc.querySelectorAll('#pdfBtn,#shareBtn').forEach(b=>b.style.display='none');
-        return Promise.all([...doc.querySelectorAll('img')].map(img=>{
-          if(img.complete&&img.naturalWidth>0) return Promise.resolve();
-          return new Promise(res=>{img.onload=res;img.onerror=res;if(img.src)img.src=img.src;});
-        }));
-      }
-    },
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
-    pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box','.photo-cell']}
-  };
-
-  if(hint) hint.textContent='⏳ Generando PDF... (puede tardar 20-30 seg)';
-
-  let blob=null;
-  try{
-    // Mostrar el contenido PDF antes de capturar
-    const pdfContent=document.getElementById('pdfContent');
-    if(pdfContent) pdfContent.style.display='block';
-    blob=await html2pdf().set(opt).from(el).outputPdf('blob');
-  }catch(e){
-    console.error('Error generando PDF:',e);
-    if(hint) hint.textContent='❌ Error al generar PDF. Intenta de nuevo.';
-  }finally{
-    // Restaurar estilos originales
-    el.style.width=prev.width; el.style.maxWidth=prev.maxWidth;
-    el.style.margin=prev.margin; el.style.padding=prev.padding;
-    el.style.boxShadow=prev.boxShadow; el.style.boxSizing=prev.boxSizing;
-  }
-  return {blob, pdfFileName};
-}
-
-// ── Guardar PDF (descarga directa al dispositivo) ──
 async function savePDF(){
-  const hint=document.getElementById('pdfHint');
-  const btn=document.querySelector('#pdfBtn button');
-  if(btn) btn.disabled=true;
-
-  const sinLote=validarCantLote();
-  if(sinLote.length>0){
-    const ok=confirm('⚠️ Códigos con daños sin "Cant. Lote":\n\n'+sinLote.join('\n')+'\n\n¿Continuar de todas formas?');
-    if(!ok){if(btn)btn.disabled=false;return;}
-  }
-
-  const result=await generarBlob(hint);
-  if(btn) btn.disabled=false;
-  if(!result||!result.blob){return;}
-
-  const {blob,pdfFileName}=result;
-
-  // Descarga directa — funciona en Android Chrome y PC
+  var hint=document.getElementById('pdfHint');
+  var btn=document.getElementById('savePdfBtn');
+  if(btn){btn.disabled=true;btn.textContent='Generando...';}
+  if(hint)hint.textContent='Generando PDF (20-30 segundos)...';
   try{
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url; a.download=pdfFileName;
-    a.style.display='none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
-    if(hint) hint.textContent='✅ PDF guardado en tu carpeta de Descargas';
+    var el=document.querySelector('.page');
+    if(!el){alert('Error: no se encontro el reporte');return;}
+    var fileNum=(document.getElementById('fileNum')||{value:'REP'}).value||'REP';
+    var fecha=(document.getElementById('fecha')||{value:''}).value||new Date().toISOString().slice(0,10);
+    var cont=((document.getElementById('contNum')||{value:''}).value||'').replace(/[^A-Z0-9]/gi,'').toUpperCase();
+    var fname='Insp_'+fileNum+'_'+fecha+(cont?'_'+cont:'')+'.pdf';
+    var pw=el.style.width,pp=el.style.padding,pm=el.style.margin,ps=el.style.boxShadow;
+    el.style.width='720px';el.style.maxWidth='720px';el.style.margin='0 auto';
+    el.style.padding='8px 28px';el.style.boxShadow='none';el.style.boxSizing='border-box';
+    await new Promise(function(r){setTimeout(r,200);});
+    var opt={
+      margin:[12,14,14,14],filename:fname,
+      image:{type:'jpeg',quality:0.92},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
+        windowWidth:776,width:720,scrollX:0,scrollY:0,
+        onclone:function(doc){
+          var p=doc.querySelector('.page');
+          if(p){p.style.width='720px';p.style.maxWidth='720px';p.style.margin='0 auto';
+            p.style.padding='8px 28px';p.style.boxSizing='border-box';p.style.boxShadow='none';}
+          doc.querySelectorAll('#pdfBtn,#shareBtn,#emergBtn').forEach(function(b){b.style.display='none';});
+          return Promise.all([].slice.call(doc.querySelectorAll('img')).map(function(img){
+            if(img.complete&&img.naturalWidth>0)return Promise.resolve();
+            return new Promise(function(res){img.onload=res;img.onerror=res;});
+          }));
+        }
+      },
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
+      pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box']}
+    };
+    var blob=await html2pdf().set(opt).from(el).outputPdf('blob');
+    el.style.width=pw;el.style.padding=pp;el.style.margin=pm;el.style.boxShadow=ps;
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download=fname;a.style.display='none';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
+    if(hint)hint.textContent='PDF guardado en Descargas';
   }catch(e){
-    if(hint) hint.textContent='❌ No se pudo descargar. Intenta con el botón Compartir.';
-  }
-}
-
-
-// ══════════════════════════════════════════════════════
-// SALVACONDUCTO DE EMERGENCIA
-// Si el PDF falla, descarga el reporte como HTML
-// → PC: abre el archivo y presiona Ctrl+P → Guardar como PDF
-// → Móvil: abre en Chrome → menú ⋮ → Imprimir → Guardar PDF
-// ══════════════════════════════════════════════════════
-async function emergenciaPDF(){
-  const hint=document.getElementById('pdfHint');
-  const btn=document.getElementById('emergBtn');
-
-  // Mostrar instrucciones primero
-  const instrucciones = 'MODO EMERGENCIA\n\n'
-    + 'Este modo descarga el reporte como archivo HTML.\n\n'
-    + 'COMO CONVERTIRLO A PDF:\n\n'
-    + 'En el CELULAR:\n'
-    + '1. Abre el archivo descargado\n'
-    + '2. Toca los 3 puntos (menu)\n'
-    + '3. Elige Imprimir\n'
-    + '4. Selecciona Guardar como PDF\n\n'
-    + 'En la LAPTOP / PC:\n'
-    + '1. Abre el archivo descargado\n'
-    + '2. Presiona Ctrl+P\n'
-    + '3. En destino elige Guardar como PDF\n'
-    + '4. Haz click en Guardar\n\n'
-    + 'Continuar?';
-
-  if(!confirm(instrucciones)) return;
-
-  btn.disabled=true;
-  btn.textContent='⏳ Preparando...';
-  if(hint) hint.textContent='⏳ Preparando reporte de emergencia...';
-
-  try{
-    // Generar el HTML del reporte
-    const reporteHTML = await generarReporteHTML();
-    if(!reporteHTML){
-      hint.textContent='❌ Error al generar reporte';
-      btn.disabled=false; btn.textContent='🆘 Emergencia';
-      return;
-    }
-
-    const fileNum=document.getElementById('fileNum')?.value||'REP';
-    const fecha=document.getElementById('fecha')?.value||new Date().toISOString().slice(0,10);
-    const nombreArchivo='EMERGENCIA_Insp_'+fileNum+'_'+fecha+'.html';
-
-    const blob=new Blob([reporteHTML],{type:'text/html;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url; a.download=nombreArchivo;
-    a.style.display='none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
-
-    if(hint) hint.textContent='✅ Archivo descargado. Ábrelo y presiona Ctrl+P (PC) o Imprimir (móvil)';
-    alert('Archivo descargado: '+nombreArchivo+'\n\nAbre el archivo y usa Ctrl+P en PC o el menu Imprimir en movil para guardarlo como PDF.');
-  }catch(e){
-    if(hint) hint.textContent='❌ Error: '+e.message;
+    if(hint)hint.textContent='Error al generar - usa EMERGENCIA';
+    console.error('savePDF:',e);
   }finally{
-    btn.disabled=false; btn.textContent='🆘 Emergencia';
+    if(btn){btn.disabled=false;btn.textContent='Descargar PDF';}
+    mostrarBarraPDF();
   }
-}
-
-// Generar HTML limpio del reporte para emergencia
-async function generarReporteHTML(){
-  // Obtener el contenido del reporte ya renderizado
-  const page=document.querySelector('.page');
-  if(!page) return null;
-
-  // Estilos críticos para que se vea bien al abrir
-  const estiloEmergencia='<style>'
-    +'*{box-sizing:border-box;margin:0;padding:0}'
-    +'body{font-family:Segoe UI,Arial,sans-serif;color:#1a2332;font-size:10pt;background:#fff;padding:10mm}'
-    +'img{max-width:100%;height:auto}'
-    +'table{width:100%;border-collapse:collapse}'
-    +'td,th{padding:4px 8px;border:1px solid #c9d4e0;font-size:9pt}'
-    +'th{background:#1a3a5c;color:#fff;font-weight:700}'
-    +'.section{margin-bottom:8px;border:1.5px solid #1a3a5c;page-break-inside:avoid}'
-    +'@media print{body{padding:8mm}.section{page-break-inside:avoid}button{display:none!important}}'
-    +'</style>';
-
-  const htmlCompleto='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
-    +'<title>Reporte Emergencia Grupo Sole</title>'
-    +estiloEmergencia
-    +'</head><body>'
-    +'<div style="background:#DC2626;color:#fff;padding:8px 12px;font-size:11px;font-weight:700;text-align:center;margin-bottom:8px">'
-    +'REPORTE MODO EMERGENCIA - Para PDF: Ctrl+P (PC) o menu Imprimir (movil)'
-    +'</div>'
-    +page.outerHTML
-    +'</body></html>';
-
-  return htmlCompleto;
-}
-
-function validarCantLote(){
-  // Recopilar todos los códigos con daños
-  const codigosConDanos=new Set();
-  document.querySelectorAll('.g1-codigo-block,.g2-codigo-block').forEach(bl=>{
-    const code=(bl.querySelector('[class*="code-input"]')?.value||'').trim().toUpperCase();
-    if(code) codigosConDanos.add(code);
-  });
-  // Verificar si esos códigos tienen cant. lote en la tabla de productos
-  const warnings=[];
-  document.querySelectorAll('.producto-row').forEach(row=>{
-    const cod=(row.querySelector('.prod-code')?.value||'').trim().toUpperCase();
-    const lote=(row.querySelector('.prod-lote')?.value||'').trim();
-    if(codigosConDanos.has(cod)&&!lote){
-      warnings.push(cod);
-    }
-  });
-  return warnings;
 }
 
 async function sharePDF(){
-  const sinLote=validarCantLote();
-  if(sinLote.length>0){
-    const ok=confirm('⚠️ Códigos con daños sin "Cant. Lote":\n\n'+sinLote.join('\n')+'\n\n¿Continuar de todas formas?');
-    if(!ok) return;
-  }
   const btn=document.getElementById('shareBtn');
   const hint=document.getElementById('pdfHint');
   const orig=btn.textContent;
@@ -3785,50 +3454,42 @@ async function sharePDF(){
     const A4_WIDTH_PX=794;
     const prevStyle={
       width:el.style.width, maxWidth:el.style.maxWidth, margin:el.style.margin,
-      padding:el.style.padding, boxShadow:el.style.boxShadow, boxSizing:el.style.boxSizing
+      padding:el.style.padding, boxShadow:el.style.boxShadow
     };
-    el.style.width='720px';
-    el.style.maxWidth='720px';
-    el.style.margin='0 auto';
-    el.style.padding='8px 28px';
+    el.style.width=A4_WIDTH_PX+'px';
+    el.style.maxWidth=A4_WIDTH_PX+'px';
+    el.style.margin='0';
+    el.style.padding='38px 28px';
     el.style.boxShadow='none';
-    el.style.boxSizing='border-box';
     // Dar tiempo al navegador a re-renderizar antes de capturar
-    await new Promise(r=>setTimeout(r,180));
-    
+    await new Promise(r=>setTimeout(r,100));
+    const opt={
+      margin:[6,5,8,5],
+      filename:pdfFileName,
+      image:{type:'jpeg',quality:0.88},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff',logging:false,windowWidth:A4_WIDTH_PX,width:A4_WIDTH_PX},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
+      pagebreak:{mode:['css','legacy'],avoid:['.section','.photo-cell','.sig-box','tr']}
     };
-   
-try{
-
-} catch(e){
-  console.error(e);
-} finally {
+    let blob;
+    try{
+      blob=await html2pdf().set(opt).from(el).outputPdf('blob');
+    } finally {
       // Restaurar estilos originales pase lo que pase
       el.style.width=prevStyle.width;
       el.style.maxWidth=prevStyle.maxWidth;
       el.style.margin=prevStyle.margin;
       el.style.padding=prevStyle.padding;
       el.style.boxShadow=prevStyle.boxShadow;
-      el.style.boxSizing=prevStyle.boxSizing;
     }
-  
-    // IMPORTANTE: navigator.share DEBE llamarse sin await intermedio después del gesto
-    // El blob ya está listo — share inmediato
- 
+    const file=new File([blob],pdfFileName,{type:'application/pdf'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
       btn.textContent='📤 Abriendo menú...';
       hint.textContent='Elige "OneDrive" en el menú que aparece';
-      // Llamada SÍNCRONA al share (sin await extra) para mantener el gesto activo
-      navigator.share({files:[file],title:pdfFileName,text:'Reporte de Inspección — Grupo Sole'})
-        .then(()=>{hint.textContent='✅ Archivo compartido correctamente';})
-        .catch(e=>{
-          if(e.name==='AbortError'){hint.textContent='Compartir cancelado';return;}
-          // Fallback si share falla
-          const url=URL.createObjectURL(blob);
-          const a=document.createElement('a');a.href=url;a.download=pdfFileName;a.click();
-          setTimeout(()=>URL.revokeObjectURL(url),3000);
-          hint.textContent='✅ PDF descargado. Súbelo manualmente a OneDrive.';
-        });
+      await navigator.share({files:[file],title:pdfFileName,text:'Reporte de Inspección — Grupo Sole'});
+      hint.textContent='✅ Archivo enviado a OneDrive (verifica en tu app)';
     } else {
+      // Fallback: descarga el PDF para que el usuario lo suba manual
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');a.href=url;a.download=pdfFileName;a.click();
       setTimeout(()=>URL.revokeObjectURL(url),3000);
@@ -3844,7 +3505,7 @@ try{
     }
   }finally{
     btn.disabled=false;btn.textContent=orig;
-    setTimeout(()=>{hint.textContent='💾 Descarga el PDF a tu teléfono · 📤 Comparte directo a OneDrive';},6000);
+    setTimeout(()=>{hint.textContent='Compartir abre el menú de Android — elige OneDrive de tu empresa';},6000);
   }
 }
 <\/script>
@@ -3890,77 +3551,35 @@ updateNav();
 setupSig('sigAlmacen','statusAlm');
 setupSig('sigCalidad','statusCal');
 restoreProgress();loadGSheetConfig();
-
-// ══════════════════════════════════════════
-// TABLA MILITAR AQL
-// ══════════════════════════════════════════
-const AQL_TABLE=[
-  {de:2,   hasta:8,      normal:2,  reducida:2,  funcional:2, logo:1},
-  {de:9,   hasta:15,     normal:3,  reducida:2,  funcional:2, logo:1},
-  {de:16,  hasta:25,     normal:5,  reducida:2,  funcional:2, logo:2},
-  {de:26,  hasta:50,     normal:8,  reducida:3,  funcional:2, logo:2},
-  {de:51,  hasta:90,     normal:13, reducida:5,  funcional:3, logo:3},
-  {de:91,  hasta:150,    normal:20, reducida:8,  funcional:3, logo:3},
-  {de:151, hasta:280,    normal:32, reducida:13, funcional:3, logo:3},
-  {de:281, hasta:500,    normal:50, reducida:20, funcional:3, logo:3},
-  {de:501, hasta:1200,   normal:80, reducida:32, funcional:5, logo:5},
-  {de:1201,hasta:3200,   normal:125,reducida:50, funcional:5, logo:5},
-  {de:3201,hasta:10000,  normal:200,reducida:80, funcional:5, logo:5},
-  {de:10001,hasta:35000, normal:315,reducida:125,funcional:5, logo:5},
-  {de:35001,hasta:150000,normal:500,reducida:200,funcional:8, logo:5},
-  {de:150001,hasta:500000,normal:800,reducida:315,funcional:8,logo:5},
-  {de:500001,hasta:Infinity,normal:1250,reducida:500,funcional:8,logo:5}
-];
-
-function buildAQLTable(){
-  const tbody=document.getElementById('aqlTableBody');
-  if(!tbody) return;
-  tbody.innerHTML=AQL_TABLE.map((r,i)=>{
-    const hastaStr=r.hasta===Infinity?'y más':r.hasta.toLocaleString();
-    const bg=i%2===0?'#fff':'#F8FAFC';
-    return '<tr id="aqlRow'+i+'" style="background:'+bg+'">'
-      +'<td style="padding:5px 8px;border:1px solid #E2E8F0;color:#1a3a5c;font-weight:600">'+r.de.toLocaleString()+'</td>'
-      +'<td style="padding:5px 8px;border:1px solid #E2E8F0;color:#1a3a5c;font-weight:600">'+hastaStr+'</td>'
-      +'<td style="padding:5px 8px;border:1px solid #E2E8F0;text-align:center;font-weight:700;color:#15803d">'+r.normal+'</td>'
-      +'<td style="padding:5px 8px;border:1px solid #E2E8F0;text-align:center;font-weight:700;color:#92400e">'+r.reducida+'</td>'
-      +'<td style="padding:5px 8px;border:1px solid #E2E8F0;text-align:center;font-weight:700;color:#b91c1c">'+r.funcional+'</td>'
-      +'<td style="padding:5px 8px;border:1px solid #E2E8F0;text-align:center;font-weight:700;color:#b45309">'+r.logo+'</td>'
-      +'</tr>';
-  }).join('');
-}
-
-function toggleAQL(){
-  const panel=document.getElementById('aqlPanel');
-  const arrow=document.getElementById('aqlArrow');
-  const open=panel.style.display==='none';
-  panel.style.display=open?'block':'none';
-  arrow.style.transform=open?'rotate(180deg)':'rotate(0deg)';
-  if(open) buildAQLTable();
-}
-
-function calcAQL(val){
-  const n=parseInt(val);
-  const res=document.getElementById('aqlResult');
-  if(!n||n<2){res.innerHTML='← Ingresa la cantidad';return;}
-  const row=AQL_TABLE.find(r=>n>=r.de&&n<=r.hasta);
-  if(!row){res.innerHTML='Fuera de rango';return;}
-  // Resaltar fila en la tabla
-  document.querySelectorAll('[id^="aqlRow"]').forEach(r=>r.style.background='');
-  AQL_TABLE.forEach((r,i)=>{
-    const bg=i%2===0?'#fff':'#F8FAFC';
-    const el=document.getElementById('aqlRow'+i);
-    if(el) el.style.background=(r===row)?'#FEF9C3':bg;
-  });
-  res.innerHTML='<span style="background:#FEF9C3;border:1.5px solid #FDE68A;border-radius:6px;padding:4px 10px">'
-    +'Normal: <b style=\"color:#15803d\">'+row.normal+'</b> &nbsp;·&nbsp; '
-    +'Reducida: <b style=\"color:#92400e\">'+row.reducida+'</b> &nbsp;·&nbsp; '
-    +'Funcional: <b style=\"color:#b91c1c\">'+row.funcional+'</b> &nbsp;·&nbsp; '
-    +'Logo: <b style=\"color:#b45309\">'+row.logo+'</b></span>';
+function emergenciaPDF(){
+  var hint=document.getElementById('pdfHint');
+  var btn=document.getElementById('emergBtn');
+  if(!confirm('MODO EMERGENCIA\n\nDescarga el reporte como archivo HTML.\nDespues abrelo y usa:\n  PC: Ctrl+P > Guardar como PDF\n  Movil: menu > Imprimir > Guardar PDF\n\nContinuar?'))return;
+  if(btn){btn.disabled=true;btn.textContent='Preparando...';}
+  try{
+    var page=document.querySelector('.page');
+    if(!page){alert('No se encontro el reporte');return;}
+    var fileNum=(document.getElementById('fileNum')||{value:'REP'}).value||'REP';
+    var fecha=(document.getElementById('fecha')||{value:''}).value||new Date().toISOString().slice(0,10);
+    var nombre='EMERGENCIA_'+fileNum+'_'+fecha+'.html';
+    var estilos='<style>body{font-family:Arial;font-size:10pt;padding:10mm}table{width:100%;border-collapse:collapse}td,th{padding:4px 8px;border:1px solid #ccc;font-size:9pt}th{background:#1a3a5c;color:#fff}img{max-width:100%}@media print{.no-print{display:none!important}}</style>';
+    var banner='<div class="no-print" style="background:#DC2626;color:#fff;padding:10px;text-align:center;font-weight:bold;margin-bottom:12px">MODO EMERGENCIA - Usa Ctrl+P en PC o menu Imprimir en movil para guardar como PDF</div>';
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reporte '+fileNum+'</title>'+estilos+'</head><body>'+banner+page.outerHTML+'</body></html>';
+    var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download=nombre;a.style.display='none';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
+    if(hint)hint.textContent='Descargado: '+nombre+' - Abrelo y usa Ctrl+P para PDF';
+  }catch(e){
+    alert('Error: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='EMERGENCIA';}
+  }
 }
 
 recoverPhotosFromDB();
-// Si al cargar ya estamos en el paso 7 (datos recuperados), mostrar barra
-setTimeout(()=>{if(currentStep===6) mostrarBarraPDF();}, 2000);
 </script>
 </body>
 </html>
