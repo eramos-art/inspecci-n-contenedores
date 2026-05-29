@@ -3840,9 +3840,11 @@ async function sharePDF(){
       pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box','.photo-cell']}
     };
     let blob;
-    try{
-      blob=await html2pdf().set(opt).from(el).outputPdf('blob');
-    } finally {
+try{
+  blob = await html2pdf().set(opt).from(el).outputPdf('blob');
+} catch(e){
+  console.error(e);
+} finally {
       // Restaurar estilos originales pase lo que pase
       el.style.width=prevStyle.width;
       el.style.maxWidth=prevStyle.maxWidth;
