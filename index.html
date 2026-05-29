@@ -3823,18 +3823,19 @@ async function sharePDF(){
     .forEach(btn => btn.style.display = 'none');
 
   return Promise.all(
-    [...doc.querySelectorAll('img')].map(img => {
-      if (img.complete && img.naturalWidth > 0) {
-        return Promise.resolve();
-      }
-      return new Promise(res => {
-        img.onload = res;
-        img.onerror = res;
-        if (img.src) img.src = img.src;
-      });
-    })
-  );
+  [...doc.querySelectorAll('img')].map(img => {
+    if (img.complete && img.naturalWidth > 0) {
+      return Promise.resolve();
+    }
+    return new Promise(res => {
+      img.onload = res;
+      img.onerror = res;
+      if (img.src) img.src = img.src;
+    });
+  })
+);
 },
+
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
       pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box','.photo-cell']}
     };
