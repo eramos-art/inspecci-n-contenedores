@@ -3795,53 +3795,11 @@ async function sharePDF(){
     el.style.boxSizing='border-box';
     // Dar tiempo al navegador a re-renderizar antes de capturar
     await new Promise(r=>setTimeout(r,180));
-    const opt={
-      margin:[12,14,14,14],
-      filename:pdfFileName,
-      image:{type:'jpeg',quality:0.94},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
-                   windowWidth:776,width:720,scrollX:0,scrollY:0,
-                   onclone:(doc)=>{
-  const b = doc.body;
-  if (b) {
-    b.style.margin = '0';
-    b.style.padding = '0';
-    b.style.background = '#fff';
-  }
-
-  const p = doc.querySelector('.page');
-  if (p) {
-    p.style.width = '720px';
-    p.style.maxWidth = '720px';
-    p.style.margin = '0 auto';
-    p.style.padding = '8px 28px';
-    p.style.boxSizing = 'border-box';
-    p.style.boxShadow = 'none';
-  }
-
-  doc.querySelectorAll('#pdfBtn,#shareBtn')
-    .forEach(btn => btn.style.display = 'none');
-
-  return Promise.all(
-  [...doc.querySelectorAll('img')].map(img => {
-    if (img.complete && img.naturalWidth > 0) {
-      return Promise.resolve();
-    }
-    return new Promise(res => {
-      img.onload = res;
-      img.onerror = res;
-      if (img.src) img.src = img.src;
-    });
-  })
-);
-},
-
-      jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
-      pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box','.photo-cell']}
+    
     };
-    let blob;
+   
 try{
-  blob = await html2pdf().set(opt).from(el).outputPdf('blob');
+
 } catch(e){
   console.error(e);
 } finally {
@@ -3853,7 +3811,7 @@ try{
       el.style.boxShadow=prevStyle.boxShadow;
       el.style.boxSizing=prevStyle.boxSizing;
     }
-    const file=new File([blob],pdfFileName,{type:'application/pdf'});
+  
     // IMPORTANTE: navigator.share DEBE llamarse sin await intermedio después del gesto
     // El blob ya está listo — share inmediato
     if(navigator.canShare&&navigator.canShare({files:[file]})){
