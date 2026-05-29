@@ -772,8 +772,6 @@ window.onerror = function(msg, src, line, col, err) {
 <input type="file" accept="image/*" id="hiddenFileGallery" style="display:none">
 
 <script>
-function mostrarBarraPDF(){var b=document.getElementById('pdfBtn');if(b){b.style.display='flex';b.style.position='fixed';b.style.bottom='0';b.style.left='0';b.style.right='0';b.style.zIndex='9999';b.style.background='#1a3a5c';b.style.padding='10px 16px';b.style.justifyContent='center';b.style.gap='8px';b.style.alignItems='center';b.style.flexWrap='wrap';b.style.boxShadow='0 -4px 16px rgba(0,0,0,0.35)';}}
-function ocultarBarraPDF(){var b=document.getElementById('pdfBtn');if(b)b.style.display='none';}
 // ══════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════
@@ -1673,7 +1671,6 @@ function nextStep(){
     updateNav();
     if(currentStep===6){
       buildSummary();
-      setTimeout(mostrarBarraPDF,600);
       // Al llegar al paso 7, limpiar campos de firma si tienen texto no deseado
       // (autocompletado del móvil que pega texto de escaneo anterior)
       setTimeout(()=>{
@@ -1694,7 +1691,6 @@ function nextStep(){
   }
 }
 function prevStep(){
-  if(currentStep===6)ocultarBarraPDF();
   if(currentStep>0){
     document.getElementById('page'+currentStep).classList.remove('active');
     currentStep--;
@@ -3063,14 +3059,9 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
   }
 }
 @media print{
-  #pdfBtn,button,#btnNext,#btnPrev,.btn-nav{display:none!important}
-  .page{box-shadow:none!important;padding:10mm!important}
-  body{background:#fff!important}
-  .section{page-break-inside:avoid}
-
   body{background:#fff;padding:0}
   .page{box-shadow:none;padding:0}
-  #pdfBtn{display:none}
+  #pdfBtn{display:none!important}
   .section{page-break-inside:avoid}
 }
 </style>
@@ -3372,8 +3363,12 @@ ${(()=>{
 </div>
 
 </div>
-<div id="pdfBtn" style="display:none"><button onclick="savePDF()" id="savePdfBtn" style="background:#fff;color:#1a3a5c;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;min-width:150px">Descargar PDF</button> <button onclick="window.print()" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">Imprimir / Guardar</button><span id="pdfHint" style="font-size:10px;color:rgba(255,255,255,0.85);font-family:Arial,sans-serif;width:100%;text-align:center;margin-top:4px">Descargar PDF = archivo en Descargas &nbsp;|&nbsp; Imprimir = Ctrl+P o menu Imprimir del movil</span></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<div id="pdfBtn" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a3a5c;padding:10px 16px;z-index:999;box-shadow:0 -4px 16px rgba(0,0,0,0.25);justify-content:center;gap:8px;align-items:center;flex-wrap:wrap">
+  <button onclick="savePDF()" style="background:#fff;color:#1a3a5c;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">💾 Guardar PDF</button>
+  <button onclick="sharePDF()" id="shareBtn" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">📤 Compartir / OneDrive</button>
+  <span id="pdfHint" style="font-size:10.5px;color:rgba(255,255,255,0.75);font-family:Arial,sans-serif;width:100%;text-align:center;margin-top:2px">Compartir abre el menú de Android — elige OneDrive de tu empresa</span>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
 <script>
 // Nombre estandarizado del archivo: Insp_FILE_FECHA_CONTENEDOR.pdf
 const cleanName=s=>(s||'').toString().replace(/[^A-Za-z0-9-]/g,'').substring(0,30);
@@ -3390,54 +3385,47 @@ window.onload=function(){
 };
 
 async function savePDF(){
-  var hint=document.getElementById('pdfHint');
-  var btn=document.getElementById('savePdfBtn');
-  if(btn){btn.disabled=true;btn.textContent='Generando...';}
-  if(hint)hint.textContent='Generando PDF (20-30 segundos)...';
+  const hint=document.getElementById('pdfHint');
+  const btn=document.getElementById('pdfBtn');
+  if(hint)hint.textContent='Generando PDF...';
   try{
-    var el=document.querySelector('.page');
-    if(!el){alert('Error: no se encontro el reporte');return;}
-    var fileNum=(document.getElementById('fileNum')||{value:'REP'}).value||'REP';
-    var fecha=(document.getElementById('fecha')||{value:''}).value||new Date().toISOString().slice(0,10);
-    var cont=((document.getElementById('contNum')||{value:''}).value||'').replace(/[^A-Z0-9]/gi,'').toUpperCase();
-    var fname='Insp_'+fileNum+'_'+fecha+(cont?'_'+cont:'')+'.pdf';
-    var pw=el.style.width,pp=el.style.padding,pm=el.style.margin,ps=el.style.boxShadow;
-    el.style.width='720px';el.style.maxWidth='720px';el.style.margin='0 auto';
-    el.style.padding='8px 28px';el.style.boxShadow='none';el.style.boxSizing='border-box';
-    await new Promise(function(r){setTimeout(r,200);});
-    var opt={
+    const el=document.querySelector('.page');
+    const fileNum=(document.getElementById('fileNum')||{value:'REP'}).value||'REP';
+    const fecha=(document.getElementById('fecha')||{value:''}).value||new Date().toISOString().slice(0,10);
+    const cont=((document.getElementById('contNum')||{value:''}).value||'').replace(/[^A-Z0-9]/gi,'').toUpperCase();
+    const fname='Insp_'+fileNum+'_'+fecha+(cont?'_'+cont:'')+'.pdf';
+    const pw=el.style.width,pp=el.style.padding,pm=el.style.margin,ps=el.style.boxShadow;
+    el.style.cssText+=';width:720px;max-width:720px;margin:0 auto;padding:8px 28px;box-shadow:none;box-sizing:border-box';
+    await new Promise(r=>setTimeout(r,200));
+    const opt={
       margin:[12,14,14,14],filename:fname,
       image:{type:'jpeg',quality:0.92},
       html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
         windowWidth:776,width:720,scrollX:0,scrollY:0,
-        onclone:function(doc){
-          var p=doc.querySelector('.page');
+        onclone:(doc)=>{
+          const p=doc.querySelector('.page');
           if(p){p.style.width='720px';p.style.maxWidth='720px';p.style.margin='0 auto';
             p.style.padding='8px 28px';p.style.boxSizing='border-box';p.style.boxShadow='none';}
-          doc.querySelectorAll('#pdfBtn,#shareBtn,#emergBtn').forEach(function(b){b.style.display='none';});
-          return Promise.all([].slice.call(doc.querySelectorAll('img')).map(function(img){
+          doc.querySelectorAll('#pdfBtn').forEach(b=>b.style.display='none');
+          return Promise.all([...doc.querySelectorAll('img')].map(img=>{
             if(img.complete&&img.naturalWidth>0)return Promise.resolve();
-            return new Promise(function(res){img.onload=res;img.onerror=res;});
+            return new Promise(res=>{img.onload=res;img.onerror=res;});
           }));
         }
       },
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
       pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box']}
     };
-    var blob=await html2pdf().set(opt).from(el).outputPdf('blob');
+    const blob=await html2pdf().set(opt).from(el).outputPdf('blob');
     el.style.width=pw;el.style.padding=pp;el.style.margin=pm;el.style.boxShadow=ps;
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;a.download=fname;a.style.display='none';
-    document.body.appendChild(a);a.click();
-    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=fname;document.body.appendChild(a);a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
     if(hint)hint.textContent='PDF guardado en Descargas';
   }catch(e){
-    if(hint)hint.textContent='Error al generar - usa EMERGENCIA';
-    console.error('savePDF:',e);
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent='Descargar PDF';}
-    mostrarBarraPDF();
+    if(hint)hint.textContent='Error - intenta con Imprimir';
+    console.error(e);
   }
 }
 
@@ -3551,34 +3539,6 @@ updateNav();
 setupSig('sigAlmacen','statusAlm');
 setupSig('sigCalidad','statusCal');
 restoreProgress();loadGSheetConfig();
-function emergenciaPDF(){
-  var hint=document.getElementById('pdfHint');
-  var btn=document.getElementById('emergBtn');
-  if(!confirm('MODO EMERGENCIA\n\nDescarga el reporte como archivo HTML.\nDespues abrelo y usa:\n  PC: Ctrl+P > Guardar como PDF\n  Movil: menu > Imprimir > Guardar PDF\n\nContinuar?'))return;
-  if(btn){btn.disabled=true;btn.textContent='Preparando...';}
-  try{
-    var page=document.querySelector('.page');
-    if(!page){alert('No se encontro el reporte');return;}
-    var fileNum=(document.getElementById('fileNum')||{value:'REP'}).value||'REP';
-    var fecha=(document.getElementById('fecha')||{value:''}).value||new Date().toISOString().slice(0,10);
-    var nombre='EMERGENCIA_'+fileNum+'_'+fecha+'.html';
-    var estilos='<style>body{font-family:Arial;font-size:10pt;padding:10mm}table{width:100%;border-collapse:collapse}td,th{padding:4px 8px;border:1px solid #ccc;font-size:9pt}th{background:#1a3a5c;color:#fff}img{max-width:100%}@media print{.no-print{display:none!important}}</style>';
-    var banner='<div class="no-print" style="background:#DC2626;color:#fff;padding:10px;text-align:center;font-weight:bold;margin-bottom:12px">MODO EMERGENCIA - Usa Ctrl+P en PC o menu Imprimir en movil para guardar como PDF</div>';
-    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reporte '+fileNum+'</title>'+estilos+'</head><body>'+banner+page.outerHTML+'</body></html>';
-    var blob=new Blob([html],{type:'text/html;charset=utf-8'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;a.download=nombre;a.style.display='none';
-    document.body.appendChild(a);a.click();
-    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
-    if(hint)hint.textContent='Descargado: '+nombre+' - Abrelo y usa Ctrl+P para PDF';
-  }catch(e){
-    alert('Error: '+e.message);
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent='EMERGENCIA';}
-  }
-}
-
 recoverPhotosFromDB();
 </script>
 </body>
