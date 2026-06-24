@@ -801,6 +801,32 @@ window.onerror = function(msg, src, line, col, err) {
   <!-- BOTÓN NUEVO REPORTE — disponible en cualquier paso -->
   <button class="btn-clear-report" id="btnClearReport" onclick="showClearConfirm()" title="Nuevo reporte">🗑</button>
 
+  <!-- BOTÓN RECUPERAR FOTOS DESDE GALERÍA -->
+  <button onclick="showRecoverModal()" id="btnRecoverFotos" title="Recuperar fotos desde galería"
+    style="position:fixed;top:12px;right:56px;z-index:200;background:rgba(37,99,235,0.9);color:white;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2);-webkit-tap-highlight-color:transparent">📥</button>
+
+  <!-- INPUT oculto para selección múltiple de fotos -->
+  <input type="file" id="recoverInput" accept="image/*" multiple style="display:none" onchange="procesarFotosRecuperadas(this.files)">
+
+  <!-- MODAL RECUPERAR FOTOS -->
+  <div id="recoverModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9997;display:none;align-items:center;justify-content:center;padding:20px">
+    <div style="background:white;border-radius:16px;padding:24px;max-width:340px;width:100%;font-family:'Segoe UI',system-ui,sans-serif">
+      <div style="font-size:32px;text-align:center;margin-bottom:12px">📥</div>
+      <div style="font-size:16px;font-weight:700;color:#1a2332;text-align:center;margin-bottom:8px">Recuperar fotos desde galería</div>
+      <div style="font-size:13px;color:#475569;line-height:1.6;margin-bottom:16px;text-align:center">
+        Si las fotos del app aparecen en blanco, puedes recuperarlas desde tu galería.<br><br>
+        <strong>Pasos:</strong><br>
+        1. Toca <strong>"Seleccionar fotos"</strong><br>
+        2. Ve a la carpeta <strong>Descargas</strong><br>
+        3. Selecciona <strong>todas las fotos</strong> de esta inspección (busca las que empiezan con <em>Insp_</em>)<br>
+        4. El app las coloca automáticamente en su lugar
+      </div>
+      <div id="recoverStatus" style="font-size:12px;color:#059669;text-align:center;margin-bottom:12px;min-height:18px"></div>
+      <button onclick="document.getElementById('recoverInput').click()" style="width:100%;padding:13px;background:#1a3a5c;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px">📂 Seleccionar fotos</button>
+      <button onclick="document.getElementById('recoverModal').style.display='none'" style="width:100%;padding:13px;background:#F1F5F9;color:#475569;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Cerrar</button>
+    </div>
+  </div>
+
   <!-- MODAL CONFIRMACIÓN LIMPIAR -->
   <div class="confirm-modal" id="confirmClearModal">
     <div class="confirm-sheet">
@@ -1026,6 +1052,64 @@ async function dbGetAllPhotos(){try{const d=await openDB();return new Promise((r
 async function dbClearAllPhotos(){try{const d=await openDB();const tx=d.transaction('fotos','readwrite');tx.objectStore('fotos').clear();}catch(e){}}
 
 // ══════════════════════════════════════════════
+// RESPALDO SECUNDARIO EN LOCALSTORAGE
+// Las fotos también se guardan aquí comprimidas (más pequeñas).
+// Si IndexedDB se borra (Android con poca memoria), este respaldo
+// permite recuperar las fotos al volver a abrir el app.
+// ══════════════════════════════════════════════
+const LS_PHOTO_PREFIX = 'insp_foto_v1_';
+const LS_PHOTO_INDEX  = 'insp_foto_index_v1';
+
+// Guardar una foto en localStorage (comprimida extra para ahorrar espacio)
+async function lsSavePhoto(key, dataUrl) {
+  try {
+    // Comprimir a 800px y calidad 0.65 para el respaldo secundario (más liviano)
+    const small = await compressDataUrl(dataUrl, 800, 0.65);
+    localStorage.setItem(LS_PHOTO_PREFIX + key, small);
+    // Actualizar índice de keys guardadas
+    let idx = [];
+    try { idx = JSON.parse(localStorage.getItem(LS_PHOTO_INDEX) || '[]'); } catch(e){}
+    if (!idx.includes(key)) { idx.push(key); localStorage.setItem(LS_PHOTO_INDEX, JSON.stringify(idx)); }
+  } catch(e) {
+    // localStorage puede estar lleno — ignorar silenciosamente
+    console.warn('lsSavePhoto: no se pudo guardar', key, e);
+  }
+}
+
+// Eliminar foto del respaldo localStorage
+function lsDeletePhoto(key) {
+  try {
+    localStorage.removeItem(LS_PHOTO_PREFIX + key);
+    let idx = [];
+    try { idx = JSON.parse(localStorage.getItem(LS_PHOTO_INDEX) || '[]'); } catch(e){}
+    idx = idx.filter(k => k !== key);
+    localStorage.setItem(LS_PHOTO_INDEX, JSON.stringify(idx));
+  } catch(e) {}
+}
+
+// Recuperar todas las fotos del respaldo localStorage
+function lsGetAllPhotos() {
+  const results = [];
+  try {
+    const idx = JSON.parse(localStorage.getItem(LS_PHOTO_INDEX) || '[]');
+    idx.forEach(key => {
+      const dataUrl = localStorage.getItem(LS_PHOTO_PREFIX + key);
+      if (dataUrl) results.push({ id: key, dataUrl });
+    });
+  } catch(e) {}
+  return results;
+}
+
+// Limpiar todas las fotos del respaldo localStorage
+function lsClearAllPhotos() {
+  try {
+    const idx = JSON.parse(localStorage.getItem(LS_PHOTO_INDEX) || '[]');
+    idx.forEach(key => localStorage.removeItem(LS_PHOTO_PREFIX + key));
+    localStorage.removeItem(LS_PHOTO_INDEX);
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════
 // GALERÍA
 // ══════════════════════════════════════════════
 function saveToGallery(dataUrl,filename){
@@ -1114,6 +1198,7 @@ function readFile(file, fromGallery=false){
     const fec=(document.getElementById('fecha').value||new Date().toISOString().split('T')[0]).replace(/-/g,'');
     const fname='Insp_'+fnum+'_'+fec+'_'+ns+'_'+key+'.jpg';
     await dbSavePhoto(ns+':'+key,dataUrl,fname);
+    lsSavePhoto(ns+':'+key,dataUrl); // respaldo secundario localStorage
     // Solo descargar a galería si vino de cámara (no duplicar si vino de galería)
     if(!fromGallery) saveToGallery(dataUrl,fname);
     updateCounts();saveProgress();
@@ -1128,7 +1213,7 @@ function readFile(file, fromGallery=false){
   };
   reader.readAsDataURL(file);
 }
-function removeSlotPhoto(ns,key,slot,removable){delete photoStore[ns+':'+key];const img=slot.querySelector('img');if(img)img.remove();const chk=slot.querySelector('.check-badge');if(chk)chk.remove();slot.classList.remove('has-photo');if(removable&&slot.parentElement)slot.parentElement.removeChild(slot);updateCounts();saveProgress();}
+function removeSlotPhoto(ns,key,slot,removable){delete photoStore[ns+':'+key];lsDeletePhoto(ns+':'+key);const img=slot.querySelector('img');if(img)img.remove();const chk=slot.querySelector('.check-badge');if(chk)chk.remove();slot.classList.remove('has-photo');if(removable&&slot.parentElement)slot.parentElement.removeChild(slot);updateCounts();saveProgress();}
 function buildGrid(containerId,ns,slots){const g=document.getElementById(containerId);if(!g)return;g.innerHTML='';slots.forEach((s,i)=>{g.appendChild(makeSlot(ns,String(i),s.num,s.label,false));});}
 function addExtraPhoto(ns,sectionId,counterId,simple){
   extraCounters[ns]=(extraCounters[ns]||0)+1;const key='x'+extraCounters[ns];
@@ -1405,7 +1490,7 @@ function addFotoBloque(btn, grade){
           const fname='Insp_'+(document.getElementById('fileNum').value||'FILE')+'_'+grade+'_blk'+blockIdx+'_'+key+'.jpg';
           if(!fromGallery) saveToGallery(dataUrl,fname);
           dbSavePhoto(fullKey,dataUrl,fname);
-          updateBloqueFotoCount(block,grade);
+          lsSavePhoto(fullKey,dataUrl); // respaldo secundario localStorage
           saveProgress();
         };
         reader.readAsDataURL(file);
@@ -1919,6 +2004,126 @@ setInterval(saveNow, 60000);
 // _doSave is defined above in AUTOSAVE section
 function clearSavedData(){localStorage.removeItem(SAVE_KEY);dbClearAllPhotos();}
 
+function showRecoverModal(){
+  document.getElementById('recoverModal').style.display='flex';
+  document.getElementById('recoverStatus').textContent='';
+  document.getElementById('recoverInput').value='';
+}
+
+// ══════════════════════════════════════════════
+// RECUPERAR FOTOS DESDE GALERÍA
+// El inspector selecciona los archivos Insp_*.jpg desde Descargas.
+// El app los reconoce por el nombre y los coloca en el slot correcto.
+// ══════════════════════════════════════════════
+async function procesarFotosRecuperadas(files){
+  if(!files||!files.length) return;
+  const status=document.getElementById('recoverStatus');
+  status.style.color='#1a3a5c';
+  status.textContent='⏳ Procesando '+files.length+' foto(s)...';
+
+  let ok=0, skip=0, noMatch=0;
+
+  for(const file of Array.from(files)){
+    const name=file.name; // ej: Insp_FILE001_20250624_ext_0.jpg
+    // Solo procesar archivos Insp_
+    if(!name.startsWith('Insp_')){ noMatch++; continue; }
+
+    // Comprimir antes de guardar
+    const dataUrl=await new Promise(res=>{
+      const r=new FileReader();
+      r.onload=async e=>res(await compressDataUrl(e.target.result));
+      r.readAsDataURL(file);
+    });
+
+    // ── Patrón 1: fotos normales ──
+    // Insp_FILE_FECHA_ext_0.jpg → ns=ext, key=0
+    // Insp_FILE_FECHA_ap_x1.jpg → ns=ap, key=x1
+    // Insp_FILE_FECHA_desc_x2.jpg → ns=desc, key=x2
+    const m1=name.match(/Insp_[^_]+_[^_]+_([a-z]+)_(x?\d+)\.jpg$/i);
+    if(m1){
+      const ns=m1[1].toLowerCase();
+      const key=m1[2];
+      const fullKey=ns+':'+key;
+      photoStore[fullKey]=dataUrl;
+      await dbSavePhoto(fullKey,dataUrl,name);
+      lsSavePhoto(fullKey,dataUrl);
+      // Pintar en el slot si existe
+      const slot=document.querySelector('[data-ns="'+ns+'"][data-key="'+key+'"]');
+      if(slot) await paintSlotPhoto(slot,dataUrl);
+      ok++; continue;
+    }
+
+    // ── Patrón 2: fotos de bloques G1/G2 ──
+    // Insp_FILE_g1_blk1_f0.jpg → ns=g1_blk_1, key=f0
+    const m2=name.match(/Insp_[^_]+_(g[12])_blk(\d+)_(f\d+)\.jpg$/i);
+    if(m2){
+      const grade=m2[1].toLowerCase();
+      const blockIdx=m2[2];
+      const key=m2[3];
+      const ns=grade+'_blk_'+blockIdx;
+      const fullKey=ns+':'+key;
+      photoStore[fullKey]=dataUrl;
+      await dbSavePhoto(fullKey,dataUrl,name);
+      lsSavePhoto(fullKey,dataUrl);
+      // Pintar en bloque si existe
+      const block=document.querySelector('.'+grade+'-codigo-block[data-idx="'+blockIdx+'"]');
+      if(block){
+        const fotoSec=block.querySelector('.'+grade+'-fotos-section');
+        if(fotoSec){
+          let slot=document.querySelector('[data-ns="'+ns+'"][data-key="'+key+'"]');
+          if(!slot){
+            let grid=fotoSec.querySelector('.bloque-foto-grid');
+            if(!grid){grid=document.createElement('div');grid.className='bloque-foto-grid';fotoSec.appendChild(grid);}
+            slot=document.createElement('div');
+            slot.className='bloque-foto-slot has-photo';
+            slot.dataset.ns=ns;slot.dataset.key=key;
+            const img=document.createElement('img');img.src=dataUrl;slot.appendChild(img);
+            const rm=document.createElement('button');rm.className='rm-btn';rm.innerHTML='×';
+            rm.onclick=(e)=>{e.stopPropagation();delete photoStore[fullKey];lsDeletePhoto(fullKey);slot.remove();saveProgress();};
+            slot.appendChild(rm);
+            grid.appendChild(slot);
+            const cnt=block.querySelector('.'+grade+'-foto-count');
+            if(cnt) cnt.textContent=String(grid.querySelectorAll('.bloque-foto-slot').length);
+          } else {
+            await paintSlotPhoto(slot,dataUrl);
+          }
+        }
+      }
+      ok++; continue;
+    }
+
+    // ── Patrón 3: fotos de observaciones ──
+    // Insp_FILE_obs_1.jpg → obs id=1
+    const m3=name.match(/Insp_[^_]+_obs_(\d+)\.jpg$/i);
+    if(m3){
+      const id=m3[1];
+      const fullKey='obs:'+id;
+      photoStore[fullKey]=dataUrl;
+      await dbSavePhoto(fullKey,dataUrl,name);
+      lsSavePhoto(fullKey,dataUrl);
+      // Pintar en obs thumb si existe
+      const obsRows=document.querySelectorAll('.obs-row');
+      if(obsRows[parseInt(id)-1]){
+        const th=obsRows[parseInt(id)-1].querySelector('.obs-thumb');
+        if(th){th.innerHTML='<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';th.style.border='1.5px solid #10B981';}
+      }
+      ok++; continue;
+    }
+
+    noMatch++;
+  }
+
+  updateCounts();
+  saveProgress();
+
+  const msg=ok+' foto(s) recuperadas'+(noMatch?' · '+noMatch+' no reconocidas':'')+(skip?' · '+skip+' ya existían':'');
+  status.style.color=ok>0?'#059669':'#DC2626';
+  status.textContent='✅ '+msg;
+
+  // Cerrar modal después de 3 segundos si todo fue bien
+  if(ok>0) setTimeout(()=>document.getElementById('recoverModal').style.display='none',3000);
+}
+
 function showClearConfirm(){
   document.getElementById('confirmClearModal').classList.add('open');
 }
@@ -1933,8 +2138,9 @@ function confirmClearReport(){
 function resetApp(){
   // 1. Borrar borrador guardado
   try{localStorage.removeItem(SAVE_KEY);}catch(e){}
-  // 2. Borrar fotos de IndexedDB
+  // 2. Borrar fotos de IndexedDB y respaldo localStorage
   dbClearAllPhotos();
+  lsClearAllPhotos();
   // 3. Guardar config Google Sheets
   const gsId  = localStorage.getItem('gs_id');
   const gsKey = localStorage.getItem('gs_key');
@@ -2233,10 +2439,27 @@ function restoreProgress(){
 }
 
 async function recoverPhotosFromDB(){
-  const fotos=await dbGetAllPhotos();if(!fotos.length)return;
-  let restored=0;fotos.forEach(f=>{if(!photoStore[f.id]){photoStore[f.id]=f.dataUrl;restored++;}});
-  if(restored>0){
-    buildGrid('extGrid','ext',EXT_SLOTS);buildGrid('apGrid','ap',AP_SLOTS);
+  // 1. Intentar recuperar desde IndexedDB (fuente primaria)
+  const fotosIDB=await dbGetAllPhotos();
+  fotosIDB.forEach(f=>{if(!photoStore[f.id]){photoStore[f.id]=f.dataUrl;}});
+
+  // 2. Complementar con respaldo localStorage (fuente secundaria)
+  // Esto cubre el caso donde Android borró el IndexedDB por falta de memoria
+  const fotosLS=lsGetAllPhotos();
+  let restoredFromLS=0;
+  fotosLS.forEach(f=>{
+    if(!photoStore[f.id]){
+      photoStore[f.id]=f.dataUrl;
+      // Re-sincronizar a IndexedDB para que quede completo de nuevo
+      dbSavePhoto(f.id,f.dataUrl,'foto');
+      restoredFromLS++;
+    }
+  });
+
+  const restored=Object.keys(photoStore).length;
+  if(restored===0) return;
+
+  buildGrid('extGrid','ext',EXT_SLOTS);buildGrid('apGrid','ap',AP_SLOTS);
     // Recreate extra photo slots for keys with 'x'
     Object.keys(photoStore).filter(k=>k.includes(':x')).forEach(key=>{
       const[ns,k]=key.split(':');
@@ -2292,8 +2515,10 @@ async function recoverPhotosFromDB(){
       if(cnt) cnt.textContent=String(grid.querySelectorAll('.bloque-foto-slot').length);
     });
     updateCounts();
-    const av=document.createElement('div');av.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#059669;color:white;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);white-space:nowrap';av.innerHTML='📸 '+restored+' foto(s) recuperada(s) del respaldo';document.body.appendChild(av);setTimeout(()=>av.remove(),4000);
-  }
+    const msg = restoredFromLS>0
+      ? '📸 '+restored+' foto(s) recuperada(s) ('+restoredFromLS+' desde respaldo emergencia)'
+      : '📸 '+restored+' foto(s) recuperada(s) del respaldo';
+    const av=document.createElement('div');av.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#059669;color:white;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);white-space:nowrap';av.innerHTML=msg;document.body.appendChild(av);setTimeout(()=>av.remove(),4000);
 }
 
 // Guardar al cambiar cualquier campo (excepto campos de serie que tienen su propio save)
@@ -3453,6 +3678,7 @@ ${(()=>{
   <span id="pdfHint" style="font-size:10.5px;color:rgba(255,255,255,0.75);font-family:Arial,sans-serif;width:100%;text-align:center;margin-top:2px">Compartir abre el menú de Android — elige OneDrive de tu empresa</span>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
 <script>
 // Nombre estandarizado del archivo: Insp_FILE_FECHA_CONTENEDOR.pdf
 const cleanName=s=>(s||'').toString().replace(/[^A-Za-z0-9-]/g,'').substring(0,30);
@@ -3485,82 +3711,124 @@ async function savePDF(){
 }
 
 // ── Función compartida para generar el blob PDF correctamente ──
+// NUEVA ESTRATEGIA: captura cada sección (.pdf-section) como imagen individual
+// y las ensambla en páginas A4. Así NUNCA se corta nada en medio.
 async function generarBlobPDF(onProgress){
   const el=document.querySelector('.page');
   if(!el) throw new Error('No se encontro el reporte');
   if(onProgress) onProgress('Preparando reporte...');
 
-  // Guardar estilos originales
-  const prev={width:el.style.width,maxWidth:el.style.maxWidth,
-    margin:el.style.margin,padding:el.style.padding,boxShadow:el.style.boxShadow};
+  // Esperar a que el DOM esté estable
+  await new Promise(r=>setTimeout(r,300));
 
-  // Aplicar dimensiones exactas A4 para captura
-  el.style.width='750px';
-  el.style.maxWidth='750px';
-  el.style.margin='0 auto';
+  // Dimensiones A4 en puntos (jsPDF)
+  const A4_W_MM=210, A4_H_MM=297;
+  const MARGIN_MM=10;
+  const PAGE_W_MM=A4_W_MM - MARGIN_MM*2; // ancho útil
+  const PAGE_H_MM=A4_H_MM - MARGIN_MM*2; // alto útil por página
+
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait',compress:true});
+
+  // Escala de captura: pixels por mm (2 = alta calidad)
+  const SCALE=2;
+  const PX_PER_MM=3.7795275591; // 1mm = 3.7795... px a 96dpi
+  const CAPTURE_W_PX=Math.round(PAGE_W_MM*PX_PER_MM*SCALE);
+
+  // Guardar estilo original del contenedor
+  const prevW=el.style.width, prevMax=el.style.maxWidth,
+        prevM=el.style.margin, prevP=el.style.padding,
+        prevS=el.style.boxShadow;
+
+  // Ajustar ancho para captura correcta
+  el.style.width=CAPTURE_W_PX+'px';
+  el.style.maxWidth=CAPTURE_W_PX+'px';
+  el.style.margin='0';
   el.style.padding='0';
   el.style.boxShadow='none';
 
-  await new Promise(r=>setTimeout(r,300));
-  if(onProgress) onProgress('Generando PDF (puede tardar 30 seg)...');
+  // Ocultar barra de botones durante captura
+  const pdfBtn=document.getElementById('pdfBtn');
+  const prevBtnDisplay=pdfBtn?pdfBtn.style.display:'';
+  if(pdfBtn) pdfBtn.style.display='none';
 
-  const opt={
-    margin:[14,12,14,12],
-    filename:pdfFileName,
-    image:{type:'jpeg',quality:0.95},
-    html2canvas:{
-      scale:2,
+  try{
+    if(onProgress) onProgress('Capturando reporte (esto puede tardar 30 seg)...');
+
+    // Capturar la página completa de una vez con html2canvas
+    const canvas=await html2canvas(el,{
+      scale:SCALE,
       useCORS:true,
       backgroundColor:'#ffffff',
       logging:false,
-      windowWidth:780,
-      width:750,
+      width:CAPTURE_W_PX,
       scrollX:0,
       scrollY:0,
+      windowWidth:CAPTURE_W_PX,
       onclone:function(doc){
-        // Ajustar el page clonado
         const p=doc.querySelector('.page');
-        if(p){
-          p.style.width='750px';
-          p.style.maxWidth='750px';
-          p.style.margin='0 auto';
-          p.style.padding='0';
-          p.style.boxSizing='border-box';
-          p.style.boxShadow='none';
-          p.style.background='#fff';
-        }
-        // Ocultar barra de botones
+        if(p){p.style.width=CAPTURE_W_PX+'px';p.style.maxWidth=CAPTURE_W_PX+'px';
+               p.style.margin='0';p.style.padding='0';p.style.boxShadow='none';}
         const bar=doc.getElementById('pdfBtn');
         if(bar) bar.style.display='none';
-        // ESPERAR que todas las imágenes carguen antes de capturar
+        // Esperar imágenes
         const imgs=[].slice.call(doc.querySelectorAll('img'));
         return Promise.all(imgs.map(function(img){
           if(img.complete&&img.naturalWidth>0) return Promise.resolve();
-          return new Promise(function(res){
-            img.onload=res;
-            img.onerror=res;
-            // Forzar recarga si tiene src
-            if(img.src) img.src=img.src;
-          });
+          return new Promise(function(res){img.onload=res;img.onerror=res;if(img.src)img.src=img.src;});
         }));
       }
-    },
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
-    pagebreak:{mode:['avoid-all','css'],avoid:['tr','.sig-box','.corp-header']}
-  };
+    });
 
-  let blob;
-  try{
-    blob=await html2pdf().set(opt).from(el).outputPdf('blob');
+    if(onProgress) onProgress('Armando páginas PDF...');
+
+    // Convertir canvas total a páginas A4
+    const totalH_PX=canvas.height;
+    const totalW_PX=canvas.width;
+    // Cuántos px corresponden a una página A4 útil
+    const pageH_PX=Math.round(PAGE_H_MM*PX_PER_MM*SCALE);
+
+    let yOffset=0;
+    let pageNum=0;
+
+    while(yOffset<totalH_PX){
+      if(pageNum>0) pdf.addPage();
+
+      // Altura del trozo en esta página (puede ser menor en la última)
+      const sliceH=Math.min(pageH_PX, totalH_PX-yOffset);
+
+      // Crear canvas del trozo
+      const pageCanvas=document.createElement('canvas');
+      pageCanvas.width=totalW_PX;
+      pageCanvas.height=sliceH;
+      const ctx=pageCanvas.getContext('2d');
+      // Fondo blanco
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,totalW_PX,sliceH);
+      // Copiar trozo del canvas total
+      ctx.drawImage(canvas,0,yOffset,totalW_PX,sliceH,0,0,totalW_PX,sliceH);
+
+      const imgData=pageCanvas.toDataURL('image/jpeg',0.92);
+      // Calcular alto real en mm para este trozo
+      const sliceH_MM=sliceH/PX_PER_MM/SCALE;
+      pdf.addImage(imgData,'JPEG',MARGIN_MM,MARGIN_MM,PAGE_W_MM,Math.min(sliceH_MM,PAGE_H_MM));
+
+      yOffset+=pageH_PX;
+      pageNum++;
+    }
+
+    if(onProgress) onProgress('Finalizando PDF...');
+    return pdf.output('blob');
+
   }finally{
     // Restaurar estilos siempre
-    el.style.width=prev.width;
-    el.style.maxWidth=prev.maxWidth;
-    el.style.margin=prev.margin;
-    el.style.padding=prev.padding;
-    el.style.boxShadow=prev.boxShadow;
+    el.style.width=prevW;
+    el.style.maxWidth=prevMax;
+    el.style.margin=prevM;
+    el.style.padding=prevP;
+    el.style.boxShadow=prevS;
+    if(pdfBtn) pdfBtn.style.display=prevBtnDisplay;
   }
-  return blob;
 }
 
 async function sharePDF(){
