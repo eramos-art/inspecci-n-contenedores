@@ -3782,38 +3782,68 @@ async function generarBlobPDF(onProgress){
 
     if(onProgress) onProgress('Armando páginas PDF...');
 
-    // Convertir canvas total a páginas A4
-    const totalH_PX=canvas.height;
-    const totalW_PX=canvas.width;
-    // Cuántos px corresponden a una página A4 útil
-    const pageH_PX=Math.round(PAGE_H_MM*PX_PER_MM*SCALE);
+    // ── CORTE INTELIGENTE: nunca partir una foto a la mitad ──
+    // Obtener posición de cada foto en el canvas para evitar cortarlas
+    const allImgs = Array.from(el.querySelectorAll('img'));
+    const elRect  = el.getBoundingClientRect();
+    // Mapear posiciones de imágenes en coordenadas del canvas
+    const photoZones = allImgs.map(function(img){
+      const r = img.getBoundingClientRect();
+      const top    = Math.round((r.top - elRect.top) * SCALE);
+      const bottom = Math.round((r.bottom - elRect.top) * SCALE);
+      return {top: top, bottom: bottom};
+    }).filter(function(z){ return z.bottom > z.top && z.top >= 0; });
 
-    let yOffset=0;
-    let pageNum=0;
+    const totalH_PX = canvas.height;
+    const totalW_PX = canvas.width;
+    const pageH_PX  = Math.round(PAGE_H_MM * PX_PER_MM * SCALE);
 
-    while(yOffset<totalH_PX){
-      if(pageNum>0) pdf.addPage();
+    // Función: dado un corte candidato Y, moverlo hacia arriba si cae dentro de una foto
+    function safeYCut(candidateY){
+      for(var i=0; i<photoZones.length; i++){
+        var z = photoZones[i];
+        // Si el corte cae dentro de la foto, subir el corte al inicio de la foto
+        if(candidateY > z.top && candidateY < z.bottom){
+          // Solo subir si la foto cabe en la página anterior
+          if(z.top > 0) return z.top;
+        }
+      }
+      return candidateY;
+    }
 
-      // Altura del trozo en esta página (puede ser menor en la última)
-      const sliceH=Math.min(pageH_PX, totalH_PX-yOffset);
+    var yOffset = 0;
+    var pageNum = 0;
+
+    while(yOffset < totalH_PX){
+      if(pageNum > 0) pdf.addPage();
+
+      // Calcular corte candidato
+      var candidateCut = yOffset + pageH_PX;
+      var actualCut;
+      if(candidateCut >= totalH_PX){
+        actualCut = totalH_PX;
+      } else {
+        actualCut = safeYCut(candidateCut);
+        // Si subir el corte lo deja igual o menor que yOffset, cortar normal
+        if(actualCut <= yOffset) actualCut = candidateCut;
+      }
+
+      var sliceH = actualCut - yOffset;
 
       // Crear canvas del trozo
-      const pageCanvas=document.createElement('canvas');
-      pageCanvas.width=totalW_PX;
-      pageCanvas.height=sliceH;
-      const ctx=pageCanvas.getContext('2d');
-      // Fondo blanco
-      ctx.fillStyle='#ffffff';
-      ctx.fillRect(0,0,totalW_PX,sliceH);
-      // Copiar trozo del canvas total
-      ctx.drawImage(canvas,0,yOffset,totalW_PX,sliceH,0,0,totalW_PX,sliceH);
+      var pageCanvas = document.createElement('canvas');
+      pageCanvas.width  = totalW_PX;
+      pageCanvas.height = sliceH;
+      var ctx = pageCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, totalW_PX, sliceH);
+      ctx.drawImage(canvas, 0, yOffset, totalW_PX, sliceH, 0, 0, totalW_PX, sliceH);
 
-      const imgData=pageCanvas.toDataURL('image/jpeg',0.92);
-      // Calcular alto real en mm para este trozo
-      const sliceH_MM=sliceH/PX_PER_MM/SCALE;
-      pdf.addImage(imgData,'JPEG',MARGIN_MM,MARGIN_MM,PAGE_W_MM,Math.min(sliceH_MM,PAGE_H_MM));
+      var imgData   = pageCanvas.toDataURL('image/jpeg', 0.92);
+      var sliceH_MM = sliceH / PX_PER_MM / SCALE;
+      pdf.addImage(imgData, 'JPEG', MARGIN_MM, MARGIN_MM, PAGE_W_MM, Math.min(sliceH_MM, PAGE_H_MM));
 
-      yOffset+=pageH_PX;
+      yOffset = actualCut;
       pageNum++;
     }
 
@@ -3913,6 +3943,9 @@ setupSig('sigAlmacen','statusAlm');
 setupSig('sigCalidad','statusCal');
 restoreProgress();loadGSheetConfig();
 recoverPhotosFromDB();
+if('serviceWorker' in navigator && location.hostname==='eramos-art.github.io'){
+  navigator.serviceWorker.register('/inspecci-n-contenedores/sw.js').catch(function(){});
+}
 </script>
 </body>
 </html>
