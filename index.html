@@ -1196,7 +1196,7 @@ function readFile(file, fromGallery=false){
     await paintSlotPhoto(slot, dataUrl);
     const fnum=document.getElementById('fileNum').value||'FILE';
     const fec=(document.getElementById('fecha').value||new Date().toISOString().split('T')[0]).replace(/-/g,'');
-    const fname='Insp_'+fnum+'_'+fec+'_'+ns+'_'+key+'.jpg';
+    const fname='Insp_'+fnum+'_'+fec+'_'+ns+'_'+key+'_'+Date.now()+'.jpg';
     await dbSavePhoto(ns+':'+key,dataUrl,fname);
     lsSavePhoto(ns+':'+key,dataUrl); // respaldo secundario localStorage
     // Solo descargar a galería si vino de cámara (no duplicar si vino de galería)
@@ -1216,11 +1216,19 @@ function readFile(file, fromGallery=false){
 function removeSlotPhoto(ns,key,slot,removable){delete photoStore[ns+':'+key];lsDeletePhoto(ns+':'+key);const img=slot.querySelector('img');if(img)img.remove();const chk=slot.querySelector('.check-badge');if(chk)chk.remove();slot.classList.remove('has-photo');if(removable&&slot.parentElement)slot.parentElement.removeChild(slot);updateCounts();saveProgress();}
 function buildGrid(containerId,ns,slots){const g=document.getElementById(containerId);if(!g)return;g.innerHTML='';slots.forEach((s,i)=>{g.appendChild(makeSlot(ns,String(i),s.num,s.label,false));});}
 function addExtraPhoto(ns,sectionId,counterId,simple){
+  const section=document.getElementById(sectionId);
+  // Buscar si ya existe un slot extra vacío sin usar — reutilizarlo en vez de crear otro
+  const existingEmpty=section.querySelector('.extra-grid [data-ns="'+ns+'"]:not(.has-photo)');
+  if(existingEmpty){
+    existingEmpty.click();
+    return;
+  }
   extraCounters[ns]=(extraCounters[ns]||0)+1;const key='x'+extraCounters[ns];
-  const section=document.getElementById(sectionId);let grid=section.querySelector('.extra-grid');
+  let grid=section.querySelector('.extra-grid');
   if(!grid){const div=document.createElement('div');div.className='photo-extra-divider';div.innerHTML='<span>Fotos adicionales</span>';section.appendChild(div);grid=document.createElement('div');grid.className='photo-grid extra-grid';section.appendChild(grid);}
   const slot=makeSlot(ns,key,null,'Foto extra '+extraCounters[ns],true);grid.appendChild(slot);
   updateCounts();setTimeout(()=>slot.scrollIntoView({behavior:'smooth',block:'center'}),100);
+  slot.click();
 }
 function updateCounts(){
   function cf(ns,t){let c=0;for(let i=0;i<t;i++)if(photoStore[ns+':'+i])c++;return c;}
@@ -1487,7 +1495,7 @@ function addFotoBloque(btn, grade){
           slot.appendChild(img);
           slot.appendChild(rm);
           slot.classList.add('has-photo');
-          const fname='Insp_'+(document.getElementById('fileNum').value||'FILE')+'_'+grade+'_blk'+blockIdx+'_'+key+'.jpg';
+          const fname='Insp_'+(document.getElementById('fileNum').value||'FILE')+'_'+grade+'_blk'+blockIdx+'_'+key+'_'+Date.now()+'.jpg';
           if(!fromGallery) saveToGallery(dataUrl,fname);
           dbSavePhoto(fullKey,dataUrl,fname);
           lsSavePhoto(fullKey,dataUrl); // respaldo secundario localStorage
@@ -1645,7 +1653,7 @@ function addObs(){
         if(th){th.innerHTML='<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';th.style.border='1.5px solid #10B981';}
         photoStore['obs:'+id]=dataUrl;
         const fnum=document.getElementById('fileNum').value||'FILE';
-        if(!fromGallery) saveToGallery(dataUrl,'Insp_'+fnum+'_obs_'+id+'.jpg');
+        if(!fromGallery) saveToGallery(dataUrl,'Insp_'+fnum+'_obs_'+id+'_'+Date.now()+'.jpg');
         saveProgress();
       };
       reader.readAsDataURL(file);
@@ -1983,11 +1991,14 @@ function saveNow(){
 }
 
 // Guardar en TODOS los eventos de salida posibles
-// Sincronizar TODAS las fotos a IndexedDB
+// Sincronizar TODAS las fotos a IndexedDB Y localStorage (doble blindaje)
 async function syncPhotosToIDB(){
   const keys=Object.keys(photoStore);
   for(const key of keys){
-    if(photoStore[key]) await dbSavePhoto(key,photoStore[key],'foto');
+    if(photoStore[key]){
+      await dbSavePhoto(key,photoStore[key],'foto');
+      lsSavePhoto(key,photoStore[key]); // respaldo extra antes de que Android pueda matar la pestaña
+    }
   }
   saveNow();
 }
@@ -1997,6 +2008,36 @@ document.addEventListener('visibilitychange',function(){
 window.addEventListener('beforeunload',function(){syncPhotosToIDB();});
 window.addEventListener('pagehide',function(){syncPhotosToIDB();});
 window.addEventListener('blur',function(){syncPhotosToIDB();});
+// Cuando el inspector vuelve al app (tras llamada, cambio de app, etc.)
+// verificar que las fotos sigan pintadas — si Android limpió algo, recuperarlas
+window.addEventListener('pageshow',function(ev){
+  setTimeout(function(){
+    Object.keys(photoStore).forEach(function(key){
+      const parts=key.split(':');
+      const ns=parts[0], k=parts[1];
+      if(ns.match(/^g[12]_blk_/)) return; // esos se manejan distinto, ya cubiertos
+      const slot=document.querySelector('[data-ns="'+ns+'"][data-key="'+k+'"]');
+      if(slot && !slot.classList.contains('has-photo')){
+        paintSlotPhoto(slot, photoStore[key]);
+      }
+    });
+  }, 150);
+});
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible'){
+    setTimeout(function(){
+      Object.keys(photoStore).forEach(function(key){
+        const parts=key.split(':');
+        const ns=parts[0], k=parts[1];
+        if(ns.match(/^g[12]_blk_/)) return;
+        const slot=document.querySelector('[data-ns="'+ns+'"][data-key="'+k+'"]');
+        if(slot && !slot.classList.contains('has-photo')){
+          paintSlotPhoto(slot, photoStore[key]);
+        }
+      });
+    }, 150);
+  }
+});
 // Guardar fotos cada 90 segundos automáticamente (sesiones largas de descarga)
 setInterval(syncPhotosToIDB, 90000);
 // Guardar datos cada 60 segundos
@@ -2039,7 +2080,7 @@ async function procesarFotosRecuperadas(files){
     // Insp_FILE_FECHA_ext_0.jpg → ns=ext, key=0
     // Insp_FILE_FECHA_ap_x1.jpg → ns=ap, key=x1
     // Insp_FILE_FECHA_desc_x2.jpg → ns=desc, key=x2
-    const m1=name.match(/Insp_[^_]+_[^_]+_([a-z]+)_(x?\d+)\.jpg$/i);
+    const m1=name.match(/Insp_[^_]+_[^_]+_([a-z]+)_(x?\d+)(?:_\d+)?\.jpg$/i);
     if(m1){
       const ns=m1[1].toLowerCase();
       const key=m1[2];
@@ -2055,7 +2096,7 @@ async function procesarFotosRecuperadas(files){
 
     // ── Patrón 2: fotos de bloques G1/G2 ──
     // Insp_FILE_g1_blk1_f0.jpg → ns=g1_blk_1, key=f0
-    const m2=name.match(/Insp_[^_]+_(g[12])_blk(\d+)_(f\d+)\.jpg$/i);
+    const m2=name.match(/Insp_[^_]+_(g[12])_blk(\d+)_(f\d+)(?:_\d+)?\.jpg$/i);
     if(m2){
       const grade=m2[1].toLowerCase();
       const blockIdx=m2[2];
@@ -2094,7 +2135,7 @@ async function procesarFotosRecuperadas(files){
 
     // ── Patrón 3: fotos de observaciones ──
     // Insp_FILE_obs_1.jpg → obs id=1
-    const m3=name.match(/Insp_[^_]+_obs_(\d+)\.jpg$/i);
+    const m3=name.match(/Insp_[^_]+_obs_(\d+)(?:_\d+)?\.jpg$/i);
     if(m3){
       const id=m3[1];
       const fullKey='obs:'+id;
@@ -2459,7 +2500,8 @@ async function recoverPhotosFromDB(){
   const restored=Object.keys(photoStore).length;
   if(restored===0) return;
 
-  buildGrid('extGrid','ext',EXT_SLOTS);buildGrid('apGrid','ap',AP_SLOTS);
+  // NOTA: no se llama buildGrid aquí — restoreProgress() ya construyó los grids.
+  // Volver a llamarlo borraría y recrearía los slots, perdiendo fotos ya pintadas (condición de carrera).
     // Recreate extra photo slots for keys with 'x'
     Object.keys(photoStore).filter(k=>k.includes(':x')).forEach(key=>{
       const[ns,k]=key.split(':');
@@ -3301,14 +3343,15 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 .inv-table tr:nth-child(even) td{background:#f7f9fc}
 .grade-g1{background:#dbeafe;color:#1e40af;font-weight:800;text-align:center}
 .grade-g2{background:#fef3c7;color:#92400e;font-weight:800;text-align:center}
-/* FOTOS — sin recortar, fondo blanco, altura mayor */
-.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:5px}
-.photo-cell{border:1px solid #c9d4e0;padding:4px;background:#fff;display:flex;flex-direction:column}
-.photo-cell .ph{width:100%;height:165px;display:flex;align-items:center;justify-content:center;background:#f7f9fc;overflow:hidden}
-.photo-cell .ph img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+/* FOTOS — sin recortar, fondo blanco, tamaño optimizado para evitar espacios vacíos */
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px;page-break-inside:avoid}
+.photo-grid-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;page-break-inside:avoid;break-inside:avoid;margin-bottom:8px}
+.photo-cell{border:1px solid #c9d4e0;padding:4px;background:#fff;display:flex;flex-direction:column;page-break-inside:avoid;break-inside:avoid}
+.photo-cell .ph{width:100%;height:195px;display:flex;align-items:center;justify-content:center;background:#f7f9fc;overflow:hidden}
+.photo-cell .ph img{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:cover;display:block}
 .photo-cell .cap{font-size:8pt;color:#475569;text-align:center;padding:4px 0 2px;font-weight:600}
-.photo-grid-evidence{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:5px}
-.photo-grid-evidence .photo-cell .ph{height:145px}
+.photo-grid-evidence{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:6px;page-break-inside:avoid}
+.photo-grid-evidence .photo-cell .ph{height:175px}
 /* OBSERVACIONES */
 .obs-list{width:100%;border-collapse:collapse;border:1px solid #1a3a5c;font-size:8.5pt}
 .obs-list th{background:#1a3a5c;color:#fff;padding:4px 7px;text-align:left;font-size:8pt;font-weight:700}
@@ -3942,7 +3985,9 @@ updateNav();
 setupSig('sigAlmacen','statusAlm');
 setupSig('sigCalidad','statusCal');
 restoreProgress();loadGSheetConfig();
-recoverPhotosFromDB();
+// Pequeña espera para asegurar que restoreProgress termine de construir el DOM
+// antes de que recoverPhotosFromDB pinte las fotos sobre los slots ya creados
+setTimeout(function(){ recoverPhotosFromDB(); }, 50);
 if('serviceWorker' in navigator && location.hostname==='eramos-art.github.io'){
   navigator.serviceWorker.register('/inspecci-n-contenedores/sw.js').catch(function(){});
 }
