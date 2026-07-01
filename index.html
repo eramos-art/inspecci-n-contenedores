@@ -3524,12 +3524,18 @@ ${(()=>{
     const code=bl.querySelector('[class*="code-input"]')?.value||'—';
     const grade=bl.querySelector('[class*="grado-select"]')?.value||'—';
     const tipo=bl.querySelector('[class*="tipo-select"]')?.value||'—';
-    const qty=bl.querySelector('[class*="qty-input"]')?.value||'—';
-    const uds=bl.querySelector('[class*="uds-input"]')?.value||'—';
     const detail=bl.querySelector('[class*="detail-input"]')?.value||'—';
     const gradeCls=grade==='G2'||isg2?'grade-g2':'grade-g1';
-    dmgH+='<tr><td class="'+gradeCls+'">'+grade+'</td><td style="font-family:monospace">'+code+'</td><td>'+tipo+'</td><td style="text-align:center">'+qty+'</td><td style="text-align:center">'+uds+'</td><td style="font-size:8pt">'+(detail||'—')+'</td></tr>';
+    // Contar series escaneadas para Cant. automático
     const seriesDef=[...bl.querySelectorAll('.serie-input-row')].map(row=>{const v=row.querySelector('.serie-input')?.value.trim()||'';const d=row.querySelector('.serie-defecto-sel')?.value||'';return v?{serie:v,defecto:d}:null;}).filter(Boolean);
+    const seriesCount=seriesDef.length;
+    // Cant. = número de series escaneadas (auto), o campo manual si no hay series
+    const qtyManual=bl.querySelector('[class*="qty-input"]')?.value||'';
+    const qty=seriesCount>0 ? seriesCount : (qtyManual||'—');
+    // Uds. = campo manual del inspector
+    const udsManual=bl.querySelector('[class*="uds-input"]')?.value||'';
+    const uds=udsManual||'—';
+    dmgH+='<tr><td class="'+gradeCls+'">'+grade+'</td><td style="font-family:monospace">'+code+'</td><td>'+tipo+'</td><td style="text-align:center">'+qty+'</td><td style="text-align:center">'+uds+'</td><td style="font-size:8pt">'+(detail||'—')+'</td></tr>';
     if(seriesDef.length){
       dmgH+='<tr><td colspan="6" style="padding:4px 8px;background:#f7f9fc"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Series / Serials:</div><table style="width:100%;border-collapse:collapse;font-size:8pt"><tr style="background:#e8eef5"><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Serie / Serial</th><th style="padding:3px 6px;border:1px solid #c9d4e0;text-align:left;color:#1a3a5c">Defecto / Damage</th></tr>'+seriesDef.map((s,i)=>{const en=DEFECTO_EN[s.defecto]||'';const defText=(!s.defecto||s.defecto==='—')?'—':(en?s.defecto+' <span style="color:#94a3b8;font-style:italic;font-size:7.5pt">/ '+en+'</span>':s.defecto);return '<tr style="background:'+(i%2===0?'#fff':'#f7f9fc')+'"><td style="padding:3px 6px;border:1px solid #c9d4e0;font-family:monospace">'+s.serie+'</td><td style="padding:3px 6px;border:1px solid #c9d4e0">'+defText+'</td></tr>';}).join('')+'</table></td></tr>';
     }
