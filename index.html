@@ -117,6 +117,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F0F4F8;color:#1a233
 .serie-defecto-sel{width:120px;flex-shrink:0;padding:7px 4px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:11px;font-family:inherit;background:white;color:#475569}
 .serie-defecto-sel:focus{border-color:#378ADD;outline:none}
 .serie-input:focus{outline:none;border-color:#378ADD;background:white}
+/* ── ACORDEÓN códigos G1/G2 ── */
+.bloque-accordion-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 14px;background:#F0F7FF;border-radius:10px;margin-bottom:0;border:1.5px solid #BFDBFE;user-select:none;-webkit-tap-highlight-color:transparent}
+.bloque-accordion-header.g2{background:#FEF9EC;border-color:#FCD34D}
+.bloque-accordion-summary{font-size:13px;font-weight:700;color:#1E40AF;flex:1;min-width:0}
+.bloque-accordion-summary.g2{color:#92400E}
+.bloque-accordion-chevron{font-size:18px;color:#94A3B8;transition:transform 0.2s;flex-shrink:0;margin-left:8px}
+.bloque-accordion-body.collapsed{display:none}
+
 .serie-del{background:none;border:none;cursor:pointer;color:#CBD5E1;font-size:18px;padding:0 4px;line-height:1}
 /* FIRMAS */
 .sig-area{border:1.5px solid #E2E8F0;border-radius:10px;background:#F8FAFC;cursor:crosshair;display:block;width:100%;touch-action:none}
@@ -459,10 +467,14 @@ window.onerror = function(msg, src, line, col, err) {
     <div class="tip-box"><div class="tip-icon">📊</div><div class="tip-text">Registra cada código de producto por separado. Por cada código puedes indicar si es Grado 1 o Grado 2. Usa el botón <strong>"+ Otro código"</strong> para agregar más.</div></div>
     <div id="g1CodigosContainer">
       <div class="card g1-codigo-block" data-idx="0">
-        <div class="section-title">Código #1 / Code #1 &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
-        <div class="field" style="margin-bottom:10px">
+        <div class="bloque-accordion-header" onclick="toggleBloque(this)">
+          <div class="bloque-accordion-summary">📦 Código #1 — <span class="bloque-resumen">sin código aún</span></div>
+          <span class="bloque-accordion-chevron">▼</span>
+        </div>
+        <div class="bloque-accordion-body">
+        <div class="field" style="margin-bottom:10px;margin-top:10px">
           <label>Código de producto / Product code</label>
-          <div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div>
+          <div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase();actualizarResumen(this)" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div>
         </div>
         <div class="grid2" style="margin-bottom:10px">
           <div class="field">
@@ -518,16 +530,30 @@ window.onerror = function(msg, src, line, col, err) {
             <span>📦 Números de serie G1 / Serial numbers</span>
             <span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span>
           </div>
+          <div style="padding:8px 12px;background:#F0F7FF;border-bottom:1px solid #BFDBFE;display:flex;align-items:center">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#1E40AF;cursor:pointer;font-weight:600">
+              <input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g1')" style="width:16px;height:16px;cursor:pointer">
+              Sin número de serie (insumos / cajas máster)
+            </label>
+          </div>
           <div class="grado-body g1-series-body">
             <div class="serie-input-row">
               <input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')">
               <button class="serie-del" onclick="delSerie(this)">×</button>
             </div>
           </div>
+          <div class="sin-serie-section" style="display:none;padding:10px 12px;background:#FFF7ED;border-top:1px solid #FED7AA">
+            <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:6px">📦 Reporte por cantidad de cajas</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <label style="font-size:12px;color:#92400E;font-weight:600;white-space:nowrap">Cajas dañadas:</label>
+              <input type="number" class="sin-serie-qty" min="1" placeholder="0" onchange="saveProgress()" style="width:80px;padding:8px;border:1.5px solid #FED7AA;border-radius:8px;font-size:14px;font-weight:700;text-align:center;background:white">
+            </div>
+          </div>
           <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
             <button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button>
           </div>
         </div>
+        </div><!-- fin accordion body G1 -->
       </div>
     </div>
     <button onclick="addG1Block()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;font-size:14px;font-weight:700;background:#EBF4FF;border:2px dashed #378ADD;color:#1E40AF;border-radius:12px;cursor:pointer;margin-bottom:12px;font-family:inherit">📦 + Agregar otro código de producto</button>
@@ -541,10 +567,14 @@ window.onerror = function(msg, src, line, col, err) {
     <div class="tip-box"><div class="tip-icon">🔴</div><div class="tip-text">Registra los códigos con daño Grado 2 (Rechazado). Por cada código indica el tipo de daño, cantidad y números de serie. Usa <strong>"+ Otro código"</strong> para agregar más.</div></div>
     <div id="g2CodigosContainer">
       <div class="card g2-codigo-block" data-idx="0">
-        <div class="section-title">Código #1 / Code #1 &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
+        <div class="bloque-accordion-header g2" onclick="toggleBloque(this)">
+          <div class="bloque-accordion-summary g2">🔴 Código #1 — <span class="bloque-resumen">sin código aún</span></div>
+          <span class="bloque-accordion-chevron">▼</span>
+        </div>
+        <div class="bloque-accordion-body">
         <div class="field" style="margin-bottom:10px">
           <label>Código de producto / Product code</label>
-          <div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div>
+          <div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase();actualizarResumen(this)" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div>
         </div>
         <div class="grid2" style="margin-bottom:10px">
           <div class="field">
@@ -601,16 +631,30 @@ window.onerror = function(msg, src, line, col, err) {
             <span>🔴 Números de serie G2 / Serial numbers</span>
             <span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span>
           </div>
+          <div style="padding:8px 12px;background:#FEF3C7;border-bottom:1px solid #FCD34D;display:flex;align-items:center">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#92400E;cursor:pointer;font-weight:600">
+              <input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g2')" style="width:16px;height:16px;cursor:pointer">
+              Sin número de serie (insumos / cajas máster)
+            </label>
+          </div>
           <div class="grado-body g2-series-body">
             <div class="serie-input-row">
               <input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')">
               <button class="serie-del" onclick="delSerie(this)">×</button>
             </div>
           </div>
+          <div class="sin-serie-section" style="display:none;padding:10px 12px;background:#FFF7ED;border-top:1px solid #FED7AA">
+            <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:6px">📦 Reporte por cantidad de cajas</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <label style="font-size:12px;color:#92400E;font-weight:600;white-space:nowrap">Cajas dañadas:</label>
+              <input type="number" class="sin-serie-qty" min="1" placeholder="0" onchange="saveProgress()" style="width:80px;padding:8px;border:1.5px solid #FED7AA;border-radius:8px;font-size:14px;font-weight:700;text-align:center;background:white">
+            </div>
+          </div>
           <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0">
             <button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button>
           </div>
         </div>
+        </div><!-- fin accordion body G2 -->
       </div>
     </div>
     <button onclick="addG2Block()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;font-size:14px;font-weight:700;background:#FEF9EC;border:2px dashed #F59E0B;color:#92400E;border-radius:12px;cursor:pointer;margin-bottom:12px;font-family:inherit">🔴 + Agregar otro código de producto</button>
@@ -1190,8 +1234,9 @@ function readFile(file, fromGallery=false){
   const reader=new FileReader();
   reader.onload=async(e)=>{
     const {ns,key,slot}=pendingTarget;
-    // Comprimir antes de guardar — evita base64 gigantes que rompen Android
-    const dataUrl=await compressDataUrl(e.target.result);
+    // Paso 4 (desc) usa compresión extra para soportar 50+ fotos sin agotar memoria
+    const isDesc=ns==='desc';
+    const dataUrl=await compressDataUrl(e.target.result,isDesc?1200:1600,isDesc?0.75:0.82);
     photoStore[ns+':'+key]=dataUrl;
     await paintSlotPhoto(slot, dataUrl);
     const fnum=document.getElementById('fileNum').value||'FILE';
@@ -1272,6 +1317,49 @@ function removeRow(btn){const rows=document.getElementById('inventBody').querySe
 // Timers para auto-avance por pistola
 const _serieScanTimers = new WeakMap();
 
+
+// ── ACORDEÓN bloques G1/G2 ──
+function toggleBloque(header){
+  const body=header.nextElementSibling;
+  if(!body) return;
+  const collapsed=body.classList.toggle('collapsed');
+  const chevron=header.querySelector('.bloque-accordion-chevron');
+  if(chevron) chevron.textContent=collapsed?'▶':'▼';
+}
+function actualizarResumen(input){
+  const block=input.closest('.g1-codigo-block,.g2-codigo-block');
+  if(!block) return;
+  const resumen=block.querySelector('.bloque-resumen');
+  if(!resumen) return;
+  const tipo=block.querySelector('[class*="tipo-select"]')?.value||'';
+  resumen.textContent=(input.value.trim()||'sin código aún')+(tipo?' · '+tipo.split('/')[0].trim():'');
+  saveProgress();
+}
+function onTipoChange(select){
+  const inp=select.closest('.g1-codigo-block,.g2-codigo-block')?.querySelector('[class*="code-input"]');
+  if(inp) actualizarResumen(inp);
+}
+// ── SIN SERIE: toggle ──
+function toggleSinSerie(checkbox,grade){
+  const block=checkbox.closest('.g1-codigo-block,.g2-codigo-block');
+  if(!block) return;
+  const seriesBody=block.querySelector('.'+grade+'-series-body');
+  const sinSec=block.querySelector('.sin-serie-section');
+  const addBtn=block.querySelector('.btn-add');
+  const counter=block.querySelector('.serie-counter');
+  if(checkbox.checked){
+    if(seriesBody) seriesBody.style.display='none';
+    if(addBtn) addBtn.parentElement.style.display='none';
+    if(sinSec) sinSec.style.display='block';
+    if(counter) counter.style.display='none';
+  } else {
+    if(seriesBody) seriesBody.style.display='';
+    if(addBtn) addBtn.parentElement.style.display='';
+    if(sinSec) sinSec.style.display='none';
+    if(counter) counter.style.display='';
+  }
+  saveProgress();
+}
 function serieAutoAdvance(input, cls){
   // Convierte a mayúsculas
   input.value = input.value.toUpperCase();
@@ -1540,31 +1628,47 @@ function addSerieToBlock(btn,cls){
   body.querySelector('input:last-of-type').focus();
 }
 let g1BlockCount=1,g2BlockCount=1;
+
+function _sinSerieHTML(grade){
+  const bg=grade==='g1'?'#F0F7FF':'#FEF3C7';
+  const bc=grade==='g1'?'#BFDBFE':'#FCD34D';
+  const tc=grade==='g1'?'#1E40AF':'#92400E';
+  return `<div style="padding:8px 12px;background:${bg};border-bottom:1px solid ${bc};display:flex;align-items:center"><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:${tc};cursor:pointer;font-weight:600"><input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'${grade}')" style="width:16px;height:16px;cursor:pointer">Sin número de serie (insumos / cajas máster)</label></div>
+  <div class="${grade}-series-body grado-body"><div class="serie-input-row"><input type="text" class="serie-input ${grade}-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'${grade}-input')" onkeydown="serieEnterNav(event,this,'${grade}-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
+  <div class="sin-serie-section" style="display:none;padding:10px 12px;background:#FFF7ED;border-top:1px solid #FED7AA"><div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:6px">📦 Reporte por cantidad de cajas</div><div style="display:flex;gap:8px;align-items:center"><label style="font-size:12px;color:#92400E;font-weight:600;white-space:nowrap">Cajas dañadas:</label><input type="number" class="sin-serie-qty" min="1" placeholder="0" onchange="saveProgress()" style="width:80px;padding:8px;border:1.5px solid #FED7AA;border-radius:8px;font-size:14px;font-weight:700;text-align:center;background:white"></div></div>
+  <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'${grade}-input')">+ Agregar serie / Add serial</button></div>`;
+}
+
 function addG1Block(){
   g1BlockCount++;
   const container=document.getElementById('g1CodigosContainer');
   const div=document.createElement('div');div.className='card g1-codigo-block';div.dataset.idx=g1BlockCount;
-  div.innerHTML=`<div class="section-title">Código #${g1BlockCount} / Code #${g1BlockCount} &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
-  <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div></div>
+  div.innerHTML=`
+  <div class="bloque-accordion-header" onclick="toggleBloque(this)">
+    <div class="bloque-accordion-summary">📦 Código #${g1BlockCount} — <span class="bloque-resumen">sin código aún</span></div>
+    <span class="bloque-accordion-chevron">▼</span>
+  </div>
+  <div class="bloque-accordion-body">
+  <div class="field" style="margin-bottom:10px;margin-top:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase();actualizarResumen(this)" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div></div>
   <div class="grid2" style="margin-bottom:10px">
     <div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1">G1 — Tolerable</option><option value="G2">G2 — Rechazado</option></select></div>
-    <div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option>Caja rota / Broken box</option><option>Caja húmeda / Wet box</option><option>Caja aplastada / Crushed box</option><option>Caja manchada / Stained box</option><option>Caja con deformación leve / Slightly deformed box</option><option>Producto sin empaque correcto / Improperly packaged product</option><option>Sin zunchos (producto que los requiere) / Missing strapping</option><option>Producto dañado / Damaged product</option><option>Golpe / Impact damage</option><option>Etiqueta incorrecta / Wrong label</option><option>Error en rating labels / Wrong rating label</option><option>Leve sobreajuste por zunchos / Slight over-strapping</option><option>Otro / Other</option></select></div>
+    <div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select" onchange="onTipoChange(this)"><option value="">Seleccionar...</option><option>Caja rota / Broken box</option><option>Caja húmeda / Wet box</option><option>Caja aplastada / Crushed box</option><option>Caja manchada / Stained box</option><option>Caja con deformación leve / Slightly deformed box</option><option>Sin zunchos / Missing strapping</option><option>Producto dañado / Damaged product</option><option>Golpe / Impact damage</option><option>Etiqueta incorrecta / Wrong label</option><option>Sobreajuste / Over-strapping</option><option>Otro / Other</option></select></div>
   </div>
   <div class="grid2" style="margin-bottom:10px">
     <div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0"></div>
     <div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0"></div>
   </div>
-  <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g1-detail-input" type="text" placeholder="Ej: cajas mal estibadas en origen"></div>
-  <div class="grado-section">
-    <div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
-    <div class="grado-body g1-series-body"><div class="serie-input-row"><input type="text" class="serie-input g1-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g1-input')" onkeydown="serieEnterNav(event,this,'g1-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
-    <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div>
-  </div>
-  <div style="margin-top:10px;background:#F8FAFC;border:1px solid #BFDBFE;border-radius:12px;padding:12px">
-    <div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">📷 Fotos del defecto / Evidence photos</div>
-    <div class="photo-count-badge" style="margin-bottom:6px">Fotos: <span class="cnt g1-foto-count">0</span></div>
+  <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g1-detail-input" type="text" placeholder="Ej: cajas mal estibadas en origen"></div>
+  <div style="margin-bottom:10px;background:#EBF4FF;border:1.5px solid #BFDBFE;border-radius:12px;padding:12px">
+    <div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g1-foto-count" style="background:#1E40AF;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div>
     <div class="g1-fotos-section"></div>
-    <button class="btn-add-photo" onclick="addFotoBloque(this,'g1')" style="font-size:12px;padding:8px 12px">📷 + Foto de evidencia G1</button>
+    <button class="btn-add-photo" onclick="addFotoBloque(this,'g1')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G1</button>
+  </div>
+  <div class="grado-section">
+    <div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Series G1</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
+    ${_sinSerieHTML('g1')}
+  </div>
+  <div style="padding:6px;text-align:right"><button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:11px">🗑 Eliminar código</button></div>
   </div>`;
   container.appendChild(div);div.querySelector('.g1-code-input').focus();
 }
@@ -1575,33 +1679,39 @@ function addG2Block(){
   g2BlockCount++;
   const container=document.getElementById('g2CodigosContainer');
   const div=document.createElement('div');div.className='card g2-codigo-block';div.dataset.idx=g2BlockCount;
-  div.innerHTML=`<div class="section-title">Código #${g2BlockCount} / Code #${g2BlockCount} &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
-  <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div></div>
+  div.innerHTML=`
+  <div class="bloque-accordion-header g2" onclick="toggleBloque(this)">
+    <div class="bloque-accordion-summary g2">🔴 Código #${g2BlockCount} — <span class="bloque-resumen">sin código aún</span></div>
+    <span class="bloque-accordion-chevron">▼</span>
+  </div>
+  <div class="bloque-accordion-body">
+  <div class="field" style="margin-bottom:10px;margin-top:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase();actualizarResumen(this)" style="text-transform:uppercase"><span class="scan-icon">⬛</span></div></div>
   <div class="grid2" style="margin-bottom:10px">
     <div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1">G1 — Tolerable</option><option value="G2" selected>G2 — Rechazado</option></select></div>
-    <div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option>Cajas rotas / Broken boxes</option><option>Manchas de grasa/aceite / Grease or oil stains</option><option>Desprendimiento de cajas / Box separation/collapse</option><option>Humedad / Moisture damage</option><option>Producto mojado / Wet product</option><option>Manchas de pintura / Paint stains</option><option>Oxidación / Rust/oxidation</option><option>Cajas cortadas por zunchos / Boxes cut by strapping</option><option>Caída de producto por mala manipulación / Product fallen due to mishandling</option><option>Caja húmeda / Wet box</option><option>Caja aplastada / Crushed box</option><option>Producto dañado / Damaged product</option><option>Golpe severo / Severe impact</option><option>Otro / Other</option></select></div>
+    <div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select" onchange="onTipoChange(this)"><option value="">Seleccionar...</option><option>Cajas rotas / Broken boxes</option><option>Manchas de grasa / Grease stains</option><option>Humedad / Moisture damage</option><option>Producto mojado / Wet product</option><option>Oxidación / Rust</option><option>Cajas cortadas por zunchos / Boxes cut by strapping</option><option>Caja aplastada / Crushed box</option><option>Producto dañado / Damaged product</option><option>Golpe severo / Severe impact</option><option>Otro / Other</option></select></div>
   </div>
   <div class="grid2" style="margin-bottom:10px">
     <div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0"></div>
     <div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0"></div>
   </div>
-  <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g2-detail-input" type="text" placeholder="Ej: golpe severo durante descarga"></div>
-  <div class="grado-section">
-    <div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
-    <div class="grado-body g2-series-body"><div class="serie-input-row"><input type="text" class="serie-input g2-input" placeholder="Escanear serie" autocapitalize="characters" oninput="serieAutoAdvance(this,'g2-input')" onkeydown="serieEnterNav(event,this,'g2-input')"><select class="serie-defecto-sel" onchange="saveProgress()"><option value="">— Defecto</option><option value="Caja rota">Caja rota</option><option value="Manchas">Manchas</option><option value="Humedad">Humedad</option><option value="Oxidación">Oxidación</option><option value="Abolladura">Abolladura</option><option value="Golpes">Golpes</option><option value="Etiq. incorrecta">Etiq. incorrecta</option><option value="Cinta rota">Cinta rota</option><option value="Zuncho">Zuncho</option><option value="Deformaciones">Deformaciones</option><option value="Sobreajuste">Sobreajuste</option><option value="Otro">Otro</option></select><button class="serie-del" onclick="delSerie(this)">×</button></div></div>
-    <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div>
-  </div>
-  <div style="margin-top:10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px">
-    <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">📷 Fotos del defecto / Evidence photos</div>
-    <div class="photo-count-badge" style="margin-bottom:6px">Fotos: <span class="cnt g2-foto-count">0</span></div>
+  <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g2-detail-input" type="text" placeholder="Ej: golpe severo durante descarga"></div>
+  <div style="margin-bottom:10px;background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:12px;padding:12px">
+    <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g2-foto-count" style="background:#92400E;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div>
     <div class="g2-fotos-section"></div>
-    <button class="btn-add-photo" onclick="addFotoBloque(this,'g2')" style="font-size:12px;padding:8px 12px">📷 + Foto de evidencia G2</button>
+    <button class="btn-add-photo" onclick="addFotoBloque(this,'g2')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G2</button>
+  </div>
+  <div class="grado-section">
+    <div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Series G2</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
+    ${_sinSerieHTML('g2')}
+  </div>
+  <div style="padding:6px;text-align:right"><button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:11px">🗑 Eliminar código</button></div>
   </div>`;
   container.appendChild(div);div.querySelector('.g2-code-input').focus();
 }
 function removeG2Block(btn){
   const blocks=document.querySelectorAll('.g2-codigo-block');if(blocks.length>1)btn.closest('.g2-codigo-block').remove();
 }
+
 
 // ══════════════════════════════════════════════
 // OC ADICIONALES
