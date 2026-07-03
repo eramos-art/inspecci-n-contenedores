@@ -3338,6 +3338,22 @@ async function submitReport(){
 // ══════════════════════════════════════════════
 // GENERAR REPORTE HTML BILINGÜE
 // ══════════════════════════════════════════════
+// Arma un bloque de fotos como TABLA (filas de 3 celdas) en vez de grid/flex.
+// Las tablas HTML sí respetan de forma confiable el salto de página entre <tr>
+// en todos los navegadores, a diferencia de CSS grid/flex (que suelen ignorar
+// page-break-inside/break-inside y provocan que una foto quede cortada entre hojas).
+function photoGridTable(innerCellsArr, cls){
+  if(!innerCellsArr || !innerCellsArr.length) return '';
+  let rows='';
+  for(let i=0;i<innerCellsArr.length;i+=3){
+    const group=innerCellsArr.slice(i,i+3);
+    let tds=group.map(inner=>'<td class="photo-cell">'+inner+'</td>').join('');
+    for(let p=group.length;p<3;p++){ tds+='<td class="photo-cell-empty"></td>'; }
+    rows+='<tr>'+tds+'</tr>';
+  }
+  return '<table class="'+cls+'"><tbody>'+rows+'</tbody></table>';
+}
+
 function generateReport(){
   // Helper: "JUAN PÉREZ DE LA O" → "Juan Pérez de la O"
   // Códigos alfanuméricos (contienen dígitos y son todo mayúsculas) NO se tocan.
@@ -3466,14 +3482,17 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 .grade-g1{background:#dbeafe;color:#1e40af;font-weight:800;text-align:center}
 .grade-g2{background:#fef3c7;color:#92400e;font-weight:800;text-align:center}
 /* FOTOS — sin recortar, fondo blanco, tamaño optimizado para evitar espacios vacíos */
-.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px;page-break-inside:avoid}
-.photo-grid-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;page-break-inside:avoid;break-inside:avoid;margin-bottom:8px}
-.photo-cell{border:1px solid #c9d4e0;padding:4px;background:#fff;display:flex;flex-direction:column;page-break-inside:avoid;break-inside:avoid}
+/* FOTOS como TABLA (no grid/flex): los navegadores respetan de forma confiable
+   el salto de página entre filas <tr>, evitando que una foto quede cortada
+   entre hojas al imprimir/exportar a PDF. */
+.photo-grid,.photo-grid-evidence{width:100%;border-collapse:separate;border-spacing:8px;margin-top:6px;table-layout:fixed}
+.photo-grid td.photo-cell,.photo-grid-evidence td.photo-cell{border:1px solid #c9d4e0;padding:4px;background:#fff;vertical-align:top;width:33.333%;page-break-inside:avoid;break-inside:avoid}
+.photo-grid td.photo-cell-empty,.photo-grid-evidence td.photo-cell-empty{border:none;background:transparent;width:33.333%}
 .photo-cell .ph{width:100%;height:195px;display:flex;align-items:center;justify-content:center;background:#f7f9fc;overflow:hidden}
 .photo-cell .ph img{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:cover;display:block}
 .photo-cell .cap{font-size:8pt;color:#475569;text-align:center;padding:4px 0 2px;font-weight:600}
-.photo-grid-evidence{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:6px;page-break-inside:avoid}
 .photo-grid-evidence .photo-cell .ph{height:175px}
+tr{page-break-inside:avoid;break-inside:avoid}
 /* OBSERVACIONES */
 .obs-list{width:100%;border-collapse:collapse;border:1px solid #1a3a5c;font-size:8.5pt}
 .obs-list th{background:#1a3a5c;color:#fff;padding:4px 7px;text-align:left;font-size:8pt;font-weight:700}
@@ -3587,7 +3606,8 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
   <table class="check-table"><thead><tr><th>Descripción / Description</th><th class="ans">Resultado</th></tr></thead><tbody>${extRows}</tbody></table>
   ${(()=>{
     const photos=Object.keys(photoStore).filter(k=>k.startsWith('estadocont:')).map(k=>photoStore[k]);
-    return photos.length?`<div class="sub-title">Fotos del defecto / Defect photos</div><div class="photo-grid">${photos.map(src=>'<div class="photo-cell"><div class="ph"><img src="'+src+'"></div></div>').join('')}</div>`:'';
+    const innerCells=photos.map(src=>'<div class="ph"><img src="'+src+'"></div>');
+    return photos.length?`<div class="sub-title">Fotos del defecto / Defect photos</div>${photoGridTable(innerCells,'photo-grid')}`:'';
   })()}
   ${obsEstado!=='—'&&obsEstado?'<div class="obs-box"><b>Observación:</b> '+obsEstado+'</div>':''}
 </div>
@@ -3595,10 +3615,10 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 <!-- 4. FOTOS EXTERIORES -->
 ${(()=>{
   const labels=['Lateral derecho / Right side','Lateral izquierdo / Left side','Frontal vehículo / Front vehicle','Posterior / Rear','N° precinto / Seal no.'];
-  const cells=labels.map((l,i)=>{const f=photoStore['ext:'+i];return f?'<div class="photo-cell"><div class="ph"><img src="'+f+'"></div><div class="cap">'+l.split(' / ')[0]+'</div></div>':'';}).filter(Boolean);
+  const cells=labels.map((l,i)=>{const f=photoStore['ext:'+i];return f?'<div class="ph"><img src="'+f+'"></div><div class="cap">'+l.split(' / ')[0]+'</div>':'';}).filter(Boolean);
   // Fotos extras de exteriores
-  Object.keys(photoStore).filter(k=>k.startsWith('ext:x')).forEach(k=>{cells.push('<div class="photo-cell"><div class="ph"><img src="'+photoStore[k]+'"></div><div class="cap">Foto adicional</div></div>');});
-  return cells.length?`<div class="section"><div class="sec-title"><span class="num">4</span> Fotos Exteriores / External Photos</div><div class="photo-grid">${cells.join('')}</div></div>`:'';
+  Object.keys(photoStore).filter(k=>k.startsWith('ext:x')).forEach(k=>{cells.push('<div class="ph"><img src="'+photoStore[k]+'"></div><div class="cap">Foto adicional</div>');});
+  return cells.length?`<div class="section"><div class="sec-title"><span class="num">4</span> Fotos Exteriores / External Photos</div>${photoGridTable(cells,'photo-grid')}</div>`:'';
 })()}
 
 <!-- 5. APERTURA (checklist interna + fotos apertura + obs internas) -->
@@ -3608,17 +3628,17 @@ ${(()=>{
   <table class="check-table"><thead><tr><th>Descripción / Description</th><th class="ans">Resultado</th></tr></thead><tbody>${intRows}</tbody></table>
   ${(()=>{
     const labels=['Primera fila / First row','Lado izquierdo / Left side','Lado derecho / Right side','Piso / Floor','Techo / Ceiling','Vista general / General view'];
-    const cells=labels.map((l,i)=>{const f=photoStore['ap:'+i];return f?'<div class="photo-cell"><div class="ph"><img src="'+f+'"></div><div class="cap">'+l.split(' / ')[0]+'</div></div>':'';}).filter(Boolean);
-    Object.keys(photoStore).filter(k=>k.startsWith('ap:x')).forEach(k=>{cells.push('<div class="photo-cell"><div class="ph"><img src="'+photoStore[k]+'"></div><div class="cap">Foto adicional</div></div>');});
-    return cells.length?`<div class="sub-title">Fotos de apertura / Opening photos</div><div class="photo-grid">${cells.join('')}</div>`:'';
+    const cells=labels.map((l,i)=>{const f=photoStore['ap:'+i];return f?'<div class="ph"><img src="'+f+'"></div><div class="cap">'+l.split(' / ')[0]+'</div>':'';}).filter(Boolean);
+    Object.keys(photoStore).filter(k=>k.startsWith('ap:x')).forEach(k=>{cells.push('<div class="ph"><img src="'+photoStore[k]+'"></div><div class="cap">Foto adicional</div>');});
+    return cells.length?`<div class="sub-title">Fotos de apertura / Opening photos</div>${photoGridTable(cells,'photo-grid')}`:'';
   })()}
   ${obsInterna!=='—'&&obsInterna?'<div class="obs-box"><b>Observaciones internas:</b> '+obsInterna+'</div>':''}
 </div>
 
 <!-- 6. FOTOS DURANTE LA DESCARGA -->
 ${(()=>{
-  const cells=Object.keys(photoStore).filter(k=>k.startsWith('desc:')).map(k=>'<div class="photo-cell"><div class="ph"><img src="'+photoStore[k]+'"></div></div>');
-  return cells.length?`<div class="section"><div class="sec-title"><span class="num">6</span> Fotos Durante la Descarga / Unloading Photos</div><div class="photo-grid">${cells.join('')}</div></div>`:'';
+  const cells=Object.keys(photoStore).filter(k=>k.startsWith('desc:')).map(k=>'<div class="ph"><img src="'+photoStore[k]+'"></div>');
+  return cells.length?`<div class="section"><div class="sec-title"><span class="num">6</span> Fotos Durante la Descarga / Unloading Photos</div>${photoGridTable(cells,'photo-grid')}</div>`:'';
 })()}
 
 <!-- 7. PRODUCTOS RECIBIDOS (INVENTARIO) -->
@@ -3667,7 +3687,7 @@ ${(()=>{
     const ns=gradePrefix+'_blk_'+blkIdx;
     const blkPhotos=Object.keys(photoStore).filter(k=>k.startsWith(ns+':')).map(k=>photoStore[k]).filter(Boolean);
     if(blkPhotos.length){
-      dmgH+='<tr><td colspan="6" style="padding:5px 8px;background:#fff"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Fotos de evidencia ('+blkPhotos.length+'):</div><div class="photo-grid-evidence">'+blkPhotos.map(src=>'<div class="photo-cell"><div class="ph"><img src="'+src+'"></div></div>').join('')+'</div></td></tr>';
+      dmgH+='<tr><td colspan="6" style="padding:5px 8px;background:#fff"><div style="font-size:8pt;font-weight:700;color:#1a3a5c;margin-bottom:3px">Fotos de evidencia ('+blkPhotos.length+'):</div>'+photoGridTable(blkPhotos.map(src=>'<div class="ph"><img src="'+src+'"></div>'),'photo-grid-evidence')+'</td></tr>';
     }
   });
   dmgH+='</tbody></table></div>';
