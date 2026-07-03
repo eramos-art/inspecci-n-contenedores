@@ -1640,6 +1640,12 @@ function _sinSerieHTML(grade){
 }
 
 function addG1Block(){
+  // Colapsar todos los bloques G1 abiertos antes de agregar uno nuevo
+  document.querySelectorAll('#g1CodigosContainer .bloque-accordion-body:not(.collapsed)').forEach(body=>{
+    body.classList.add('collapsed');
+    const chev=body.previousElementSibling?.querySelector('.bloque-accordion-chevron');
+    if(chev) chev.textContent='▶';
+  });
   g1BlockCount++;
   const container=document.getElementById('g1CodigosContainer');
   const div=document.createElement('div');div.className='card g1-codigo-block';div.dataset.idx=g1BlockCount;
@@ -1676,6 +1682,12 @@ function removeG1Block(btn){
   const blocks=document.querySelectorAll('.g1-codigo-block');if(blocks.length>1)btn.closest('.g1-codigo-block').remove();
 }
 function addG2Block(){
+  // Colapsar todos los bloques G2 abiertos antes de agregar uno nuevo
+  document.querySelectorAll('#g2CodigosContainer .bloque-accordion-body:not(.collapsed)').forEach(body=>{
+    body.classList.add('collapsed');
+    const chev=body.previousElementSibling?.querySelector('.bloque-accordion-chevron');
+    if(chev) chev.textContent='▶';
+  });
   g2BlockCount++;
   const container=document.getElementById('g2CodigosContainer');
   const div=document.createElement('div');div.className='card g2-codigo-block';div.dataset.idx=g2BlockCount;
