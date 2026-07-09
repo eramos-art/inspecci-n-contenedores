@@ -3349,9 +3349,9 @@ function photoGridTable(innerCellsArr, cls){
     const group=innerCellsArr.slice(i,i+3);
     let tds=group.map(inner=>'<td class="photo-cell">'+inner+'</td>').join('');
     for(let p=group.length;p<3;p++){ tds+='<td class="photo-cell-empty"></td>'; }
-    rows+='<tr>'+tds+'</tr>';
+    rows+='<tr style="page-break-inside:avoid;break-inside:avoid">'+tds+'</tr>';
   }
-  return '<table class="'+cls+'"><tbody>'+rows+'</tbody></table>';
+  return '<table class="'+cls+'" style="width:100%;border-collapse:collapse;table-layout:fixed"><tbody>'+rows+'</tbody></table>';
 }
 
 function generateReport(){
@@ -3488,8 +3488,8 @@ body{font-family:'Calibri','Segoe UI',Arial,sans-serif;color:#1a2332;font-size:1
 .photo-grid,.photo-grid-evidence{width:100%;border-collapse:separate;border-spacing:8px;margin-top:6px;table-layout:fixed}
 .photo-grid td.photo-cell,.photo-grid-evidence td.photo-cell{border:1px solid #c9d4e0;padding:4px;background:#fff;vertical-align:top;width:33.333%;page-break-inside:avoid;break-inside:avoid}
 .photo-grid td.photo-cell-empty,.photo-grid-evidence td.photo-cell-empty{border:none;background:transparent;width:33.333%}
-.photo-cell .ph{width:100%;height:195px;display:flex;align-items:center;justify-content:center;background:#f7f9fc;overflow:hidden}
-.photo-cell .ph img{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:cover;display:block}
+.photo-cell .ph{width:100%;height:185px;display:flex;align-items:center;justify-content:center;background:#f7f9fc;overflow:hidden;page-break-inside:avoid;break-inside:avoid}
+.photo-cell .ph img{width:100%;height:100%;object-fit:cover;display:block}
 .photo-cell .cap{font-size:8pt;color:#475569;text-align:center;padding:4px 0 2px;font-weight:600}
 .photo-grid-evidence .photo-cell .ph{height:175px}
 tr{page-break-inside:avoid;break-inside:avoid}
