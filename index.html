@@ -941,16 +941,12 @@ let currentStep=0;
 const CHECKLIST_EXT=[
   {es:'Golpes visibles',en:'Visible dents'},
   {es:'Oxidación',en:'Rust'},
-  {es:'Sello roto / distinto al informado',en:'Broken or mismatched seal'},
+  {es:'N° precinto no coincide / distinto al informado',en:'Seal number mismatch / differs from reported'},
   {es:'Dificultad al abrir puertas',en:'Difficulty opening doors'},
   {es:'Manchas / pintura fresca',en:'Stains / fresh paint'},
-  {es:'Presencia de grasa / aceite',en:'Grease / oil residue'},
-  {es:'Brea / alquitrán',en:'Tar / bitumen'},
   {es:'Abolladura / agrietado',en:'Dented / cracked'},
   {es:'Precinto manipulado',en:'Tampered seal'},
   {es:'Precinto cambiado',en:'Replaced seal'},
-  {es:'Puerta trabada',en:'Jammed door'},
-  {es:'No cierra por completo',en:'Door does not close fully'},
   {es:'Agujereado / desoldado',en:'Holes / unwelded areas'},
   {es:'Limpio',en:'Clean'}
 ];
@@ -971,16 +967,12 @@ const CHECKLIST_INT=[
 const EXT_CORTO={
   'Golpes visibles':'Golpes',
   'Oxidación':'Oxidación',
-  'Sello roto / distinto al informado':'Sello roto',
+  'N° precinto no coincide / distinto al informado':'Precinto no coincide',
   'Dificultad al abrir puertas':'Puerta difícil',
   'Manchas / pintura fresca':'Manchas',
-  'Presencia de grasa / aceite':'Grasa/aceite',
-  'Brea / alquitrán':'Brea',
   'Abolladura / agrietado':'Abolladura',
   'Precinto manipulado':'Precinto manipulado',
   'Precinto cambiado':'Precinto cambiado',
-  'Puerta trabada':'Puerta trabada',
-  'No cierra por completo':'No cierra',
   'Agujereado / desoldado':'Agujeros',
   'Limpio':'Limpio',
 };
@@ -1265,10 +1257,11 @@ function removeSlotPhoto(ns,key,slot,removable){delete photoStore[ns+':'+key];ls
 function buildGrid(containerId,ns,slots){const g=document.getElementById(containerId);if(!g)return;g.innerHTML='';slots.forEach((s,i)=>{g.appendChild(makeSlot(ns,String(i),s.num,s.label,false));});}
 function addExtraPhoto(ns,sectionId,counterId,simple){
   const section=document.getElementById(sectionId);
-  // Buscar si ya existe un slot extra vacío sin usar — reutilizarlo en vez de crear otro
+  // Buscar si ya existe un slot extra vacío sin usar — abrirlo directamente
   const existingEmpty=section.querySelector('.extra-grid [data-ns="'+ns+'"]:not(.has-photo)');
   if(existingEmpty){
-    existingEmpty.click();
+    // Abrir picker directamente sin click (evita interferencia con visor)
+    openPicker(ns, existingEmpty.dataset.key, existingEmpty);
     return;
   }
   extraCounters[ns]=(extraCounters[ns]||0)+1;const key='x'+extraCounters[ns];
@@ -1901,7 +1894,49 @@ function validateStep(step){
       el&&el.classList.add('error');ok=false;
     } else {el&&el.classList.remove('error');}
   });
-  if(!ok){
+
+  // ── Validación especial: códigos G1/G2 deben tener cantidad de lote en inventario ──
+  // Se valida al salir del paso 4 (G1, step=3) y paso 5 (G2, step=4)
+  if(ok && (step===3 || step===4)){
+    const grade = step===3 ? 'g1' : 'g2';
+    const blocks = document.querySelectorAll('.'+grade+'-codigo-block');
+    // Obtener todos los códigos registrados en inventario con su lote
+    const inventCodes = {};
+    document.querySelectorAll('#inventBody tr').forEach(row=>{
+      const inputs = row.querySelectorAll('input');
+      if(inputs[0] && inputs[1]){
+        const cod = inputs[0].value.trim().toUpperCase();
+        const lote = parseInt(inputs[1].value)||0;
+        if(cod) inventCodes[cod] = lote;
+      }
+    });
+    // Verificar que cada código con series tenga lote registrado
+    const sinLote = [];
+    blocks.forEach(bl=>{
+      const codeInput = bl.querySelector('[class*="code-input"]');
+      const seriesCount = bl.querySelectorAll('.serie-input').filter
+        ? [...bl.querySelectorAll('.serie-input')].filter(i=>i.value.trim()).length
+        : 0;
+      const sinSerie = bl.querySelector('.sin-serie-check')?.checked;
+      const sinSerieQty = parseInt(bl.querySelector('.sin-serie-qty')?.value)||0;
+      const code = codeInput?.value.trim().toUpperCase();
+      if(code && (seriesCount>0 || (sinSerie && sinSerieQty>0))){
+        const lote = inventCodes[code]||0;
+        if(lote===0) sinLote.push(code);
+      }
+    });
+    if(sinLote.length>0){
+      ok=false;
+      let msg=document.getElementById('alertRequired');
+      if(!msg){msg=document.createElement('div');msg.id='alertRequired';msg.className='alert-required';document.getElementById('page'+step).insertBefore(msg,document.getElementById('page'+step).firstChild);}
+      msg.innerHTML='⚠️ Los siguientes códigos no tienen <strong>Cant. Lote</strong> registrada en Productos Recibidos (Paso 3):<br><strong style="color:#DC2626">'+sinLote.join(', ')+'</strong><br><small>Ve al Paso 3 y agrega la cantidad de lote para continuar.</small>';
+      msg.style.display='block';
+      setTimeout(()=>{if(msg)msg.style.display='none';},6000);
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+  }
+
+  if(!ok && !(step===3||step===4)){
     let msg=document.getElementById('alertRequired');
     if(!msg){msg=document.createElement('div');msg.id='alertRequired';msg.className='alert-required';document.getElementById('page'+step).insertBefore(msg,document.getElementById('page'+step).firstChild);}
     msg.textContent='⚠️ Por favor completa los campos obligatorios (⚠️) antes de continuar.';
@@ -2483,13 +2518,25 @@ function restoreProgress(){
       const cont=document.getElementById('g1CodigosContainer');cont.innerHTML='';g1BlockCount=0;
       data.g1Bloques.forEach((bl,bi)=>{
         g1BlockCount++;const div=document.createElement('div');div.className='card g1-codigo-block';div.dataset.idx=g1BlockCount;
-        div.innerHTML=`<div class="section-title">Código #${g1BlockCount} / Code #${g1BlockCount} &nbsp;<button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
-        <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase" value="${(bl.codigo||'').toUpperCase()}"><span class="scan-icon">⬛</span></div></div>
-        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
-        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
-        <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g1-detail-input" type="text" placeholder="Ej: cajas mal estibadas en origen" value="${bl.detail||''}"></div>
-        <div style="margin-bottom:10px;background:#EBF4FF;border:1.5px solid #BFDBFE;border-radius:12px;padding:12px"><div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g1-foto-count" style="background:#1E40AF;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div><div class="g1-fotos-section"></div><button class="btn-add-photo" onclick="addFotoBloque(this,'g1')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G1</button></div>
-        <div class="grado-section"><div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Números de serie G1 / Serial numbers</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div><div class="grado-body g1-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div></div>`;
+        const isCollapsed=bi>0;
+        div.innerHTML=`
+  <div class="bloque-accordion-header" onclick="toggleBloque(this)">
+    <div class="bloque-accordion-summary">📦 Código #${g1BlockCount} — <span class="bloque-resumen">${(bl.codigo||'sin código aún').toUpperCase()}${bl.tipo?' · '+bl.tipo.split(' / ')[0]:''}</span></div>
+    <span class="bloque-accordion-chevron">${isCollapsed?'▶':'▼'}</span>
+  </div>
+  <div class="bloque-accordion-body${isCollapsed?' collapsed':''}">
+  <div class="field" style="margin-bottom:10px;margin-top:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g1-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase();actualizarResumen(this)" style="text-transform:uppercase" value="${(bl.codigo||'').toUpperCase()}"><span class="scan-icon">⬛</span></div></div>
+  <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g1-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g1-tipo-select" onchange="onTipoChange(this)"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
+  <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g1-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g1-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
+  <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g1-detail-input" type="text" placeholder="Ej: cajas mal estibadas en origen" value="${bl.detail||''}"></div>
+  <div style="margin-bottom:10px;background:#EBF4FF;border:1.5px solid #BFDBFE;border-radius:12px;padding:12px"><div style="font-size:12px;font-weight:700;color:#1E40AF;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g1-foto-count" style="background:#1E40AF;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div><div class="g1-fotos-section"></div><button class="btn-add-photo" onclick="addFotoBloque(this,'g1')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G1</button></div>
+  <div class="grado-section"><div class="grado-header-1" style="display:flex;justify-content:space-between;align-items:center"><span>📦 Series G1</span><span class="serie-counter" style="background:#1E40AF;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
+  <div style="padding:8px 12px;background:#F0F7FF;border-bottom:1px solid #BFDBFE;display:flex;align-items:center"><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#1E40AF;cursor:pointer;font-weight:600"><input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g1')" style="width:16px;height:16px;cursor:pointer"${bl.sinSerie?' checked':''}>Sin número de serie (insumos / cajas máster)</label></div>
+  <div class="grado-body g1-series-body"${bl.sinSerie?' style="display:none"':''}></div>
+  <div class="sin-serie-section" style="${bl.sinSerie?'display:block':'display:none'};padding:10px 12px;background:#FFF7ED;border-top:1px solid #FED7AA"><div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:6px">📦 Reporte por cantidad de cajas</div><div style="display:flex;gap:8px;align-items:center"><label style="font-size:12px;color:#92400E;font-weight:600;white-space:nowrap">Cajas dañadas:</label><input type="number" class="sin-serie-qty" min="1" placeholder="0" onchange="saveProgress()" value="${bl.sinSerieQty||''}" style="width:80px;padding:8px;border:1.5px solid #FED7AA;border-radius:8px;font-size:14px;font-weight:700;text-align:center;background:white"></div></div>
+  <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g1-input')">+ Agregar serie / Add serial</button></div></div>
+  <div style="padding:6px;text-align:right"><button onclick="removeG1Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:11px">🗑 Eliminar código</button></div>
+  </div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g1-series-body');
         const seriesG1=(bl.series||[]).filter(s=>s&&(typeof s==='object'?s.serie:s));
@@ -2510,13 +2557,25 @@ function restoreProgress(){
       const cont=document.getElementById('g2CodigosContainer');cont.innerHTML='';g2BlockCount=0;
       data.g2Bloques.forEach((bl,bi)=>{
         g2BlockCount++;const div=document.createElement('div');div.className='card g2-codigo-block';div.dataset.idx=g2BlockCount;
-        div.innerHTML=`<div class="section-title">Código #${g2BlockCount} / Code #${g2BlockCount} &nbsp;<button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:16px;float:right;margin-top:-2px">×</button></div>
-        <div class="field" style="margin-bottom:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase" value="${(bl.codigo||'').toUpperCase()}"><span class="scan-icon">⬛</span></div></div>
-        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select"><option value="">Seleccionar...</option><option${bl.tipo==='Caja rota / Broken box'?' selected':''}>Caja rota / Broken box</option><option${bl.tipo==='Caja húmeda / Wet box'?' selected':''}>Caja húmeda / Wet box</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Caja manchada / Stained box'?' selected':''}>Caja manchada / Stained box</option><option${bl.tipo==='Caja con deformación leve / Slightly deformed box'?' selected':''}>Caja con deformación leve / Slightly deformed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe / Impact damage'?' selected':''}>Golpe / Impact damage</option><option${bl.tipo==='Etiqueta incorrecta / Wrong label'?' selected':''}>Etiqueta incorrecta / Wrong label</option><option${bl.tipo==='Error en rating labels / Wrong rating label'?' selected':''}>Error en rating labels / Wrong rating label</option><option${bl.tipo==='Leve sobreajuste por zunchos / Slight over-strapping'?' selected':''}>Leve sobreajuste por zunchos / Slight over-strapping</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
-        <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
-        <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes <span style="font-size:10px;color:#94A3B8">(causa probable del daño)</span></label><input class="g2-detail-input" type="text" placeholder="Ej: golpe severo durante descarga" value="${bl.detail||''}"></div>
-        <div style="margin-bottom:10px;background:#FEF9EC;border:1.5px solid #FCD34D;border-radius:12px;padding:12px"><div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g2-foto-count" style="background:#92400E;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div><div class="g2-fotos-section"></div><button class="btn-add-photo" onclick="addFotoBloque(this,'g2')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G2</button></div>
-        <div class="grado-section"><div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Números de serie G2 / Serial numbers</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div><div class="grado-body g2-series-body"></div><div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div></div>`;
+        const isCollapsed=bi>0;
+        div.innerHTML=`
+  <div class="bloque-accordion-header g2" onclick="toggleBloque(this)">
+    <div class="bloque-accordion-summary g2">🔴 Código #${g2BlockCount} — <span class="bloque-resumen">${(bl.codigo||'sin código aún').toUpperCase()}${bl.tipo?' · '+bl.tipo.split(' / ')[0]:''}</span></div>
+    <span class="bloque-accordion-chevron">${isCollapsed?'▶':'▼'}</span>
+  </div>
+  <div class="bloque-accordion-body${isCollapsed?' collapsed':''}">
+  <div class="field" style="margin-bottom:10px;margin-top:10px"><label>Código de producto / Product code</label><div class="barcode-wrap"><input class="g2-code-input" type="text" placeholder="Escanear código" autocapitalize="characters" oninput="this.value=this.value.toUpperCase();actualizarResumen(this)" style="text-transform:uppercase" value="${(bl.codigo||'').toUpperCase()}"><span class="scan-icon">⬛</span></div></div>
+  <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Grado / Grade</label><select class="g2-grado-select"><option value="">Seleccionar...</option><option value="G1"${bl.grado==='G1'?' selected':''}>G1 — Tolerable</option><option value="G2"${bl.grado==='G2'?' selected':''}>G2 — Rechazado</option></select></div><div class="field"><label>Tipo de daño / Damage type</label><select class="g2-tipo-select" onchange="onTipoChange(this)"><option value="">Seleccionar...</option><option${bl.tipo==='Cajas rotas / Broken boxes'?' selected':''}>Cajas rotas / Broken boxes</option><option${bl.tipo==='Manchas de grasa / Grease stains'?' selected':''}>Manchas de grasa / Grease stains</option><option${bl.tipo==='Humedad / Moisture damage'?' selected':''}>Humedad / Moisture damage</option><option${bl.tipo==='Caja aplastada / Crushed box'?' selected':''}>Caja aplastada / Crushed box</option><option${bl.tipo==='Producto dañado / Damaged product'?' selected':''}>Producto dañado / Damaged product</option><option${bl.tipo==='Golpe severo / Severe impact'?' selected':''}>Golpe severo / Severe impact</option><option${bl.tipo==='Otro / Other'?' selected':''}>Otro / Other</option></select></div></div>
+  <div class="grid2" style="margin-bottom:10px"><div class="field"><label>Cantidad / Qty</label><input class="g2-qty-input" type="number" min="0" placeholder="0" value="${bl.qty||''}"></div><div class="field"><label>Uds. internas / Internal units</label><input class="g2-uds-input" type="number" min="0" placeholder="0" value="${bl.uds||''}"></div></div>
+  <div class="field" style="margin-bottom:10px"><label>Observaciones / Notes</label><input class="g2-detail-input" type="text" placeholder="Ej: golpe severo durante descarga" value="${bl.detail||''}"></div>
+  <div style="margin-bottom:10px;background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:12px;padding:12px"><div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">📷 Fotos del defecto / Evidence photos <span class="cnt g2-foto-count" style="background:#92400E;color:white;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px">0</span></div><div class="g2-fotos-section"></div><button class="btn-add-photo" onclick="addFotoBloque(this,'g2')" style="font-size:12px;padding:8px 12px;margin-top:6px">📷 + Foto de evidencia G2</button></div>
+  <div class="grado-section"><div class="grado-header-2" style="display:flex;justify-content:space-between;align-items:center"><span>🔴 Series G2</span><span class="serie-counter" style="background:#92400E;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">0 escaneadas</span></div>
+  <div style="padding:8px 12px;background:#FEF3C7;border-bottom:1px solid #FCD34D;display:flex;align-items:center"><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#92400E;cursor:pointer;font-weight:600"><input type="checkbox" class="sin-serie-check" onchange="toggleSinSerie(this,'g2')" style="width:16px;height:16px;cursor:pointer"${bl.sinSerie?' checked':''}>Sin número de serie (insumos / cajas máster)</label></div>
+  <div class="grado-body g2-series-body"${bl.sinSerie?' style="display:none"':''}></div>
+  <div class="sin-serie-section" style="${bl.sinSerie?'display:block':'display:none'};padding:10px 12px;background:#FFF7ED;border-top:1px solid #FED7AA"><div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:6px">📦 Reporte por cantidad de cajas</div><div style="display:flex;gap:8px;align-items:center"><label style="font-size:12px;color:#92400E;font-weight:600;white-space:nowrap">Cajas dañadas:</label><input type="number" class="sin-serie-qty" min="1" placeholder="0" onchange="saveProgress()" value="${bl.sinSerieQty||''}" style="width:80px;padding:8px;border:1.5px solid #FED7AA;border-radius:8px;font-size:14px;font-weight:700;text-align:center;background:white"></div></div>
+  <div style="padding:8px 12px;background:#F8FAFC;border-top:1px solid #E2E8F0"><button class="btn-add" style="margin-top:0" onclick="addSerieToBlock(this,'g2-input')">+ Agregar serie / Add serial</button></div></div>
+  <div style="padding:6px;text-align:right"><button onclick="removeG2Block(this)" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:11px">🗑 Eliminar código</button></div>
+  </div>`;
         cont.appendChild(div);
         const seriesBody=div.querySelector('.g2-series-body');
         const seriesG2=(bl.series||[]).filter(s=>s&&(typeof s==='object'?s.serie:s));
@@ -3564,7 +3623,6 @@ tr{page-break-inside:avoid;break-inside:avoid}
     <div class="doc-meta">
       <span><b>FILE:</b> ${fileNum}</span>
       <span><b>FECHA:</b> ${fecha}</span>
-      <span><b>OC:</b> ${numOC}</span>
     </div>
   </div>
 </div>
@@ -3577,7 +3635,7 @@ tr{page-break-inside:avoid;break-inside:avoid}
 <div class="section">
   <div class="sec-title"><span class="num">1</span> Información General / General Information</div>
   <table class="data-table">
-    <tr><td class="lbl">N° File</td><td class="val">${fileNum}</td><td class="lbl">N° OC / PO</td><td class="val">${numOC}${ocAdicStr!=='—'?' <span style="font-size:8pt;color:#64748b">(+ '+ocAdicStr+')</span>':''}</td></tr>
+    <tr><td class="lbl">N° File</td><td class="val">${fileNum}</td><td class="lbl">N° OC / PO <span style="font-size:7pt;color:#64748b;font-style:italic">(Orden de compra)</span></td><td class="val">${numOC}${ocAdicStr!=='—'?' <span style="font-size:8pt;color:#64748b">(+ '+ocAdicStr+')</span>':''}</td></tr>
     <tr><td class="lbl">Proveedor / Supplier</td><td class="val" colspan="3">${proveedor}${provAdicStr?' <span style="font-size:8pt;color:#64748b">/ '+provAdicStr+'</span>':''}</td></tr>
     <tr><td class="lbl">Almacén / Warehouse</td><td class="val">${almacen}</td><td class="lbl">Tamaño / Size</td><td class="val">${tamano}</td></tr>
     <tr><td class="lbl">Placa / Plate</td><td class="val">${placa}</td><td class="lbl">N° Estibadores</td><td class="val">${estibadores}</td></tr>
@@ -3663,7 +3721,7 @@ ${(()=>{
   });
   if(!filledBlocks.length) return '';
   let dmgH='<div class="section"><div class="sec-title"><span class="num">8</span> Detalle de Daños Observados / Damage Details</div>';
-  dmgH+='<table class="dmg-table"><thead><tr><th style="width:42px;text-align:center">Grado</th><th>Código / Code</th><th>Tipo de Daño</th><th style="width:42px;text-align:center">Cant.</th><th style="width:52px;text-align:center">Uds.</th><th>Detalle</th></tr></thead><tbody>';
+  dmgH+='<table class="dmg-table" style="width:100%;border-collapse:collapse"><thead style="display:table-header-group"><tr><th style="width:42px;text-align:center">Grado</th><th>Código / Code</th><th>Tipo de Daño</th><th style="width:42px;text-align:center">Cant.</th><th style="width:52px;text-align:center">Uds/Caja</th><th>Detalle</th></tr></thead><tbody>';
   filledBlocks.forEach(bl=>{
     const isg2=bl.classList.contains('g2-codigo-block');
     const code=bl.querySelector('[class*="code-input"]')?.value||'—';
