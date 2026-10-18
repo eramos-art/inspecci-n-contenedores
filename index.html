@@ -4896,43 +4896,70 @@ async function importarDesdeSheets(silent){
     if(!res.ok)throw new Error('HTTP '+res.status);
     vals=(await res.json()).values||[];
   }catch(e){if(!silent)toastSync('⚠ No se pudo leer el Sheet ('+e.message+')');else console.warn('Auto-import Sheets:',e.message);return;}
-  const existentes=new Set(_histRecords.map(function(r){const s=r.resumen||{};return ((s.file||'')+'|'+(s.fecha||'')+'|'+(s.contenedor||'')).toUpperCase();}));
+  // v9.5: existentes pasa a Map clave→id — permite REFRESCAR registros importados que fueron corregidos en el Sheet
+  const existentes=new Map();
+  _histRecords.forEach(function(r){const s=r.resumen||{};existentes.set(((s.file||'')+'|'+(s.fecha||'')+'|'+(s.contenedor||'')).toUpperCase(),r.id);});
   const papelera=new Set(JSON.parse(localStorage.getItem('sole_papelera_v9')||'[]').map(function(p){return ((p.file||'')+'|'+(p.fecha||'')+'|'+(p.contenedor||'')).toUpperCase();}));
   const idx=_histReadIdx();
-  let n=0;
+  let n=0,nUpd=0;
   for(const row of vals){
     if(!row||!row[0])continue;
     const k=((row[0]||'')+'|'+(row[3]||'')+'|'+(row[5]||'')).toUpperCase();
-    if(existentes.has(k)||papelera.has(k))continue;
-    existentes.add(k);
+    if(papelera.has(k))continue;
+    if(existentes.has(k)){
+      // v9.5: la fila ya está en el teléfono. Si es un registro importado (solo resumen),
+      // se actualiza con lo corregido en el Sheet. Los hechos en el app (con fotos/datos) NO se tocan.
+      const rid=existentes.get(k);
+      if(rid){
+        const rec=await histIdbGet(rid);
+        if(!rec||!rec.datos){
+          const rs=_sheetResumen(row);
+          const cur=(rec&&rec.resumen)||((idx.find(function(x){return x.id===rid;})||{}).resumen)||{};
+          if(JSON.stringify(cur)!==JSON.stringify(rs)){ // v9.5.1: solo actualiza/cuenta si la fila realmente cambió
+            if(rec){rec.fila=row;rec.resumen=rs;await histIdbPut(rec);}
+            const ii=idx.findIndex(function(x){return x.id===rid;});
+            if(ii>=0)idx[ii].resumen=rs;
+            nUpd++;
+          }
+        }
+      }
+      continue;
+    }
+    existentes.set(k,'');
     const fecha=String(row[3]||'');
     let ts=Date.now();
     if(/^\d{4}-\d{2}-\d{2}$/.test(fecha)){const p=fecha.split('-');ts=new Date(+p[0],+p[1]-1,+p[2],12,0,0).getTime();}
-    const emo=String(row[17]||'').toUpperCase();
-    const estadoCont=emo.indexOf('ACEPTADO')>=0?'Aceptado':emo.indexOf('TOLERADO')>=0?'Tolerado':emo.indexOf('RECHAZADO')>=0?'Rechazado':'';
-    const hi=String(row[14]||''),hf=String(row[15]||'');
-    const dBruta=(hi&&hf)?minBetween(hi,hf):null;
     const rec={
       id:'S'+_uid(),ts:ts,estado:'enviado',fechaEnvio:null,informe:'concluido',
       fila:row,fotos:{},datos:null,
-      resumen:{
-        file:row[0]||'',oc:row[1]||'',proveedor:row[2]||'',fecha:fecha,
-        almacen:row[4]||'',contenedor:row[5]||'',precinto:'',tamano:'',placa:'',
-        inspector:row[18]||'',cargo:'',
-        estadoCont:estadoCont,completo:row[16]||'',
-        g1:row[12]||0,g2:row[13]||0,
-        horaInicio:hi,horaFin:hf,
-        durBruta:dBruta,durNeta:dBruta,pausas:0,pausasMin:0,fotosN:0
-      }
+      resumen:_sheetResumen(row)
     };
     await histIdbPut(rec);
+    existentes.set(k,rec.id);
     idx.unshift({id:rec.id,ts:rec.ts,estado:rec.estado,resumen:rec.resumen});
     n++;
   }
   _histWriteIdx(idx);
   await loadHistorial();updateSyncChip();
-  if(n)toastSync('✅ '+n+' reporte(s) del Sheet importado(s) al historial');
+  if(n||nUpd)toastSync((n?'✅ '+n+' nuevo(s)':'')+(n&&nUpd?' · ':'')+(nUpd?'🔄 '+nUpd+' actualizado(s) con correcciones del Sheet':''));
   else if(!silent)toastSync('Nada nuevo — el historial ya refleja el Sheet');
+}
+// v9.5: convierte una fila del Sheet (A..T) en el resumen del registro (importar y refrescar)
+function _sheetResumen(row){
+  const fecha=String(row[3]||'');
+  const emo=String(row[17]||'').toUpperCase();
+  const estadoCont=emo.indexOf('ACEPTADO')>=0?'Aceptado':emo.indexOf('TOLERADO')>=0?'Tolerado':emo.indexOf('RECHAZADO')>=0?'Rechazado':'';
+  const hi=String(row[14]||''),hf=String(row[15]||'');
+  const dBruta=(hi&&hf)?minBetween(hi,hf):null;
+  return {
+    file:row[0]||'',oc:row[1]||'',proveedor:row[2]||'',fecha:fecha,
+    almacen:row[4]||'',contenedor:row[5]||'',precinto:'',tamano:'',placa:'',
+    inspector:row[18]||'',cargo:'',
+    estadoCont:estadoCont,completo:row[16]||'',
+    g1:row[12]||0,g2:row[13]||0,
+    horaInicio:hi,horaFin:hf,
+    durBruta:dBruta,durNeta:dBruta,pausas:0,pausasMin:0,fotosN:0
+  };
 }
 
 // ── Estado del INFORME DE DESCARGA (concluido = correo con el PDF ya enviado) ──
