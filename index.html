@@ -300,6 +300,28 @@ body{font-family:'Neue Haas Grotesk Text Pro','Neue Haas Grotesk Display Pro',In
 .pbar-track{flex:1;height:13px;background:#F2F3F5;border-radius:7px;overflow:hidden;min-width:0}
 .pbar-fill{height:100%;border-radius:7px;background:var(--navy);min-width:3px}
 .pbar-val{flex:0 0 52px;text-align:right;color:#56657E;font-weight:800;font-size:11px;font-variant-numeric:tabular-nums}
+/* ── v9.3: tarjetas acordeón compactas ── */
+.hist-card{padding:0;overflow:hidden}
+.hist-card .hc-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px 10px 13px;cursor:pointer;user-select:none}
+.hist-card .hc-head:active{background:#F2F3F5}
+.hist-card .hc-chev{color:#949FB3;font-size:10px;font-weight:800;display:inline-block;transition:transform .15s;margin-left:4px}
+.hist-card.open .hc-chev{transform:rotate(90deg)}
+.hist-card .hc-body{display:none;padding:0 13px 12px;border-top:1px dashed #E4E8EE}
+.hist-card.open .hc-body{display:block}
+/* ── v9.3: gráficos renovados del panel ── */
+.stack-bar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:#F2F3F5;margin:4px 0 10px;box-shadow:inset 0 0 0 1px #E4E8EE}
+.stack-bar i{display:block;height:100%}
+.stack-leg{display:flex;flex-direction:column;gap:6px}
+.stack-leg-row{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#56657E;font-weight:600}
+.stack-leg-row b{margin-left:auto;color:#262E3D;font-variant-numeric:tabular-nums}
+.stack-dot{width:9px;height:9px;border-radius:3px;flex:0 0 9px}
+.vchart{display:flex;align-items:flex-end;gap:7px;height:122px;padding:6px 2px 0}
+.vcol-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.vcol-val{font-size:10.5px;font-weight:800;color:#262E3D;margin-bottom:3px}
+.vcol{width:72%;max-width:36px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#8794AB,#4C5F80);min-height:5px;box-shadow:0 1px 3px rgba(76,95,128,.25)}
+.vcol-lab{font-size:9.5px;color:#707F99;font-weight:700;margin-top:5px;white-space:nowrap}
+.pnl-kpi{border-top-width:3px;border-radius:12px;background:linear-gradient(180deg,#FDFEFE,#F3F5F8)}
+.pnl-kpi b{font-size:21px}
 .ptable{width:100%;border-collapse:collapse;font-size:11.5px}
 .ptable th{color:#707F99;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:4px 6px;border-bottom:1.5px solid #DBDFE6}
 .ptable td{padding:5px 6px;border-bottom:1px solid #F2F3F5;color:#262E3D}
@@ -345,7 +367,7 @@ window.onerror = function(msg, src, line, col, err) {
   <div id="wizardView">
   <!-- ═══ BARRA DE TIEMPO DE OPERACIÓN — ARRIBA, NORMADA (v9.1) ═══ -->
   <div class="timebar" id="timeBar">
-    <div class="tb-cell"><span class="tb-lbl">Inicio</span><span class="tb-val" id="tbInicio">—</span></div>
+    <div class="tb-cell" style="cursor:pointer" onclick="tbIniciar()" title="Toca aquí para iniciar el reloj de descarga"><span class="tb-lbl">Inicio ▶</span><span class="tb-val" id="tbInicio">—</span></div>
     <div class="tb-cell"><span class="tb-lbl">Fin</span><span class="tb-val" id="tbFin">—</span></div>
     <div class="tb-cell"><span class="tb-lbl">Transcurrido neto</span><span class="tb-val tb-timer" id="tbTimer">—</span></div>
     <div class="tb-cell"><span class="tb-lbl">Pausas</span><span class="tb-val" id="tbPausas">0</span></div>
@@ -452,7 +474,8 @@ window.onerror = function(msg, src, line, col, err) {
       <div class="grid2">
         <div class="field" style="grid-column:1/-1">
           <label>Proveedor principal / Main Supplier ⚠️</label>
-          <input id="proveedor" type="text" placeholder="Nombre del proveedor principal" autocapitalize="words" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase">
+          <input id="proveedor" type="text" placeholder="Nombre del proveedor principal" autocapitalize="words" oninput="this.value=this.value.toUpperCase()" list="provList" style="text-transform:uppercase">
+          <datalist id="provList"></datalist>
         </div>
       </div>
       <div style="margin-top:0;margin-bottom:8px;background:#F2F3F5;border:1px dashed #CAD0D5;border-radius:12px;padding:12px">
@@ -1079,6 +1102,7 @@ window.onerror = function(msg, src, line, col, err) {
     </div>
     <div class="hist-filters">
       <input class="hf-full" id="hfQ" type="text" placeholder="🔍 Buscar FILE, OC, proveedor, contenedor..." oninput="_histFilter.q=this.value;renderHistorial()">
+      <select id="hfFile" onchange="_histFilter.file=this.value;renderHistorial()"><option value="">Todos los FILE</option></select>
       <select id="hfMes" onchange="_histFilter.mes=this.value;renderHistorial()"><option value="">Todos los meses</option></select>
       <select id="hfEstado" onchange="_histFilter.estado=this.value;renderHistorial()">
         <option value="">Todos los informes</option>
@@ -1093,10 +1117,25 @@ window.onerror = function(msg, src, line, col, err) {
   <!-- ═══ PANEL GERENCIAL (v9.1 — vista jefatura) ═══ -->
   <div id="panelView" style="display:none">
     <div class="hist-filters">
-      <input class="hf-full" id="pfQ" type="text" placeholder="🔍 Filtrar por FILE, OC, contenedor, inspector..." oninput="_panelFilter.q=this.value;renderPanel()">
+      <input class="hf-full" id="pfQ" type="text" placeholder="🔍 Filtrar por FILE, OC, contenedor..." oninput="_panelFilter.q=this.value;renderPanel()">
+      <select id="pfInsp" onchange="_panelFilter.insp=this.value;renderPanel()"><option value="">Todos los inspectores</option></select>
       <select id="pfMes" onchange="_panelFilter.mes=this.value;renderPanel()"><option value="">Todos los meses</option></select>
       <select id="pfAlm" onchange="_panelFilter.alm=this.value;renderPanel()"><option value="">Todos los almacenes</option></select>
       <select class="hf-full" id="pfProv" onchange="_panelFilter.prov=this.value;renderPanel()"><option value="">Todos los proveedores</option></select>
+      <select id="pfEstado" onchange="_panelFilter.estado=this.value;renderPanel()">
+        <option value="">Todos los estados</option>
+        <option value="Aceptado">Aceptado</option>
+        <option value="Tolerado">Tolerado</option>
+        <option value="Rechazado">Rechazado</option>
+      </select>
+      <select id="pfDef" onchange="_panelFilter.def=this.value;renderPanel()">
+        <option value="">Con o sin defectos</option>
+        <option value="cual">Con defectos (G1 o G2)</option>
+        <option value="sin">Sin defectos</option>
+        <option value="g1">Solo Grado 1</option>
+        <option value="g2">Solo Grado 2</option>
+        <option value="ambos">Grado 1 y Grado 2</option>
+      </select>
     </div>
     <div class="pnl-kpis" id="pnlKpis"></div>
     <div class="pnl-grid">
@@ -1977,7 +2016,7 @@ function addProveedorRow(){
   provCount++;
   const list=document.getElementById('proveedoresAdicionalesList');
   const div=document.createElement('div');div.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px';
-  div.innerHTML=`<input type="text" placeholder="Nombre del proveedor adicional" class="proveedor-adicional" style="flex:1;font-size:14px;padding:9px 12px;border:1.5px solid #DBDFE6;border-radius:10px;background:#F2F3F5;color:#262E3D"><button onclick="this.parentElement.remove();saveProgress()" style="background:none;border:none;cursor:pointer;color:#949FB3;font-size:20px;padding:0 6px;line-height:1">×</button>`;
+  div.innerHTML=`<input type="text" placeholder="Nombre del proveedor adicional" class="proveedor-adicional" list="provList" style="flex:1;font-size:14px;padding:9px 12px;border:1.5px solid #DBDFE6;border-radius:10px;background:#F2F3F5;color:#262E3D;text-transform:uppercase"><button onclick="this.parentElement.remove();saveProgress()" style="background:none;border:none;cursor:pointer;color:#949FB3;font-size:20px;padding:0 6px;line-height:1">×</button>`;
   list.appendChild(div);div.querySelector('input').focus();
 }
 
@@ -2286,8 +2325,27 @@ function setHoraNow(id){const el=document.getElementById(id);if(!el)return;el.va
 function stampHoraInicio(){const el=document.getElementById('horaInicio');if(el&&!el.value)setHoraNow('horaInicio');}
 function stampFechaHoy(){const f=document.getElementById('fecha');if(f&&!f.value)f.value=new Date().toISOString().slice(0,10);}
 function primerToque(){if(_primerToque)return;_primerToque=true;stampFechaHoy();stampHoraInicio();}
-document.addEventListener('input',primerToque,{capture:true});
-document.addEventListener('change',primerToque,{capture:true});
+// v9.3: el reloj SOLO arranca cuando el inspector escribe su nombre (o toca Inicio ▶);
+// ya NO arranca con cualquier toque en historial/panel/buscadores.
+(function(){const nm=document.getElementById('inspNombre');if(nm)nm.addEventListener('input',function(){primerToque();});})();
+function tbIniciar(){
+  if(_histMode)return;
+  const el=document.getElementById('horaInicio');if(!el)return;
+  if(!el.value){_primerToque=true;stampFechaHoy();setHoraNow('horaInicio');}
+}
+// ── v9.3: Catálogo de proveedores (nombres únicos, nuevos se agregan al vuelo) ──
+function provCatalogRead(){try{return JSON.parse(localStorage.getItem('sole_prov_catalog_v9')||'[]');}catch(e){return [];}}
+function provCatalogWrite(a){try{localStorage.setItem('sole_prov_catalog_v9',JSON.stringify(a));}catch(e){}}
+function provCatalogRefresh(){
+  const set=new Set(provCatalogRead().map(function(p){return String(p).toUpperCase();}));
+  (_histRecords||[]).forEach(function(r){const p=(r.resumen||{}).proveedor;if(p)set.add(String(p).toUpperCase());});
+  const arr=Array.from(set).filter(Boolean).sort();
+  provCatalogWrite(arr);
+  const dl=document.getElementById('provList');
+  if(dl)dl.innerHTML=arr.map(function(p){return '<option value="'+_esc(p)+'"></option>';}).join('');
+  return arr;
+}
+function provCatalogAdd(p){if(!p)return;const P=String(p).toUpperCase().trim();if(!P)return;const a=provCatalogRead();if(a.indexOf(P)<0){a.push(P);provCatalogWrite(a);provCatalogRefresh();}}
 function minBetween(a,b){if(!a||!b)return null;const p=x=>{const m=String(x).split(':');if(m.length!==2)return null;const h=parseInt(m[0],10),mi=parseInt(m[1],10);if(Number.isNaN(h)||Number.isNaN(mi))return null;return h*60+mi;};const A=p(a),B=p(b);if(A==null||B==null)return null;return Math.max(0,B-A);}
 function fmtDurMin(m){if(m==null)return '—';const h=Math.floor(m/60),r=m%60;return (h?h+'h ':'')+(h||r?r+' min':'0 min');}
 function pausasResumen(){const L=pausasDescarga||[];const t=L.reduce((s,p)=>s+(p.durMin||0),0);return L.length?(L.length+' pausa(s) · '+t+' min'+(pausaActiva?' · 1 en curso':'')):'Sin pausas';}
@@ -2821,7 +2879,7 @@ function restoreProgress(){
     }
     // Restaurar proveedores adicionales
     if(data.proveedoresAdicionales&&data.proveedoresAdicionales.length){
-      data.proveedoresAdicionales.forEach(v=>{if(!v)return;provCount++;const list=document.getElementById('proveedoresAdicionalesList');const div=document.createElement('div');div.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px';div.innerHTML=`<input type="text" class="proveedor-adicional" style="flex:1;font-size:14px;padding:9px 12px;border:1.5px solid #DBDFE6;border-radius:10px;background:#F2F3F5;color:#262E3D" value="${v}"><button onclick="this.parentElement.remove();saveProgress()" style="background:none;border:none;cursor:pointer;color:#949FB3;font-size:20px;padding:0 6px;line-height:1">×</button>`;list.appendChild(div);});
+      data.proveedoresAdicionales.forEach(v=>{if(!v)return;provCount++;const list=document.getElementById('proveedoresAdicionalesList');const div=document.createElement('div');div.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px';div.innerHTML=`<input type="text" class="proveedor-adicional" list="provList" style="flex:1;font-size:14px;padding:9px 12px;border:1.5px solid #DBDFE6;border-radius:10px;background:#F2F3F5;color:#262E3D;text-transform:uppercase" value="${v}"><button onclick="this.parentElement.remove();saveProgress()" style="background:none;border:none;cursor:pointer;color:#949FB3;font-size:20px;padding:0 6px;line-height:1">×</button>`;list.appendChild(div);});
     }
     // Restaurar campo respAlmacenSel
     const raSel=document.getElementById('respAlmacenSel');
@@ -3218,7 +3276,8 @@ async function uploadToOneDrive(){
       '<div style="font-size:48px;margin-bottom:10px">✅</div>'+
       '<h3 style="font-size:18px;color:#17603A;margin-bottom:8px">¡Reporte completado!</h3>'+
       '<p style="font-size:13px;color:#1E7B3C;margin-bottom:4px">📁 Fotos en OneDrive: <strong>'+reportName+'</strong></p>'+
-      '<p style="font-size:13px;color:#1E7B3C;margin-bottom:16px">🕘 Guardado en tu Historial · 📊 '+(gsStat==='enviado'?'Sincronizado con Google Sheets · Power BI actualizado':'En cola — se sincronizará solo al haber internet')+'</p>'+
+      '<p style="font-size:13px;color:#1E7B3C;margin-bottom:4px">🕘 Guardado en tu Historial · 📊 '+(gsStat==='enviado'?'Sincronizado con Google Sheets · Power BI actualizado':'En cola — se sincronizará solo al haber internet')+'</p>'+
+      '<p style="font-size:12px;color:#707F99;margin-bottom:16px">✉️ Cuando envíes el correo con el PDF, márcalo como «Informe concluido» en Historial</p>'+
       '<button onclick="resetApp()" style="width:100%;padding:16px;background:#1a8f4c;color:white;border:none;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.02em;box-shadow:0 4px 12px rgba(26,143,76,0.3)">📋 Iniciar Nuevo Reporte</button>';
     btn.style.display='none';document.getElementById('downloadBtn').style.display='none';
     clearSavedData();
@@ -3327,6 +3386,8 @@ async function testGSheetConnection(){
 
 function buildSheetRow(){
   const V=id=>document.getElementById(id)?.value||'';
+  // v9.3: registrar proveedores usados en el catálogo del datalist
+  try{provCatalogAdd(V('proveedor'));document.querySelectorAll('.proveedor-adicional').forEach(function(i){provCatalogAdd(i.value);});}catch(e){}
 
   // ── Col A: FILE ──
   const fileNum = V('fileNum');
@@ -3745,7 +3806,8 @@ async function submitReport(){
         '<div style="font-size:48px;margin-bottom:10px">✅</div>'+
         '<h3 style="font-size:18px;color:#17603A;margin-bottom:8px">¡Reporte completado!</h3>'+
         '<p style="font-size:13px;color:#1E7B3C;margin-bottom:4px">📄 Reporte descargado en tu dispositivo</p>'+
-        '<p style="font-size:13px;color:#1E7B3C;margin-bottom:16px">🕘 Guardado en tu Historial · 📊 '+(gsStat==='enviado'?'Registrado en Google Sheets automáticamente':'En cola — se sincronizará solo al haber internet')+'</p>'+
+        '<p style="font-size:13px;color:#1E7B3C;margin-bottom:4px">🕘 Guardado en tu Historial · 📊 '+(gsStat==='enviado'?'Registrado en Google Sheets automáticamente':'En cola — se sincronizará solo al haber internet')+'</p>'+
+        '<p style="font-size:12px;color:#707F99;margin-bottom:16px">✉️ Cuando envíes el correo con el PDF, márcalo como «Informe concluido» en Historial</p>'+
         '<button onclick="resetApp()" style="width:100%;padding:16px;background:#1a8f4c;color:white;border:none;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.02em;box-shadow:0 4px 12px rgba(26,143,76,0.3)">📋 Iniciar Nuevo Reporte</button>';
       btn.style.display='none';clearSavedData();
     },400);
@@ -4575,7 +4637,7 @@ const HIST_LS_IDX='insp_hist_idx_v9';
 const OUTBOX_KEY='insp_outbox_v9';
 const LASTSYNC_KEY='insp_lastsync_v9';
 let _histMode=false,_histRestoreData=null,_histBackup=null,_histBackupPhotos=null,_histViewTs=null;
-let _histRecords=[],_histFilter={q:'',mes:'',estado:'',prov:''},_syncBusy=false;
+let _histRecords=[],_histFilter={q:'',mes:'',estado:'',prov:'',file:''},_syncBusy=false;
 
 function _uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function _histReadIdx(){try{return JSON.parse(localStorage.getItem(HIST_LS_IDX)||'[]');}catch(e){return [];}}
@@ -4833,7 +4895,7 @@ async function autoImportSheets(){
 }
 
 // ═══ v9.1 — PANEL GERENCIAL (vista jefatura) ═══
-let _panelFilter={q:'',mes:'',alm:'',prov:''};
+let _panelFilter={q:'',mes:'',alm:'',prov:'',insp:'',estado:'',def:''};
 function _pnlEl(id){return document.getElementById(id);}
 function _kpi(v,l,c){return '<div class="pnl-kpi"'+(c?' style="border-top-color:'+c+'"':'')+'><b>'+v+'</b><span>'+l+'</span></div>';}
 function _pbarRows(elm,rows){
@@ -4852,6 +4914,16 @@ function _panelRecs(){
     if(_panelFilter.mes&&((s.fecha||'').slice(0,7)!==_panelFilter.mes))return false;
     if(_panelFilter.alm&&s.almacen!==_panelFilter.alm)return false;
     if(_panelFilter.prov&&s.proveedor!==_panelFilter.prov)return false;
+    if(_panelFilter.insp&&s.inspector!==_panelFilter.insp)return false;
+    if(_panelFilter.estado&&s.estadoCont!==_panelFilter.estado)return false;
+    if(_panelFilter.def){
+      const g1=parseFloat(s.g1)||0,g2=parseFloat(s.g2)||0;
+      if(_panelFilter.def==='cual'&&!(g1+g2>0))return false;
+      if(_panelFilter.def==='g1'&&!(g1>0))return false;
+      if(_panelFilter.def==='g2'&&!(g2>0))return false;
+      if(_panelFilter.def==='ambos'&&!(g1>0&&g2>0))return false;
+      if(_panelFilter.def==='sin'&&g1+g2>0)return false;
+    }
     if(_panelFilter.q){
       const q=_panelFilter.q.toLowerCase();
       const blob=[s.file,s.oc,s.contenedor,s.proveedor,s.inspector].join(' ').toLowerCase();
@@ -4865,6 +4937,8 @@ function renderPanel(){
   const meses=Array.from(new Set(_histRecords.map(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7);}).filter(function(x){return /^\d{4}-\d{2}$/.test(x);}))).sort().reverse();
   const alms=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.almacen)||'';}).filter(Boolean))).sort();
   const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(Boolean))).sort();
+  const insps=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.inspector)||'';}).filter(Boolean))).sort();
+  fillSelect('pfInsp',insps.map(function(i){return {v:i,t:i};}),'Todos los inspectores');
   fillSelect('pfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
   fillSelect('pfAlm',alms.map(function(a){return {v:a,t:a};}),'Todos los almacenes');
   fillSelect('pfProv',provs.map(function(p){return {v:p,t:p};}),'Todos los proveedores');
@@ -4886,12 +4960,16 @@ function renderPanel(){
   const cA=L.filter(function(r){return (r.resumen||{}).estadoCont==='Aceptado';}).length;
   const cT=L.filter(function(r){return (r.resumen||{}).estadoCont==='Tolerado';}).length;
   const cS=n-cA-cT-rech;
-  _pbarRows(_pnlEl('pnlEstados'),[
-    {lab:'Aceptado',val:cA,color:'#1a8f4c'},
-    {lab:'Tolerado',val:cT,color:'#c0842a'},
-    {lab:'Rechazado',val:rech,color:'#c0392b'},
-    {lab:'Sin estado',val:cS,color:'#949FB3'}
-  ].filter(function(x){return x.val>0;}));
+  // v9.3: estados como barra apilada + leyenda con conteo y %
+  const stEl=_pnlEl('pnlEstados');
+  if(stEl){
+    if(!n){stEl.innerHTML='<div class="pnl-nodata">Sin datos con los filtros actuales.</div>';}
+    else{
+      const segs=[{v:cA,c:'#1a8f4c',t:'Aceptado'},{v:cT,c:'#c0842a',t:'Tolerado'},{v:rech,c:'#c0392b',t:'Rechazado'},{v:cS,c:'#949FB3',t:'Sin estado'}].filter(function(x){return x.v>0;});
+      stEl.innerHTML='<div class="stack-bar">'+segs.map(function(x){return '<i style="width:'+(x.v/n*100).toFixed(2)+'%;background:'+x.c+'"></i>';}).join('')+'</div>'
+        +'<div class="stack-leg">'+segs.map(function(x){return '<div class="stack-leg-row"><span class="stack-dot" style="background:'+x.c+'"></span>'+x.t+'<b>'+x.v+' · '+Math.round(x.v/n*100)+'%</b></div>';}).join('')+'</div>';
+    }
+  }
   const map={};
   L.forEach(function(r){
     const s=r.resumen||{};const p=s.proveedor||'(sin proveedor)';
@@ -4907,20 +4985,27 @@ function renderPanel(){
   if(pel)pel.innerHTML=provRows.length?provRows.map(function(r){
     return '<div class="pbar-row"><div class="pbar-lab" style="flex-basis:96px" title="'+_esc(r.p)+'">'+_esc(r.p)+'</div>'
       +'<div class="pbar-track"><div class="pbar-fill" style="width:'+Math.max(3,Math.round(r.def/pmax*100))+'%;background:'+(r.rech?'#c0392b':'#4C5F80')+'"></div></div>'
-      +'<div class="pbar-val" style="flex-basis:124px">'+r.n+' cont · '+r.rech+' rech</div></div>';
+      +'<div class="pbar-val" style="flex-basis:150px;font-size:10.5px">'+r.n+' cont · '+r.rech+' rech · '+r.def+' def</div></div>';
   }).join(''):'<div class="pnl-nodata">Sin datos con los filtros actuales.</div>';
   const amap={};
   L.forEach(function(r){const a=(r.resumen||{}).almacen||'(sin almacén)';amap[a]=(amap[a]||0)+1;});
   _pbarRows(_pnlEl('pnlAlm'),Object.keys(amap).map(function(a){return {lab:a,val:amap[a],color:'#4C5F80'};}).sort(function(a,b){return b.val-a.val;}).slice(0,8));
   const tmap={};
   L.forEach(function(r){const ym=((r.resumen||{}).fecha||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(ym))tmap[ym]=(tmap[ym]||0)+1;});
-  _pbarRows(_pnlEl('pnlTend'),Object.keys(tmap).sort().slice(-6).map(function(k){return {lab:monthLabel(k),val:tmap[k],color:'#707F99'};}));
+  // v9.3: tendencia como columnas verticales
+  const tEl=_pnlEl('pnlTend');
+  const tks=Object.keys(tmap).sort().slice(-6);
+  const tmax=Math.max.apply(null,[1].concat(tks.map(function(k){return tmap[k];})));
+  if(tEl)tEl.innerHTML=tks.length?'<div class="vchart">'+tks.map(function(k){return '<div class="vcol-wrap"><div class="vcol-val">'+tmap[k]+'</div><div class="vcol" style="height:'+Math.max(5,Math.round(tmap[k]/tmax*86))+'%"></div><div class="vcol-lab">'+monthLabel(k)+'</div></div>';}).join('')+'</div>':'<div class="pnl-nodata">Sin datos con los filtros actuales.</div>';
   const fl=L.filter(function(r){const d=(r.resumen||{}).durNeta;return d!=null&&!isNaN(d);})
     .sort(function(a,b){return b.resumen.durNeta-a.resumen.durNeta;}).slice(0,10);
   const fle=_pnlEl('pnlFiles');
-  if(fle)fle.innerHTML=fl.length?'<table class="ptable"><tr><th>FILE</th><th>Proveedor</th><th>Fecha</th><th>Tiempo neto</th></tr>'
-    +fl.map(function(r){const s=r.resumen;return '<tr><td><b>'+_esc(s.file)+'</b></td><td>'+_esc(s.proveedor||'—')+'</td><td>'+String(s.fecha||'').split('-').reverse().join('/')+'</td><td>'+fmtDurMin(s.durNeta)+'</td></tr>';}).join('')+'</table>'
-    :'<div class="pnl-nodata">Sin tiempos registrados con los filtros actuales.</div>';
+  // v9.3: tiempos por FILE como barras horizontales
+  const fmax=Math.max.apply(null,[1].concat(fl.map(function(r){return r.resumen.durNeta;})));
+  if(fle)fle.innerHTML=fl.length?fl.map(function(r){const s=r.resumen;
+    return '<div class="pbar-row"><div class="pbar-lab" style="flex-basis:72px" title="'+_esc((s.proveedor||'')+' · '+String(s.fecha||'').split('-').reverse().join('/'))+'">'+_esc(s.file||'—')+'</div>'
+      +'<div class="pbar-track"><div class="pbar-fill" style="width:'+Math.max(4,Math.round(s.durNeta/fmax*100))+'%;background:linear-gradient(90deg,#8794AB,#4C5F80)"></div></div>'
+      +'<div class="pbar-val" style="flex-basis:64px">'+fmtDurMin(s.durNeta)+'</div></div>';}).join(''):'<div class="pnl-nodata">Sin tiempos registrados con los filtros actuales.</div>';
   const recha=L.filter(function(r){return (r.resumen||{}).estadoCont==='Rechazado';});
   const rle=_pnlEl('pnlRecha');
   if(rle)rle.innerHTML=recha.length?'<table class="ptable"><tr><th>FILE</th><th>Proveedor</th><th>Almacén</th><th>Fecha</th></tr>'
@@ -4953,6 +5038,9 @@ async function loadHistorial(){
   const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(Boolean))).sort();
   fillSelect('hfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
   fillSelect('hfProv',provs.map(function(p){return {v:p,t:p};}),'Todos los proveedores');
+  const files=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.file)||'';}).filter(Boolean))).sort();
+  fillSelect('hfFile',files.map(function(x){return {v:x,t:x};}),'Todos los FILE');
+  try{provCatalogRefresh();}catch(e){}
   updateHistBadge();
   renderHistorial();
   if(document.getElementById('panelView'))renderPanel();
@@ -4983,6 +5071,7 @@ function renderHistorial(){
     if(f.mes&&((s.fecha||'').slice(0,7)!==f.mes))return false;
     if(f.estado&&informeDe(r)!==f.estado)return false;
     if(f.prov&&s.proveedor!==f.prov)return false;
+    if(f.file&&((s.file||'')!==f.file))return false;
     if(f.q){
       const q=f.q.toLowerCase();
       const blob=[s.file,s.oc,s.proveedor,s.contenedor,s.almacen,s.inspector].join(' ').toLowerCase();
@@ -5011,14 +5100,21 @@ function histCardHTML(r){
   const inf=informeDe(r);
   const infChip=(inf==='concluido')?'<span class="hchip env">✓ Informe concluido</span>':'<span class="hchip pen">⏳ Informe pendiente</span>';
   const syncChip=(r.estado==='enviado')?'':'<span class="hchip '+(r.estado==='fallo'?'fal':'pen')+'">'+(r.estado==='fallo'?'⚠ Error de sync':'📴 En cola')+'</span>';
-  return '<div class="hist-card" style="border-left-color:'+border+'">'
-    +'<div class="hc-top"><span class="hc-file">'+(s.file||'(sin FILE)')+'</span><span style="font-size:11px;color:#707F99;font-weight:700">'+fdate+'</span></div>'
-    +'<div class="hc-sub">'+(s.proveedor||'—')+' · Cont. '+(s.contenedor||'—')+' · '+(s.almacen||'—')
-    +'<br>👤 '+(s.inspector||'—')+' · G1: '+(s.g1||0)+' · G2: '+(s.g2||0)+'</div>'
-    +'<div class="hist-chips">'+infChip+syncChip+ecChip
+  // v9.3: tarjeta acordeón — fila compacta siempre visible; el detalle se abre al tocar
+  const head='<div class="hc-head" onclick="toggleHistCard(this)">'
+    +'<div style="min-width:0;flex:1">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
+        +'<span class="hc-file">'+(s.file||'(sin FILE)')+'</span>'
+        +'<span style="font-size:11px;color:#707F99;font-weight:700;white-space:nowrap">'+fdate+'<span class="hc-chev">▶</span></span>'
+      +'</div>'
+      +'<div class="hc-sub" style="margin-top:2px">'+_esc(s.proveedor||'—')+' · Cont. '+_esc(s.contenedor||'—')+'</div>'
+    +'</div></div>';
+  const body='<div class="hc-body">'
+    +'<div class="hist-chips" style="margin-top:9px">'+infChip+syncChip+ecChip
     +'<span class="hchip">⏱ '+dur+'</span>'
     +(s.pausas?'<span class="hchip">⏸ '+s.pausas+'</span>':'')
     +'<span class="hchip">📷 '+(s.fotosN||0)+'</span></div>'
+    +'<div class="hc-sub" style="margin-top:7px">👤 '+(s.inspector||'—')+' · 🏬 '+_esc(s.almacen||'—')+' · G1: '+(s.g1||0)+' · G2: '+(s.g2||0)+(s.oc?' · OC: '+_esc(s.oc):'')+'</div>'
     +'<div class="hc-actions">'
     +'<button class="hc-btn primary" onclick="verDetalleHist(\''+r.id+'\')">👁 Ver</button>'
     +'<button class="hc-btn" onclick="verEnWizard(\''+r.id+'\')">📄 PDF</button>'
@@ -5026,6 +5122,13 @@ function histCardHTML(r){
     +(r.estado==='fallo'?'<button class="hc-btn" onclick="reenviarHist(\''+r.id+'\')" title="Reintentar envío">🔄</button>':'')
     +'<button class="hc-btn" style="flex:0 0 48px;max-width:48px;border-color:#D9A39B;color:#922B21" onclick="eliminarHist(\''+r.id+'\')" title="Eliminar (PIN jefatura)">🗑</button>'
     +'</div></div>';
+  return '<div class="hist-card" style="border-left-color:'+border+'">'+head+body+'</div>';
+}
+function toggleHistCard(head){
+  const c=head.parentElement;
+  const was=c.classList.contains('open');
+  document.querySelectorAll('.hist-card.open').forEach(function(x){x.classList.remove('open');});
+  if(!was)c.classList.add('open');
 }
 
 // ── Detalle (modal) ──
@@ -5037,6 +5140,10 @@ async function verDetalleHist(id){
   const s=r.resumen||{};const d=r.datos||{};const Fg=(k)=>(d.fields||{})[k]||'';
   const fdate=s.fecha?String(s.fecha).split('-').reverse().join('/'):'—';
   let h='';
+  // v9.3: aviso claro para registros históricos importados (solo resumen, sin fotos/series/pausas)
+  if(r.soloMeta||!r.datos){
+    h+='<div style="background:#FDF6E7;border:1px solid #E8D5A8;color:#7A5B12;border-radius:10px;padding:9px 12px;font-size:12px;line-height:1.55;margin-bottom:10px">📥 <b>Registro histórico importado desde Google Sheets.</b> Solo incluye el resumen (FILE, proveedor, contenedor, G1/G2, tiempos). Las fotos, series y pausas completas solo las tendrán los reportes hechos con el nuevo app.</div>';
+  }
   h+='<div class="hd-sec"><div class="hd-t">Datos generales</div><div class="hd-b"><div class="hd-grid">'
     +_hdRow('FILE',s.file||Fg('fileNum'))+_hdRow('N° OC',s.oc||Fg('numOC'))
     +_hdRow('Fecha',fdate)+_hdRow('Almacén',s.almacen||Fg('almacen'))
@@ -5120,7 +5227,7 @@ function cerrarHistLightbox(){const lb=document.getElementById('histLightbox');i
 async function verEnWizard(id){
   if(_histMode)return;
   const rec=_histRecords.find(function(x){return x.id===id;})||await histIdbGet(id);
-  if(!rec||!rec.datos){alert('Este registro se guardó sin datos completos (modo respaldo) y no puede regenerar el PDF.');return;}
+  if(!rec||!rec.datos){alert('📥 Este registro viene importado de Google Sheets (histórico): en el teléfono solo está el resumen, sin las fotos, series ni pausas completas, así que no se puede regenerar su PDF.\n\nLos reportes que hagan desde ahora con el app SÍ quedarán completos y su PDF saldrá perfecto.');return;}
   try{saveNow();}catch(e){}
   _histBackup=null;
   try{const raw=localStorage.getItem(SAVE_KEY);if(raw)_histBackup=raw;}catch(e){}
@@ -5166,6 +5273,7 @@ function toastSync(msg){
   t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2600);
 }
 function limpiarHistorial(){
+  if(pedirPinDel()===null)return;
   if(!confirm('¿Vaciar TODO el historial de inspecciones de este teléfono?\nLos reportes ya sincronizados siguen en Google Sheets.\n(Con internet, se volverán a importar automáticamente del Sheet)'))return;
   if(!confirm('Última confirmación: esta acción NO se puede deshacer.\n¿Continuar?'))return;
   histIdbClear();_histWriteIdx([]);outboxWrite([]);
