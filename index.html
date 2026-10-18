@@ -1150,6 +1150,15 @@ window.onerror = function(msg, src, line, col, err) {
       <div class="pnl-card"><div class="pnl-t">Tiempos de descarga por FILE (más lentos)</div><div id="pnlFiles"></div></div>
       <div class="pnl-card"><div class="pnl-t">Contenedores rechazados</div><div id="pnlRecha"></div></div>
     </div>
+    <!-- v9.4: cuadrícula de contenedores con su filtro de estado -->
+    <div class="pnl-card" style="margin-top:10px">
+      <div class="pnl-t" style="display:flex;align-items:center;gap:8px">
+        <span style="flex:1">Contenedores (cuadrícula)</span>
+        <span id="pnlDetCount" style="font-size:9.5px;letter-spacing:0;text-transform:none;color:#707F99;font-weight:700"></span>
+      </div>
+      <div id="pnlEstadoChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px"></div>
+      <div id="pnlDetalle"></div>
+    </div>
   </div>
 
   <!-- MODAL DETALLE HISTORIAL -->
@@ -1163,6 +1172,27 @@ window.onerror = function(msg, src, line, col, err) {
         <button type="button" class="hc-btn" style="flex:0 0 auto;padding:9px 12px" onclick="cerrarDetalleHist()">✕</button>
       </div>
       <div id="histSheetBody"></div>
+    </div>
+  </div>
+
+  <!-- MODAL LISTA MAESTRA DE INSPECTORES (v9.4) -->
+  <div class="hist-modal" id="inspCatModal">
+    <div class="hist-sheet">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="font-size:14px;font-weight:800;color:#262E3D;flex:1">👥 Lista maestra de inspectores</div>
+        <button type="button" class="hc-btn" style="flex:0 0 auto;padding:9px 12px" onclick="cerrarInspCat()">✕</button>
+      </div>
+      <div style="background:#EAF0F9;border:1px solid #C9D6EA;border-radius:10px;padding:9px 12px;font-size:12px;line-height:1.55;color:#33415C;margin-bottom:10px">
+        Sirve para que el nombre del inspector <b>se sugiera solo</b> al llenar el reporte — así todos escriben igual y el Panel no cuenta a la misma persona como dos.<br>
+        ✏️ <b>Un nombre por línea.</b> Borra las líneas que sobren (ej. <i>PEDRO</i> y <i>PEDRO PEZO</i>: deja solo el correcto). Los nombres nuevos que se escriban al enviar un reporte se agregan solos.
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap">
+        <span id="inspCatCount" style="font-size:11.5px;font-weight:800;color:#4C5F80;flex:1">0 nombres</span>
+        <button type="button" class="hc-btn" style="padding:7px 10px;font-size:11.5px" onclick="inspCatAddFromHist()" title="Añade los nombres que aparecen en el historial">📥 Traer del historial</button>
+        <button type="button" class="hc-btn" style="padding:7px 10px;font-size:11.5px;border-color:#D9A39B;color:#922B21" onclick="inspCatClearTa()">🧯 En blanco</button>
+      </div>
+      <textarea id="inspCatTa" rows="12" spellcheck="false" autocapitalize="characters" oninput="inspCatCountUpd()" placeholder="UN NOMBRE POR LÍNEA&#10;EJ: PEDRO PEZO" style="width:100%;box-sizing:border-box;border:1.5px solid #DBDFE6;border-radius:10px;padding:10px 12px;font-size:13px;font-family:ui-monospace,monospace;line-height:1.8;color:#262E3D;background:#FBFCFE;text-transform:uppercase;resize:vertical"></textarea>
+      <button type="button" class="hc-btn primary" style="width:100%;margin-top:10px;padding:12px;font-size:13.5px" onclick="inspCatSave()">💾 Guardar lista</button>
     </div>
   </div>
 
@@ -2357,13 +2387,55 @@ function inspCatRead(){try{return JSON.parse(localStorage.getItem(INSP_CAT_KEY)|
 function inspCatWrite(a){try{localStorage.setItem(INSP_CAT_KEY,JSON.stringify(a));}catch(e){}}
 function inspCatRender(){const dl=document.getElementById('inspList');if(dl)dl.innerHTML=inspCatRead().slice().sort().map(function(n){return '<option value="'+_esc(n)+'"></option>';}).join('');}
 function inspCatAdd(n){const v=String(n||'').trim().toUpperCase();if(!v)return;const a=inspCatRead();if(a.indexOf(v)<0){a.push(v);inspCatWrite(a);inspCatRender();}}
+// v9.4: gestión en modal propio (antes era un prompt nativo — incómodo, sin contador y se perdía la lista)
 function inspCatAdmin(){
-  const cur=inspCatRead().slice().sort();
-  const v=prompt('👥 LISTA MAESTRA DE INSPECTORES\n\nEstos nombres se autocompletan al llenar el reporte (así todos escriben IGUAL).\n\nCada nombre en una línea. Borra las variantes que sobren (ej. PEDRO y PEDRO PEZO: deja solo el correcto) y guarda.',cur.join('\n'));
-  if(v===null)return;
-  const arr=Array.from(new Set(v.split('\n').map(function(s){return s.trim().toUpperCase();}).filter(Boolean))).sort();
+  const ta=document.getElementById('inspCatTa');if(!ta)return;
+  ta.value=inspCatRead().slice().sort().join('\n');
+  inspCatCountUpd();
+  const m=document.getElementById('inspCatModal');
+  if(m)m.classList.add('open');
+}
+function cerrarInspCat(){const m=document.getElementById('inspCatModal');if(m)m.classList.remove('open');}
+function inspCatCountUpd(){
+  const ta=document.getElementById('inspCatTa'),el=document.getElementById('inspCatCount');
+  if(!ta||!el)return;
+  const n=ta.value.split('\n').map(function(s){return s.trim();}).filter(Boolean).length;
+  el.textContent=n+' nombre'+(n===1?'':'s');
+}
+function inspCatCleanLines(raw){
+  const seen={},out=[];
+  String(raw||'').split('\n').forEach(function(s){
+    const v=String(s||'').replace(/\s+/g,' ').trim().toUpperCase();
+    if(v&&!seen[v]){seen[v]=1;out.push(v);}
+  });
+  return out;
+}
+function inspCatSave(){
+  const ta=document.getElementById('inspCatTa');if(!ta)return;
+  const esc=ta.value.split('\n').map(function(s){return s.trim();}).filter(Boolean).length;
+  const arr=inspCatCleanLines(ta.value).sort();
+  const dups=Math.max(0,esc-arr.length);
   inspCatWrite(arr);inspCatRender();
-  try{toastSync('👥 Lista de inspectores actualizada: '+arr.length+' nombre(s)');}catch(e){}
+  cerrarInspCat();
+  try{toastSync('👥 Lista guardada: '+arr.length+' inspector(es)'+(dups>0?' · '+dups+' duplicado(s) quitado(s)':''));}catch(e){}
+}
+function inspCatAddFromHist(){
+  const ta=document.getElementById('inspCatTa');if(!ta)return;
+  const cur=inspCatCleanLines(ta.value),seen={};
+  cur.forEach(function(n){seen[n]=1;});
+  let n=0;
+  _histRecords.forEach(function(r){
+    const v=String(((r.resumen||{}).inspector)||'').replace(/\s+/g,' ').trim().toUpperCase();
+    if(v&&v.length<=40&&!seen[v]){seen[v]=1;cur.push(v);n++;}
+  });
+  cur.sort();
+  ta.value=cur.join('\n');inspCatCountUpd();
+  try{toastSync(n?('📥 '+n+' nombre(s) traído(s) del historial'):'El historial ya está en la lista');}catch(e){}
+}
+function inspCatClearTa(){
+  const ta=document.getElementById('inspCatTa');if(!ta)return;
+  if(!confirm('¿Vaciar la lista para escribirla desde cero?\n(Recuerda: un nombre por línea)'))return;
+  ta.value='';inspCatCountUpd();
 }
 function inspCatSeedFromHist(){
   try{
@@ -4672,7 +4744,7 @@ const OUTBOX_KEY='insp_outbox_v9';
 const LASTSYNC_KEY='insp_lastsync_v9';
 let _histMode=false,_histRestoreData=null,_histBackup=null,_histBackupPhotos=null,_histViewTs=null;
 let _histRecords=[],_histFilter={q:'',mes:'',estado:'',prov:'',file:''},_syncBusy=false;
-let _histLimit=30;
+let _histLimit=12;
 
 function _uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function _histReadIdx(){try{return JSON.parse(localStorage.getItem(HIST_LS_IDX)||'[]');}catch(e){return [];}}
@@ -5063,6 +5135,57 @@ function renderPanel(){
     if(trs.length>6)trs.push('<tr><td colspan="4" style="border:none;padding:6px 2px 0"><button type="button" class="pnl-more" style="margin:0" onclick="_toggleMore(this)" data-total="'+recha.length+'">▼ Ver todos ('+recha.length+')</button></td></tr>');
     return '<table class="ptable"><tr><th>FILE</th><th>Proveedor</th><th>Almacén</th><th>Fecha</th></tr>'+trs.join('')+'</table>';
   })():'<div class="pnl-nodata">Sin contenedores rechazados en este filtro.</div>';
+  // v9.4: cuadrícula de contenedores con su filtro de estado
+  renderDetallePanel();
+}
+
+// v9.4: cuadrícula de contenedores del Panel + filtro rápido Aceptado/Tolerado/Rechazado
+function pnlSetEstado(v){
+  _panelFilter.estado=v||'';
+  const sel=document.getElementById('pfEstado');if(sel)sel.value=_panelFilter.estado;
+  renderPanel();
+}
+function renderDetallePanel(){
+  const chipsEl=_pnlEl('pnlEstadoChips');
+  const savedE=_panelFilter.estado;
+  const selSync=_pnlEl('pfEstado');if(selSync&&selSync.value!==savedE)selSync.value=savedE;
+  _panelFilter.estado='';
+  const base=_panelRecs();
+  _panelFilter.estado=savedE;
+  const cA=base.filter(function(r){return (r.resumen||{}).estadoCont==='Aceptado';}).length;
+  const cT=base.filter(function(r){return (r.resumen||{}).estadoCont==='Tolerado';}).length;
+  const cR=base.filter(function(r){return (r.resumen||{}).estadoCont==='Rechazado';}).length;
+  if(chipsEl){
+    const chips=[['','Todos',base.length],['Aceptado','✅ Aceptado',cA],['Tolerado','⚠️ Tolerado',cT],['Rechazado','⛔ Rechazado',cR]];
+    chipsEl.innerHTML=chips.map(function(c){
+      const on=savedE===c[0];
+      return '<button type="button" onclick="pnlSetEstado(\''+c[0]+'\')" style="border:1.5px solid '+(on?'#4C5F80':'#DBDFE6')+';background:'+(on?'#4C5F80':'#fff')+';color:'+(on?'#fff':'#56657E')+';border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;font-family:inherit;cursor:pointer">'+c[1]+' · '+c[2]+'</button>';
+    }).join('');
+  }
+  const cnt=_pnlEl('pnlDetCount');
+  const L=savedE?base.filter(function(r){return (r.resumen||{}).estadoCont===savedE;}):base;
+  if(cnt)cnt.textContent=L.length+' contenedor'+(L.length===1?'':'es');
+  const el=_pnlEl('pnlDetalle');if(!el)return;
+  if(!base.length){el.innerHTML='<div class="pnl-nodata">Sin contenedores con los filtros actuales.</div>';return;}
+  if(!L.length){el.innerHTML='<div class="pnl-nodata">Ningún contenedor con este estado en el filtro actual.</div>';return;}
+  const chipEc=function(ec){
+    if(ec==='Aceptado')return '<span class="hchip" style="background:#E8F5EE;color:#1a8f4c;border-color:#BFE3CE">Aceptado</span>';
+    if(ec==='Tolerado')return '<span class="hchip" style="background:#FBF3E4;color:#9A6A1D;border-color:#EBD9B4">Tolerado</span>';
+    if(ec==='Rechazado')return '<span class="hchip" style="background:#FBEAE8;color:#922B21;border-color:#F0CBC6">Rechazado</span>';
+    return '<span class="hchip">Sin estado</span>';
+  };
+  const trs=L.map(function(r,i){
+    const s=r.resumen||{};
+    const def=(parseFloat(s.g1)||0)+(parseFloat(s.g2)||0);
+    return '<tr'+(i>=8?' class="pnl-extra"':'')+' style="cursor:pointer" onclick="verDetalleHist(\''+r.id+'\')">'
+      +'<td><b>'+_esc(s.file||'—')+'</b></td>'
+      +'<td>'+_esc(s.proveedor||'—')+'</td>'
+      +'<td>'+chipEc(s.estadoCont)+'</td>'
+      +'<td style="white-space:nowrap">'+(s.fecha?String(s.fecha).split('-').reverse().join('/'):'—')+'</td>'
+      +'<td style="text-align:center">'+(def||'·')+'</td></tr>';
+  });
+  if(trs.length>8)trs.push('<tr><td colspan="5" style="border:none;padding:6px 2px 0"><button type="button" class="pnl-more" style="margin:0" onclick="_toggleMore(this)" data-total="'+L.length+'">▼ Ver todos ('+L.length+')</button></td></tr>');
+  el.innerHTML='<div style="overflow-x:auto"><table class="ptable"><tr><th>FILE</th><th>Proveedor</th><th>Estado</th><th>Fecha</th><th style="text-align:center">Def.</th></tr>'+trs.join('')+'</table></div>';
 }
 
 // ── Detección de contenedor duplicado ──
@@ -5111,7 +5234,7 @@ function histEstadoChip(st){
   return '<span class="hchip loc">📱 Solo local</span>';
 }
 function renderHistorial(keep){
-  if(!keep)_histLimit=30;
+  if(!keep)_histLimit=12;
   const L=_histRecords;
   const nowym=new Date().toISOString().slice(0,7);
   const set=function(id,v){const e=document.getElementById(id);if(e)e.textContent=v;};
@@ -5142,9 +5265,9 @@ function renderHistorial(keep){
     return;
   }
   if(!list.length){el.innerHTML='<div class="hist-empty">🔍 Ninguna inspección coincide con los filtros.</div>';return;}
-  const vis=list.slice(0,Math.max(30,_histLimit));
+  const vis=list.slice(0,_histLimit);
   el.innerHTML=vis.map(histCardHTML).join('')
-    +(list.length>vis.length?'<button type="button" class="pnl-more" style="margin:12px 0 4px" onclick="_histLimit+=40;renderHistorial(true)">▼ Ver más ('+(list.length-vis.length)+' restantes)</button>':'');
+    +(list.length>vis.length?'<button type="button" class="pnl-more" style="margin:12px 0 4px" onclick="_histLimit+=20;renderHistorial(true)">▼ Ver más ('+(list.length-vis.length)+' restantes)</button>':'');
 }
 function histCardHTML(r){
   const s=r.resumen||{};
