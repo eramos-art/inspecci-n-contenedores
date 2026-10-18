@@ -327,6 +327,9 @@ body{font-family:'Neue Haas Grotesk Text Pro','Neue Haas Grotesk Display Pro',In
 .ptable td{padding:5px 6px;border-bottom:1px solid #F2F3F5;color:#262E3D}
 .ptable tr:last-child td{border-bottom:none}
 .pnl-nodata{font-size:12px;color:#707F99;padding:8px 2px}
+.pnl-extra{display:none}
+.pnl-more{display:block;width:100%;margin-top:9px;padding:9px 10px;background:#F2F3F5;border:1px solid #DBDFE6;border-radius:9px;color:#4C5F80;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit}
+.pnl-more:active{background:#E4E7EC}
 /* Modos de vista */
 body.mode-hist .nav-row,body.mode-hist .pausa-fab,body.mode-hist .btn-clear-report,body.mode-hist #btnRecoverFotos{display:none!important}
 body.hist-mode #submitBtn,body.hist-mode .btn-clear-report,body.hist-mode #btnRecoverFotos,body.hist-mode .pausa-fab{display:none!important}
@@ -423,7 +426,7 @@ window.onerror = function(msg, src, line, col, err) {
     <div class="card">
       <div class="section-title">Inspector / Quality Control Inspector</div>
       <div class="grid2" style="margin-bottom:12px">
-        <div class="field"><label>Nombre completo / Full name</label><input id="inspNombre" type="text" placeholder="Tu nombre" oninput="this.value=this.value.toUpperCase();updatePill()" autocapitalize="words" style="text-transform:uppercase"></div>
+        <div class="field"><label>Nombre completo / Full name</label><input id="inspNombre" type="text" placeholder="Tu nombre" list="inspList" oninput="this.value=this.value.toUpperCase();updatePill()" autocapitalize="words" autocomplete="off" style="text-transform:uppercase"><datalist id="inspList"></datalist></div>
         <div class="field"><label>Cargo / Role</label>
           <select id="inspCargo" onchange="updatePill();saveNow()">
             <option value="">Seleccionar...</option>
@@ -1097,6 +1100,7 @@ window.onerror = function(msg, src, line, col, err) {
     </div>
     <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <button type="button" class="hc-btn primary" onclick="processOutbox()">🔄 Sincronizar ahora</button>
+      <button type="button" class="hc-btn" onclick="inspCatAdmin()" title="Lista maestra de inspectores">👥 Inspectores</button>
       <button type="button" class="hc-btn" onclick="importarDesdeSheets()">⬇️ Importar de Sheets</button>
       <button type="button" class="hc-btn" onclick="limpiarHistorial()">🧹 Vaciar</button>
     </div>
@@ -1153,7 +1157,7 @@ window.onerror = function(msg, src, line, col, err) {
     <div class="hist-sheet">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="font-size:14px;font-weight:800;color:#262E3D;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Detalle de la inspección</div>
-        <button type="button" class="hc-btn primary" style="flex:0 0 auto;padding:9px 12px" onclick="generateReport()">📄 PDF</button>
+        <button type="button" class="hc-btn primary" style="flex:0 0 auto;padding:9px 12px" onclick="pdfDesdeHist(window._histModalId)" title="Generar el PDF completo de este registro">📄 PDF</button>
         <button type="button" class="hc-btn" id="histInfBtn" style="flex:0 0 auto;padding:9px 12px" onclick="informeModalBtn()">✉️ Informe</button>
         <button type="button" class="hc-btn" style="flex:0 0 auto;padding:9px 12px;border-color:#D9A39B;color:#922B21" onclick="eliminarHistModalBtn()" title="Eliminar (PIN jefatura)">🗑</button>
         <button type="button" class="hc-btn" style="flex:0 0 auto;padding:9px 12px" onclick="cerrarDetalleHist()">✕</button>
@@ -2346,6 +2350,33 @@ function provCatalogRefresh(){
   return arr;
 }
 function provCatalogAdd(p){if(!p)return;const P=String(p).toUpperCase().trim();if(!P)return;const a=provCatalogRead();if(a.indexOf(P)<0){a.push(P);provCatalogWrite(a);provCatalogRefresh();}}
+
+// v9.3.1: LISTA MAESTRA DE INSPECTORES — autocompletado uniforme + gestión (👥 en Historial)
+const INSP_CAT_KEY='sole_insp_cat_v1';
+function inspCatRead(){try{return JSON.parse(localStorage.getItem(INSP_CAT_KEY)||'[]');}catch(e){return [];}}
+function inspCatWrite(a){try{localStorage.setItem(INSP_CAT_KEY,JSON.stringify(a));}catch(e){}}
+function inspCatRender(){const dl=document.getElementById('inspList');if(dl)dl.innerHTML=inspCatRead().slice().sort().map(function(n){return '<option value="'+_esc(n)+'"></option>';}).join('');}
+function inspCatAdd(n){const v=String(n||'').trim().toUpperCase();if(!v)return;const a=inspCatRead();if(a.indexOf(v)<0){a.push(v);inspCatWrite(a);inspCatRender();}}
+function inspCatAdmin(){
+  const cur=inspCatRead().slice().sort();
+  const v=prompt('👥 LISTA MAESTRA DE INSPECTORES\n\nEstos nombres se autocompletan al llenar el reporte (así todos escriben IGUAL).\n\nCada nombre en una línea. Borra las variantes que sobren (ej. PEDRO y PEDRO PEZO: deja solo el correcto) y guarda.',cur.join('\n'));
+  if(v===null)return;
+  const arr=Array.from(new Set(v.split('\n').map(function(s){return s.trim().toUpperCase();}).filter(Boolean))).sort();
+  inspCatWrite(arr);inspCatRender();
+  try{toastSync('👥 Lista de inspectores actualizada: '+arr.length+' nombre(s)');}catch(e){}
+}
+function inspCatSeedFromHist(){
+  try{
+    if(localStorage.getItem('sole_insp_cat_seed')){inspCatRender();return;}
+    const seen={};
+    (_histRecords||[]).forEach(function(r){const n=String(((r.resumen||{}).inspector)||'').trim().toUpperCase();if(n&&n.length<=40)seen[n]=1;});
+    if(!Object.keys(seen).length){inspCatRender();return;}
+    inspCatRead().forEach(function(n){if(n)seen[n]=1;});
+    inspCatWrite(Object.keys(seen).sort());
+    try{localStorage.setItem('sole_insp_cat_seed','1');}catch(e){}
+    inspCatRender();
+  }catch(e){}
+}
 function minBetween(a,b){if(!a||!b)return null;const p=x=>{const m=String(x).split(':');if(m.length!==2)return null;const h=parseInt(m[0],10),mi=parseInt(m[1],10);if(Number.isNaN(h)||Number.isNaN(mi))return null;return h*60+mi;};const A=p(a),B=p(b);if(A==null||B==null)return null;return Math.max(0,B-A);}
 function fmtDurMin(m){if(m==null)return '—';const h=Math.floor(m/60),r=m%60;return (h?h+'h ':'')+(h||r?r+' min':'0 min');}
 function pausasResumen(){const L=pausasDescarga||[];const t=L.reduce((s,p)=>s+(p.durMin||0),0);return L.length?(L.length+' pausa(s) · '+t+' min'+(pausaActiva?' · 1 en curso':'')):'Sin pausas';}
@@ -3769,6 +3800,7 @@ function onlyDownload(){generateReport();exportToExcel();}
 async function submitReport(){
   const inspector=document.getElementById('inspNombre').value.trim();
   if(!inspector){alert('Por favor ingresa el nombre del inspector.');return;}
+  try{inspCatAdd(inspector);}catch(e){}
   // v9.2.1: evitar enviar sin HORA FIN (el PDF quedaría sin duración total)
   if(!document.getElementById('horaFin').value){
     if(!confirm('⏰ Falta la HORA FIN de la descarga.\n\nSin ella el reporte no tendrá duración total en el PDF.\n\n· Pulsa Cancelar y usa el botón "✔ Terminar descarga"\n· Acepta solo si la descarga realmente no terminó'))return;
@@ -3805,9 +3837,10 @@ async function submitReport(){
       document.getElementById('successBanner').innerHTML=
         '<div style="font-size:48px;margin-bottom:10px">✅</div>'+
         '<h3 style="font-size:18px;color:#17603A;margin-bottom:8px">¡Reporte completado!</h3>'+
-        '<p style="font-size:13px;color:#1E7B3C;margin-bottom:4px">📄 Reporte descargado en tu dispositivo</p>'+
+        '<p style="font-size:13px;color:#1E7B3C;margin-bottom:4px">📄 El PDF se abrió en otra pantalla: usa 💾 <b>Guardar PDF</b> (descarga) o 📤 <b>Compartir</b> (correo/OneDrive)</p>'+
         '<p style="font-size:13px;color:#1E7B3C;margin-bottom:4px">🕘 Guardado en tu Historial · 📊 '+(gsStat==='enviado'?'Registrado en Google Sheets automáticamente':'En cola — se sincronizará solo al haber internet')+'</p>'+
-        '<p style="font-size:12px;color:#707F99;margin-bottom:16px">✉️ Cuando envíes el correo con el PDF, márcalo como «Informe concluido» en Historial</p>'+
+        '<p style="font-size:12px;color:#707F99;margin-bottom:14px">✉️ Cuando envíes el correo con el PDF, márcalo como «Informe concluido» en Historial</p>'+
+        (recIdNL?'<button onclick="pdfDesdeHist(\''+recIdNL+'\')" style="width:100%;padding:13px;background:#fff;color:#4C5F80;border:2px solid #4C5F80;border-radius:14px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px">📄 Volver a abrir el PDF</button>':'')+
         '<button onclick="resetApp()" style="width:100%;padding:16px;background:#1a8f4c;color:white;border:none;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.02em;box-shadow:0 4px 12px rgba(26,143,76,0.3)">📋 Iniciar Nuevo Reporte</button>';
       btn.style.display='none';clearSavedData();
     },400);
@@ -4373,9 +4406,10 @@ ${(()=>{
 
 </div>
 <div id="pdfBtn" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#4C5F80;padding:10px 16px;z-index:999;box-shadow:0 -4px 16px rgba(0,0,0,0.25);justify-content:center;gap:8px;align-items:center;flex-wrap:wrap">
-  <button onclick="savePDF()" style="background:#fff;color:#4C5F80;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">💾 Guardar PDF</button>
-  <button onclick="sharePDF()" id="shareBtn" style="background:#1a8f4c;color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">📤 Compartir / OneDrive</button>
-  <span id="pdfHint" style="font-size:10.5px;color:rgba(255,255,255,0.75);font-family:Arial,sans-serif;width:100%;text-align:center;margin-top:2px">Compartir abre el menú de Android — elige OneDrive de tu empresa</span>
+  <button onclick="savePDF()" style="background:#fff;color:#4C5F80;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">💾 Guardar PDF</button>
+  <button onclick="window.print()" style="background:#fff;color:#4C5F80;border:2px solid #4C5F80;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">🖨️ Imprimir</button>
+  <button onclick="sharePDF()" id="shareBtn" style="background:#1a8f4c;color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap">📤 Compartir</button>
+  <span id="pdfHint" style="font-size:10.5px;color:rgba(255,255,255,0.75);font-family:Arial,sans-serif;width:100%;text-align:center;margin-top:2px">💾 Guardar = baja el PDF a Descargas · 📤 Compartir = envíalo por correo (Gmail/Outlook) o OneDrive · 🖨️ Imprimir = opción «Guardar como PDF»</span>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
@@ -4638,6 +4672,7 @@ const OUTBOX_KEY='insp_outbox_v9';
 const LASTSYNC_KEY='insp_lastsync_v9';
 let _histMode=false,_histRestoreData=null,_histBackup=null,_histBackupPhotos=null,_histViewTs=null;
 let _histRecords=[],_histFilter={q:'',mes:'',estado:'',prov:'',file:''},_syncBusy=false;
+let _histLimit=30;
 
 function _uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function _histReadIdx(){try{return JSON.parse(localStorage.getItem(HIST_LS_IDX)||'[]');}catch(e){return [];}}
@@ -4898,15 +4933,30 @@ async function autoImportSheets(){
 let _panelFilter={q:'',mes:'',alm:'',prov:'',insp:'',estado:'',def:''};
 function _pnlEl(id){return document.getElementById(id);}
 function _kpi(v,l,c){return '<div class="pnl-kpi"'+(c?' style="border-top-color:'+c+'"':'')+'><b>'+v+'</b><span>'+l+'</span></div>';}
-function _pbarRows(elm,rows){
+function _pbarRows(elm,rows,n){
   if(!elm)return;
   if(!rows.length){elm.innerHTML='<div class="pnl-nodata">Sin datos con los filtros actuales.</div>';return;}
   const max=Math.max.apply(null,rows.map(function(r){return r.val;}))||1;
-  elm.innerHTML=rows.map(function(r){
+  elm.innerHTML=_withMore(rows.map(function(r){
     return '<div class="pbar-row"><div class="pbar-lab" title="'+_esc(r.lab)+'">'+_esc(r.lab)+'</div>'
       +'<div class="pbar-track"><div class="pbar-fill" style="width:'+Math.max(3,Math.round(r.val/max*100))+'%;'+(r.color?'background:'+r.color+';':'')+'"></div></div>'
       +'<div class="pbar-val">'+r.val+'</div></div>';
-  }).join('');
+  }),n||5);
+}
+// v9.3.1: listas largas del panel — mostrar 5 y expandir con «Ver todos»
+function _withMore(rows,n){
+  if(rows.length<=n)return rows.join('');
+  return rows.slice(0,n).join('')
+    +rows.slice(n).map(function(h){return '<div class="pnl-extra">'+h+'</div>';}).join('')
+    +'<button type="button" class="pnl-more" onclick="_toggleMore(this)" data-total="'+rows.length+'">▼ Ver todos ('+rows.length+')</button>';
+}
+function _toggleMore(btn){
+  const box=(btn.parentElement.tagName==='TD')?btn.parentElement.closest('table'):btn.parentElement;
+  const ex=box.querySelectorAll('.pnl-extra');
+  const open=(btn.dataset.open!=='1');
+  btn.dataset.open=open?'1':'0';
+  ex.forEach(function(x){x.style.display=open?(x.tagName==='TR'?'table-row':'block'):'none';});
+  btn.textContent=open?'▲ Ver menos':'▼ Ver todos ('+btn.dataset.total+')';
 }
 function _panelRecs(){
   return _histRecords.filter(function(r){
@@ -4979,17 +5029,17 @@ function renderPanel(){
     if(s.durNeta!=null&&!isNaN(s.durNeta)){m.durS+=s.durNeta;m.durN++;}
   });
   const provRows=Object.keys(map).map(function(p){const m=map[p];return {p:p,n:m.n,rech:m.rech,def:m.def};})
-    .sort(function(a,b){return (b.rech-a.rech)||(b.def-a.def)||(b.n-a.n);}).slice(0,8);
+    .sort(function(a,b){return (b.rech-a.rech)||(b.def-a.def)||(b.n-a.n);});
   const pmax=Math.max.apply(null,[1].concat(provRows.map(function(r){return r.def;})));
   const pel=_pnlEl('pnlProv');
-  if(pel)pel.innerHTML=provRows.length?provRows.map(function(r){
+  if(pel)pel.innerHTML=provRows.length?_withMore(provRows.map(function(r){
     return '<div class="pbar-row"><div class="pbar-lab" style="flex-basis:96px" title="'+_esc(r.p)+'">'+_esc(r.p)+'</div>'
       +'<div class="pbar-track"><div class="pbar-fill" style="width:'+Math.max(3,Math.round(r.def/pmax*100))+'%;background:'+(r.rech?'#c0392b':'#4C5F80')+'"></div></div>'
       +'<div class="pbar-val" style="flex-basis:150px;font-size:10.5px">'+r.n+' cont · '+r.rech+' rech · '+r.def+' def</div></div>';
-  }).join(''):'<div class="pnl-nodata">Sin datos con los filtros actuales.</div>';
+  }),5):'<div class="pnl-nodata">Sin datos con los filtros actuales.</div>';
   const amap={};
   L.forEach(function(r){const a=(r.resumen||{}).almacen||'(sin almacén)';amap[a]=(amap[a]||0)+1;});
-  _pbarRows(_pnlEl('pnlAlm'),Object.keys(amap).map(function(a){return {lab:a,val:amap[a],color:'#4C5F80'};}).sort(function(a,b){return b.val-a.val;}).slice(0,8));
+  _pbarRows(_pnlEl('pnlAlm'),Object.keys(amap).map(function(a){return {lab:a,val:amap[a],color:'#4C5F80'};}).sort(function(a,b){return b.val-a.val;}),5);
   const tmap={};
   L.forEach(function(r){const ym=((r.resumen||{}).fecha||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(ym))tmap[ym]=(tmap[ym]||0)+1;});
   // v9.3: tendencia como columnas verticales
@@ -5002,15 +5052,17 @@ function renderPanel(){
   const fle=_pnlEl('pnlFiles');
   // v9.3: tiempos por FILE como barras horizontales
   const fmax=Math.max.apply(null,[1].concat(fl.map(function(r){return r.resumen.durNeta;})));
-  if(fle)fle.innerHTML=fl.length?fl.map(function(r){const s=r.resumen;
+  if(fle)fle.innerHTML=fl.length?_withMore(fl.map(function(r){const s=r.resumen;
     return '<div class="pbar-row"><div class="pbar-lab" style="flex-basis:72px" title="'+_esc((s.proveedor||'')+' · '+String(s.fecha||'').split('-').reverse().join('/'))+'">'+_esc(s.file||'—')+'</div>'
       +'<div class="pbar-track"><div class="pbar-fill" style="width:'+Math.max(4,Math.round(s.durNeta/fmax*100))+'%;background:linear-gradient(90deg,#8794AB,#4C5F80)"></div></div>'
-      +'<div class="pbar-val" style="flex-basis:64px">'+fmtDurMin(s.durNeta)+'</div></div>';}).join(''):'<div class="pnl-nodata">Sin tiempos registrados con los filtros actuales.</div>';
+      +'<div class="pbar-val" style="flex-basis:64px">'+fmtDurMin(s.durNeta)+'</div></div>';}),5):'<div class="pnl-nodata">Sin tiempos registrados con los filtros actuales.</div>';
   const recha=L.filter(function(r){return (r.resumen||{}).estadoCont==='Rechazado';});
   const rle=_pnlEl('pnlRecha');
-  if(rle)rle.innerHTML=recha.length?'<table class="ptable"><tr><th>FILE</th><th>Proveedor</th><th>Almacén</th><th>Fecha</th></tr>'
-    +recha.map(function(r){const s=r.resumen;return '<tr><td><b>'+_esc(s.file)+'</b></td><td>'+_esc(s.proveedor||'—')+'</td><td>'+_esc(s.almacen||'—')+'</td><td>'+String(s.fecha||'').split('-').reverse().join('/')+'</td></tr>';}).join('')+'</table>'
-    :'<div class="pnl-nodata">Sin contenedores rechazados en este filtro.</div>';
+  if(rle)rle.innerHTML=recha.length?(function(){
+    const trs=recha.map(function(r){const s=r.resumen;return '<tr'+((recha.indexOf(r)>=6)?' class="pnl-extra"':'')+'><td><b>'+_esc(s.file)+'</b></td><td>'+_esc(s.proveedor||'—')+'</td><td>'+_esc(s.almacen||'—')+'</td><td>'+String(s.fecha||'').split('-').reverse().join('/')+'</td></tr>';});
+    if(trs.length>6)trs.push('<tr><td colspan="4" style="border:none;padding:6px 2px 0"><button type="button" class="pnl-more" style="margin:0" onclick="_toggleMore(this)" data-total="'+recha.length+'">▼ Ver todos ('+recha.length+')</button></td></tr>');
+    return '<table class="ptable"><tr><th>FILE</th><th>Proveedor</th><th>Almacén</th><th>Fecha</th></tr>'+trs.join('')+'</table>';
+  })():'<div class="pnl-nodata">Sin contenedores rechazados en este filtro.</div>';
 }
 
 // ── Detección de contenedor duplicado ──
@@ -5041,6 +5093,7 @@ async function loadHistorial(){
   const files=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.file)||'';}).filter(Boolean))).sort();
   fillSelect('hfFile',files.map(function(x){return {v:x,t:x};}),'Todos los FILE');
   try{provCatalogRefresh();}catch(e){}
+  try{inspCatSeedFromHist();}catch(e){}
   updateHistBadge();
   renderHistorial();
   if(document.getElementById('panelView'))renderPanel();
@@ -5057,7 +5110,8 @@ function histEstadoChip(st){
   if(st==='fallo')return '<span class="hchip fal">⚠ Error de envío</span>';
   return '<span class="hchip loc">📱 Solo local</span>';
 }
-function renderHistorial(){
+function renderHistorial(keep){
+  if(!keep)_histLimit=30;
   const L=_histRecords;
   const nowym=new Date().toISOString().slice(0,7);
   const set=function(id,v){const e=document.getElementById(id);if(e)e.textContent=v;};
@@ -5088,7 +5142,9 @@ function renderHistorial(){
     return;
   }
   if(!list.length){el.innerHTML='<div class="hist-empty">🔍 Ninguna inspección coincide con los filtros.</div>';return;}
-  el.innerHTML=list.map(histCardHTML).join('');
+  const vis=list.slice(0,Math.max(30,_histLimit));
+  el.innerHTML=vis.map(histCardHTML).join('')
+    +(list.length>vis.length?'<button type="button" class="pnl-more" style="margin:12px 0 4px" onclick="_histLimit+=40;renderHistorial(true)">▼ Ver más ('+(list.length-vis.length)+' restantes)</button>':'');
 }
 function histCardHTML(r){
   const s=r.resumen||{};
@@ -5117,7 +5173,7 @@ function histCardHTML(r){
     +'<div class="hc-sub" style="margin-top:7px">👤 '+(s.inspector||'—')+' · 🏬 '+_esc(s.almacen||'—')+' · G1: '+(s.g1||0)+' · G2: '+(s.g2||0)+(s.oc?' · OC: '+_esc(s.oc):'')+'</div>'
     +'<div class="hc-actions">'
     +'<button class="hc-btn primary" onclick="verDetalleHist(\''+r.id+'\')">👁 Ver</button>'
-    +'<button class="hc-btn" onclick="verEnWizard(\''+r.id+'\')">📄 PDF</button>'
+    +'<button class="hc-btn" onclick="pdfDesdeHist(\''+r.id+'\')" title="Generar el PDF completo de este registro">📄 PDF</button>'
     +(inf!=='concluido'?'<button class="hc-btn" onclick="marcarInforme(\''+r.id+'\',true)" title="Marcar informe enviado por correo">✉️</button>':'')
     +(r.estado==='fallo'?'<button class="hc-btn" onclick="reenviarHist(\''+r.id+'\')" title="Reintentar envío">🔄</button>':'')
     +'<button class="hc-btn" style="flex:0 0 48px;max-width:48px;border-color:#D9A39B;color:#922B21" onclick="eliminarHist(\''+r.id+'\')" title="Eliminar (PIN jefatura)">🗑</button>'
@@ -5260,6 +5316,22 @@ function salirHistMode(){
   setTimeout(recoverPhotosFromDB,60);
   switchView('historial');
 }
+// v9.3.1: PDF en 1 toque desde el Historial — restaura el registro, genera el PDF y regresa solo
+async function pdfDesdeHist(id){
+  const rec=_histRecords.find(function(x){return x.id===id;})||await histIdbGet(id);
+  if(!rec||!rec.datos){alert('📥 Este registro viene importado de Google Sheets (histórico): en el teléfono solo está el resumen, sin las fotos, series ni pausas completas, así que no se puede regenerar su PDF.\n\nLos reportes que hagan desde ahora con el app SÍ quedarán completos y su PDF saldrá perfecto.');return;}
+  await verEnWizard(id);
+  toastSync('📄 Generando PDF del registro…');
+  setTimeout(function(){
+    try{recoverPhotosFromDB();}catch(e){}
+    setTimeout(function(){
+      let ok=true;
+      try{generateReport();}catch(e){ok=false;console.error('pdfDesdeHist:',e);alert('No se pudo generar el PDF: '+((e&&e.message)||e));}
+      if(ok)toastSync('✅ PDF listo — usa 💾 Guardar, 🖨️ Imprimir o 📤 Compartir');
+      salirHistMode();
+    },320);
+  },80);
+}
 async function reenviarHist(id){
   await encolarReceta(id);
   const ob=outboxRead();const o=ob.find(function(x){return x.id===id;});
@@ -5313,7 +5385,7 @@ buildProgress();
 updateNav();
 setupSig('sigAlmacen','statusAlm');
 setupSig('sigCalidad','statusCal');
-restoreProgress();loadGSheetConfig();initHistorialUI();autoImportSheets();
+restoreProgress();loadGSheetConfig();initHistorialUI();autoImportSheets();inspCatSeedFromHist();
 // Pequeña espera para asegurar que restoreProgress termine de construir el DOM
 // antes de que recoverPhotosFromDB pinte las fotos sobre los slots ya creados
 setTimeout(function(){ recoverPhotosFromDB(); }, 50);
