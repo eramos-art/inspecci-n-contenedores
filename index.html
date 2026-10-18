@@ -358,6 +358,11 @@ window.onerror = function(msg, src, line, col, err) {
       <div style="font-size:13px;font-weight:700;color:white;letter-spacing:0.04em">GERENCIA DE INNOVACIÓN Y CALIDAD</div>
       <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px">Container Unloading Report / Reporte de Descarga de Contenedor</div>
     </div>
+    <!-- v9.6: Reloj en vivo (hora y fecha del teléfono — funciona sin internet) -->
+    <div style="background:rgba(0,0,0,.18);padding:5px 12px;display:flex;justify-content:center;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <span id="relojFecha" style="font-size:9px;color:rgba(255,255,255,.72);letter-spacing:.1em;font-weight:600">—</span>
+      <span id="relojHora" style="font-size:16px;font-weight:700;color:#fff;letter-spacing:.06em;font-variant-numeric:tabular-nums">--:--:--</span>
+    </div>
   </div>
 
     <!-- ═══ TABS DE VISTA (v9.1) ═══ -->
@@ -5526,6 +5531,19 @@ function initHistorialUI(){
 // ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
+// v9.6: reloj en vivo en el encabezado — usa la hora del propio teléfono (funciona sin internet)
+function tickReloj(){
+  try{
+    var d=new Date(),p2=function(n){return (n<10?'0':'')+n;};
+    var eh=document.getElementById('relojHora'),ef=document.getElementById('relojFecha');
+    if(eh)eh.textContent=p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());
+    if(ef){
+      var DIAS=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'],MES=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+      ef.textContent=DIAS[d.getDay()]+' '+p2(d.getDate())+'.'+MES[d.getMonth()]+'.'+d.getFullYear();
+    }
+  }catch(e){}
+}
+tickReloj();setInterval(tickReloj,1000);
 document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
 buildGrid('extGrid','ext',EXT_SLOTS);
 buildGrid('apGrid','ap',AP_SLOTS);
