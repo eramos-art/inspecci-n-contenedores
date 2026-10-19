@@ -24,6 +24,13 @@
        normalizan, la importación empareja por FECHA+CONTENEDOR para reparar
        en vez de duplicar, y se borran repetidos (misma fecha+contenedor =
        misma inspección; se conserva el del app con fotos).
+     · v9.6.4 — RED DE SEGURIDAD GLOBAL: al abrir el historial se descarga el
+       Sheet (queda copiado en el teléfono para funcionar sin internet) y todo
+       registro cuyo FILE no tenga forma de FILE (ej. OC 42000… en el FILE, o
+       vacío) se empareja por N° O.C. o por FECHA+CONTENEDOR contra el Sheet
+       y se repara solo: FILE, OC, proveedor, almacén, fecha y contenedor.
+       Así ni los registros viejos que perdieron su fila se quedan con la OC
+       como identificador.
      ══════════════════════════════════════════════════════════════ -->
 <html lang="es">
 <head>
@@ -5378,6 +5385,107 @@ function _histDedup(){
   _histWriteIdx(_histReadIdx().filter(function(m){return ids.indexOf(m.id)<0;}));
   console.info('v9.6.3: '+borrar.length+' duplicado(s) eliminados del historial');
 }
+// ═══ v9.6.4 — Red de seguridad GLOBAL: repara registros usando el Sheet aunque
+// el registro no tenga la fila adjunta (importaciones viejas). Solo actúa sobre
+// registros cuyo FILE no tiene forma de FILE (OC 42000… en el FILE, vacío, etc.).
+// El Sheet queda cacheado en el teléfono (localStorage) para poder reparar offline.
+function _normKey(v){return String(v||'').toUpperCase().replace(/\s+/g,'');}
+function _pareceCont(v){return /^[A-Z]{3,6}\d{3,8}$/.test(_normKey(v));}
+const SHEETCACHE_KEY='insp_sheetcache_v964';
+async function _histSheetFetch(){
+  const id=localStorage.getItem('gs_id')||GSHEET_ID;
+  const key=localStorage.getItem('gs_key')||GSHEET_API_KEY;
+  const tab=localStorage.getItem('gs_tab')||'Hoja 1';
+  if(navigator.onLine){
+    try{
+      const url='https://sheets.googleapis.com/v4/spreadsheets/'+id+'/values/'+encodeURIComponent(tab+'!A2:T')+'?key='+key;
+      const res=await fetch(url);
+      if(res.ok){
+        const vals=((await res.json()).values)||[];
+        if(vals.length){try{localStorage.setItem(SHEETCACHE_KEY,JSON.stringify(vals));}catch(e){}return vals;}
+      }
+    }catch(e){}
+  }
+  try{const c=JSON.parse(localStorage.getItem(SHEETCACHE_KEY)||'null');if(c&&c.length)return c;}catch(e){}
+  return null;
+}
+function _histEligeFila(cands,s){
+  const fch=_fechaISO(s.fecha)||String(s.fecha||'').trim();
+  const cont=_normKey(s.contenedor);
+  let hit=cands.find(function(f){return (_fechaISO(f[3])||'')===fch;});
+  if(!hit&&cont)hit=cands.find(function(f){return _normKey(f[5])===cont;});
+  return hit||cands[0];
+}
+let _histSheetFixing=false;
+async function _histSheetFix(){
+  if(_histSheetFixing)return 0;
+  const malos=_histRecords.filter(function(r){const s=r.resumen||{};return !_pareceFILE(String(s.file||'').trim());});
+  if(!malos.length)return 0;
+  const vals=await _histSheetFetch();
+  if(!vals)return 0;
+  _histSheetFixing=true;
+  try{
+    // Índices del Sheet: OC → fila (cada OC de la celda B) y FECHA|CONT → fila
+    const porOc=new Map(),porFC=new Map();
+    vals.forEach(function(row){
+      if(!row||!row[0])return;
+      const fch=_fechaISO(row[3])||'',cont=_normKey(row[5]);
+      if(fch&&cont&&!porFC.has(fch+'|'+cont))porFC.set(fch+'|'+cont,row);
+      String(row[1]||'').split('/').forEach(function(p){
+        const k=_normKey(p);
+        if(/^\d{5,}$/.test(k)){
+          if(!porOc.has(k))porOc.set(k,[]);
+          const arr=porOc.get(k);
+          if(arr.indexOf(row)<0)arr.push(row);
+        }
+      });
+    });
+    const buscaCands=function(val){
+      const ps=String(val||'').split('/').map(_normKey).filter(function(k){return /^\d{5,}$/.test(k);});
+      const out=[];
+      ps.forEach(function(p){const arr=porOc.get(p)||[];arr.forEach(function(f){if(out.indexOf(f)<0)out.push(f);});});
+      return out;
+    };
+    let n=0;
+    malos.forEach(function(r){
+      const s=r.resumen;if(!s)return;
+      let fila=null,porQue='';
+      const cFile=buscaCands(s.file),cOc=buscaCands(s.oc);
+      const cands=cFile.length?cFile:cOc;
+      if(cands.length){fila=_histEligeFila(cands,s);porQue='oc';}
+      if(!fila){
+        const fch=_fechaISO(s.fecha),cont=_normKey(s.contenedor);
+        if(fch&&cont&&porFC.has(fch+'|'+cont)){fila=porFC.get(fch+'|'+cont);porQue='fc';}
+      }
+      if(!fila)return;
+      const antes=JSON.stringify(s);
+      s.file=String(fila[0]||'').trim();
+      if(String(fila[1]||'').trim())s.oc=String(fila[1]).trim();
+      if(!_fechaISO(s.fecha))s.fecha=_fechaISO(fila[3])||String(s.fecha||'').trim();
+      if(!String(s.proveedor||'').trim()&&String(fila[2]||'').trim())s.proveedor=String(fila[2]).trim();
+      if(!String(s.almacen||'').trim()&&String(fila[4]||'').trim())s.almacen=String(fila[4]).trim();
+      // Contenedor solo si el actual no tiene forma de contenedor Y la fila es
+      // segura: elegida por fecha+cont, o única candidata con esa fecha (la misma
+      // OC puede abarcar varios contenedores el mismo día — nunca se adivina)
+      const fFila=_fechaISO(fila[3])||'';
+      const mismosFecha=cands.filter(function(f){return (_fechaISO(f[3])||'')===fFila;}).length;
+      if(!_pareceCont(s.contenedor)&&String(fila[5]||'').trim()&&(porQue==='fc'||(fFila&&fFila===(_fechaISO(s.fecha)||'')&&mismosFecha===1)))s.contenedor=String(fila[5]).trim();
+      if(JSON.stringify(s)!==antes){
+        n++;r.resumen=s;
+        if(!r.soloMeta){try{histIdbPut(r);}catch(e){}}
+      }
+    });
+    if(n){
+      try{
+        const idx=_histReadIdx();
+        idx.forEach(function(m){const rec=_histRecords.find(function(x){return x.id===m.id;});if(rec&&rec.resumen)m.resumen=rec.resumen;});
+        _histWriteIdx(idx);
+      }catch(e){}
+      console.info('v9.6.4: '+n+' registro(s) reparados con datos del Sheet');
+    }
+    return n;
+  }finally{_histSheetFixing=false;}
+}
 async function loadHistorial(){
   const full=await histIdbAll();
   const map=new Map(full.map(function(r){return [r.id,r];}));
@@ -5396,6 +5504,9 @@ async function loadHistorial(){
   updateHistBadge();
   renderHistorial();
   if(document.getElementById('panelView'))renderPanel();
+  _histSheetFix().then(function(n){ // v9.6.4 — red de seguridad con datos del Sheet
+    if(n){renderHistorial(true);updateHistBadge();if(document.getElementById('panelView'))renderPanel();}
+  }).catch(function(){});
 }
 function updateHistBadge(){
   const b=document.getElementById('histBadge');if(!b)return;
