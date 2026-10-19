@@ -51,6 +51,14 @@
        cruce) y hay botón «♻️ Reconstruir» que borra los importados y los
        vuelve a cargar limpios desde el Sheet (los reportes del app con
        fotos jamás se tocan).
+     · v9.6.8 — CONSOLIDADO DE DEFECTOS (sección 10 del PDF) vuelve a jalar la
+       Cant. Lote: si el código del daño no coincide EXACTO con el inventario
+       (p.ej. se digitó 3120TURE001 pero el producto escaneado es 3120TURE0001),
+       ahora reintenta con código normalizado (sin espacios/guiones y colapsando
+       ceros a la izquierda de cada grupo de dígitos) y, si el inventario tiene
+       un solo producto con cantidad, usa esa cantidad marcándola con «*» y una
+       nota para verificar. Además el Total General ya no duplica la Cant. Lote
+       cuando 2 bloques de daño apuntan al mismo producto.
      · v9.6.7 — PDF SIEMPRE DISPONIBLE: un registro visto en un teléfono
        distinto al que lo hizo (o que quedó como solo-resumen) ahora SÍ
        genera su PDF: el app reconstruye el reporte con los datos que
@@ -4388,12 +4396,31 @@ ${(()=>{
       if(c) lotMap[c]=(lotMap[c]||0)+q; // v9.1: sumar códigos duplicados
     }
   });
+  // v9.6.8: emparejamiento tolerante — si el código del daño no coincide EXACTO
+  // con el inventario (sección Productos recibidos), se reintenta con el código
+  // normalizado (sin espacios/guiones y colapsando ceros a la izquierda de cada
+  // grupo de dígitos: 3120TURE001 ≡ 3120TURE0001) y, como último recurso, si el
+  // inventario tiene UN SOLO producto con cantidad, se usa esa cantidad.
+  const _normCodL=s=>String(s||'').toUpperCase().replace(/\s+/g,'').replace(/\d+/g,m=>String(parseInt(m,10))).replace(/[^A-Z0-9]/g,'');
+  const lotMapNorm={},_normKeys={};
+  Object.keys(lotMap).forEach(k=>{const nk=_normCodL(k);if(nk){lotMapNorm[nk]=(lotMapNorm[nk]||0)+lotMap[k];(_normKeys[nk]=_normKeys[nk]||[]).push(k);}});
+  const _invConCant=Object.keys(lotMap).filter(k=>lotMap[k]>0);
+  const _buscarLote=cu=>{
+    if(lotMap[cu]) return {lote:lotMap[cu],src:'E:'+cu};
+    const nk=_normCodL(cu);
+    if(nk&&lotMapNorm[nk]) return {lote:lotMapNorm[nk],src:'E:'+_normKeys[nk].slice().sort().join('|')};
+    if(_invConCant.length===1){const k0=_invConCant[0];return {lote:lotMap[k0],src:'E:'+k0,aster:true};}
+    return {lote:0,src:null};
+  };
   const UMB_WARN=0.02,UMB_BAD=0.05; // v9.1: umbrales visibles (>2% ámbar · >5% rojo)
-  const rows=Object.keys(defMap).map(code=>({
-    code, g1:defMap[code].g1, g2:defMap[code].g2,
-    lote:lotMap[code.toUpperCase()]||0,
-    total:defMap[code].g1+defMap[code].g2
-  }));
+  const rows=Object.keys(defMap).map(code=>{
+    const _b=_buscarLote(code.toUpperCase());
+    return {
+      code, g1:defMap[code].g1, g2:defMap[code].g2,
+      lote:_b.lote, loteAster:!!_b.aster, _src:_b.src,
+      total:defMap[code].g1+defMap[code].g2
+    };
+  });
   if(!rows.length) return '';
   // v9.1: detección de series repetidas entre bloques G1/G2
   const _seen={},_dupS={};
@@ -4428,14 +4455,16 @@ ${(()=>{
     html+='<tr>';
     html+='<td style="padding:0;background:'+stripeColor+'"></td>';
     html+='<td style="font-family:monospace;font-size:9pt">'+r.code+'</td>';
-    html+='<td style="text-align:center">'+(r.lote||'—')+'</td>';
+    html+='<td style="text-align:center">'+(r.lote?r.lote+(r.loteAster?'*':''):'—')+'</td>';
     html+='<td style="text-align:center;'+(r.g1>0?'background:#DEE4ED;color:#4C5F80;font-weight:700':'color:#949FB3')+'">'+(r.g1>0?r.g1:'—')+'</td>';
     html+='<td style="text-align:center;'+(r.g2>0?'background:#F5E0DD;color:#A93226;font-weight:700':'color:#949FB3')+'">'+(r.g2>0?r.g2:'—')+'</td>';
     html+='<td style="text-align:center;font-weight:700;color:'+pctColor+'">'+pct+'</td>';
     html+='</tr>';
   });
-  // Fila TOTAL GENERAL
-  const totalLoteGlobal=rows.reduce((s,r)=>s+(r.lote||0),0);
+  // Fila TOTAL GENERAL — v9.6.8: cada lote del inventario se cuenta UNA sola vez
+  // (2 códigos de daño que apuntan al mismo producto ya no duplican la cantidad)
+  const _loteUnicos={};rows.forEach(r=>{if(r.lote>0&&r._src)_loteUnicos[r._src]=r.lote;});
+  const totalLoteGlobal=Object.keys(_loteUnicos).reduce((s,k)=>s+_loteUnicos[k],0);
   const totalG1Global=rows.reduce((s,r)=>s+r.g1,0);
   const totalG2Global=rows.reduce((s,r)=>s+r.g2,0);
       const totDefs=totalG1Global+totalG2Global;
@@ -4457,6 +4486,7 @@ ${(()=>{
   html+='<span><span style="display:inline-block;width:8px;height:8px;background:#4C5F80;vertical-align:middle;margin-right:3px"></span>Solo Grado 1 (daños leves)</span>';
   html+='<span style="font-style:italic">% = defectos / cant. lote × 100 · Ámbar &gt; 2% · Rojo &gt; 5% · (—) sin lote registrado</span>';
   html+='</div>';
+  if(rows.some(r=>r.loteAster)){html+='<div style="margin-top:4px;font-size:7.5pt;color:#8F5A14"><b>*</b> Cant. Lote tomada del único producto registrado en la sección 8 — el código del daño no coincidió exactamente con el inventario. Verificar códigos.</div>';}
   if(_dupList.length){html+='<div style="margin-top:5px;background:#F7EEED;border:1px solid #D9A39B;border-left:4px solid #C00000;padding:5px 9px;font-size:8pt;color:#922B21"><b>⚠ Series repetidas:</b> '+_dupList.slice(0,6).join(', ')+(_dupList.length>6?' y '+(_dupList.length-6)+' más':'')+' — aparecen en más de un bloque. Verificar en la sección 9 (Detalle de Daños).</div>';}
       html+='</div>';
   return html;
