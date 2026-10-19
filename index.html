@@ -39,6 +39,18 @@
        PROVEEDOR, ALMACÉN, CONTENEDOR y la OC desde la fila oficial del
        Sheet; además los desplegables del Panel/Historial y el catálogo de
        proveedores del formulario ya no aceptan valores cruzados.
+     · v9.6.6 — INSPECTORES Y ALMACENES (2ª pasada): el Sheet trae valores
+       con espacio final («ULISES VEGA BAZÁN », «GERMANIA ») que duplicaban
+       opciones y rompían el filtrado exacto → ahora TODOS los campos de
+       texto se normalizan. El INSPECTOR también se repara (quedaba con
+       horas/estados de la maqueta vieja). Los desplegables unifican
+       duplicados por mayúsculas y jamás muestran basura (horas 8:49,
+       emojis de estado, fechas, contenedores). NUEVO: el app VERIFICA los
+       encabezados del Sheet antes de importar/reparar (si apunta a un
+       Sheet viejo con otro orden de columnas, lo ignora — causa raíz del
+       cruce) y hay botón «♻️ Reconstruir» que borra los importados y los
+       vuelve a cargar limpios desde el Sheet (los reportes del app con
+       fotos jamás se tocan).
      ══════════════════════════════════════════════════════════════ -->
 <html lang="es">
 <head>
@@ -1136,6 +1148,7 @@ window.onerror = function(msg, src, line, col, err) {
       <button type="button" class="hc-btn primary" onclick="processOutbox()">🔄 Sincronizar ahora</button>
       <button type="button" class="hc-btn" onclick="inspCatAdmin()" title="Lista maestra de inspectores">👥 Inspectores</button>
       <button type="button" class="hc-btn" onclick="importarDesdeSheets()">⬇️ Importar de Sheets</button>
+      <button type="button" class="hc-btn" onclick="reconstruirHistorial()" title="Borra los importados y re-importa todo el Sheet desde cero">♻️ Reconstruir</button>
       <button type="button" class="hc-btn" onclick="limpiarHistorial()">🧹 Vaciar</button>
     </div>
     <div class="hist-filters">
@@ -2481,6 +2494,16 @@ function inspCatSeedFromHist(){
     inspCatRead().forEach(function(n){if(n)seen[n]=1;});
     inspCatWrite(Object.keys(seen).sort());
     try{localStorage.setItem('sole_insp_cat_seed','1');}catch(e){}
+    inspCatRender();
+  }catch(e){}
+}
+// v9.6.6: limpia UNA VEZ el catálogo de inspectores si quedó con valores cruzados
+// (horas, estados, fechas…) de las importaciones viejas
+function inspCatCleanV966(){
+  try{
+    if(localStorage.getItem('sole_insp_cat_clean966'))return;
+    inspCatWrite(inspCatRead().filter(function(n){return _inspLimpio(n);}));
+    localStorage.setItem('sole_insp_cat_clean966','1');
     inspCatRender();
   }catch(e){}
 }
@@ -4931,6 +4954,14 @@ async function importarDesdeSheets(silent){
     if(!res.ok)throw new Error('HTTP '+res.status);
     vals=(await res.json()).values||[];
   }catch(e){if(!silent)toastSync('⚠ No se pudo leer el Sheet ('+e.message+')');else console.warn('Auto-import Sheets:',e.message);return;}
+  // v9.6.6: verifica el formato del Sheet antes de importar — si el app apunta a
+  // un Sheet viejo con otro orden de columnas, NO importa (causa raíz del cruce)
+  const lay=await _sheetLayoutOK(id,key,tab);
+  if(lay===false){
+    if(!silent)toastSync('⚠ El Sheet configurado no tiene el formato oficial (FILE, O.C., PROVEEDOR, FECHA, ALMACÉN, CONTENEDOR) — revisa ⚙️');
+    else console.warn('v9.6.6 auto-import: Sheet con formato inesperado — no se importa');
+    return;
+  }
   // v9.5: existentes pasa a Map clave→id — permite REFRESCAR registros importados que fueron corregidos en el Sheet
   // v9.6.3: emparejamiento REFORZADO — además de la clave exacta FILE|FECHA|CONT,
   // se empareja por FECHA|CONT y FILE|CONT. Así los registros viejos que quedaron
@@ -5089,6 +5120,25 @@ async function autoImportSheets(){
     await importarDesdeSheets(true);
   }catch(e){}
 }
+// v9.6.6: reconstrucción limpia del historial — borra TODOS los registros
+// importados del Sheet (los hechos en el app, con fotos y datos, se conservan)
+// y los vuelve a importar desde cero con el formato actual. Arregla de raíz
+// cualquier residuo viejo cruzado.
+async function reconstruirHistorial(){
+  if(!confirm('RECONSTRUIR HISTORIAL\n\nBorra TODOS los registros importados del Sheet y los vuelve a importar desde cero con el formato correcto.\n\nLos reportes hechos en el app (con fotos y datos) NO se tocan.\n\n¿Continuar?'))return;
+  try{
+    const ids=_histRecords.filter(function(r){return !r.datos;}).map(function(r){return r.id;});
+    if(ids.length){
+      const d=await openDB();const tx=d.transaction('historial','readwrite');
+      ids.forEach(function(id){tx.objectStore('historial').delete(id);});
+    }
+    _histRecords=_histRecords.filter(function(r){return r.datos;});
+    _histWriteIdx(_histReadIdx().filter(function(m){return _histRecords.some(function(r){return r.id===m.id;});}));
+    try{localStorage.removeItem(SHEETCACHE_KEY);}catch(e){}
+    toastSync('🧹 '+(ids.length?ids.length+' importados borrados — reconstruyendo':'Reconstruyendo desde el Sheet')+'…');
+    await importarDesdeSheets(false);
+  }catch(e){toastSync('⚠ No se pudo reconstruir: '+e.message);}
+}
 
 // ═══ v9.1 — PANEL GERENCIAL (vista jefatura) ═══
 let _panelFilter={q:'',mes:'',alm:'',prov:'',insp:'',estado:'',def:''};
@@ -5146,11 +5196,11 @@ function _panelRecs(){
 function renderPanel(){
   if(!_pnlEl('panelView'))return;
   const meses=Array.from(new Set(_histRecords.map(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7);}).filter(function(x){return /^\d{4}-\d{2}$/.test(x);}))).sort().reverse();
-  // v9.6.5: los desplegables jamás muestran valores cruzados (almacén=N° contenedor,
-  // proveedor=fecha/OC/FILE) aunque quede algún registro viejo sin reparar
-  const alms=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.almacen)||'';}).filter(function(a){return a&&!_pareceCont(a)&&!_pareceFechaC(a);}))).sort();
-  const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(_provLimpio))).sort();
-  const insps=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.inspector)||'';}).filter(Boolean))).sort();
+  // v9.6.6: desplegables limpios — normaliza espacios, quita cruzados/basura y
+  // unifica duplicados por mayúsculas (el Sheet trae «ULISES VEGA BAZÁN » etc.)
+  const alms=_optLimpio(_histRecords.map(function(r){return (r.resumen&&r.resumen.almacen)||'';}),_almLimpio);
+  const provs=_optLimpio(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}),_provLimpio);
+  const insps=_optLimpio(_histRecords.map(function(r){return (r.resumen&&r.resumen.inspector)||'';}),_inspLimpio);
   fillSelect('pfInsp',insps.map(function(i){return {v:i,t:i};}),'Todos los inspectores');
   fillSelect('pfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
   fillSelect('pfAlm',alms.map(function(a){return {v:a,t:a};}),'Todos los almacenes');
@@ -5310,9 +5360,22 @@ function _pareceOC(v){return /^\d{5,}(\s*\/\s*\d{5,})*$/.test(String(v||'').trim
 function _pareceFILE(v){return /^[A-Za-z]{1,4}\d{1,3}-\d{1,6}/.test(String(v||'').trim());}
 // v9.6.5: ¿tiene pinta de FECHA? (2026-05-08 ó 8/5/2026) — para detectar campos cruzados
 function _pareceFechaC(v){return /^\d{4}-\d{2}-\d{2}/.test(String(v||'').trim())||/^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(String(v||'').trim());}
-// v9.6.5: ¿es un nombre de PROVEEDOR legítimo? Descarta valores cruzados:
-// fechas (2026-05-08), OC (42000…), FILE (M26-…) y N° de contenedor (HAMU…)
-function _provLimpio(p){p=String(p||'').trim();return !!p&&!_pareceFechaC(p)&&!_pareceOC(p)&&!_pareceFILE(p)&&!_pareceCont(p);}
+// v9.6.6: texto normalizado — colapsa espacios y quita extremos. El Sheet trae
+// valores con espacio final («ULISES VEGA BAZÁN », «GERMANIA ») que duplicaban
+// opciones de los desplegables y rompían el filtrado exacto.
+function _textoLimpio(v){return String(v||'').replace(/\s+/g,' ').trim();}
+// v9.6.6: texto con pinta de basura (horas «8:49», emojis de estado, textos largos)
+function _malTexto(v){v=_textoLimpio(v);return !!v&&(/^\d{1,2}:\d{2}/.test(v)||/[⚠✓✔✅❌]/.test(v)||v.length>40);}
+// v9.6.6: ¿el campo quedó cruzado/basura? (vacío cuenta como «raro» = por reparar)
+function _provRaro(v){v=_textoLimpio(v);return !v||_pareceFechaC(v)||_pareceOC(v)||_pareceFILE(v)||_pareceCont(v)||_malTexto(v);}
+function _almRaro(v){v=_textoLimpio(v);return !v||_pareceCont(v)||_pareceFechaC(v)||_pareceFILE(v)||_pareceOC(v)||_malTexto(v);}
+function _inspRaro(v){v=_textoLimpio(v);return !v||_pareceFechaC(v)||_pareceOC(v)||_pareceFILE(v)||_pareceCont(v)||_malTexto(v);}
+function _provLimpio(p){return !_provRaro(p);}
+function _almLimpio(a){return !_almRaro(a);}
+function _inspLimpio(i){return !_inspRaro(i);}
+// v9.6.6: opciones de desplegable limpias — normaliza, filta y unifica duplicados
+// por mayúsculas (Argentina / ARGENTINA / «Argentina » son UNA sola opción)
+function _optLimpio(vals,ok){const m=new Map();(vals||[]).forEach(function(v){v=_textoLimpio(v);if(v&&ok(v)){const k=v.toUpperCase();if(!m.has(k))m.set(k,v);}});return Array.from(m.values()).sort();}
 function _fechaISO(v){
   let fe=String(v||'').trim();
   const mDMY=fe.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -5323,6 +5386,11 @@ function _histRepararResumenes(){
   const tocados=[];
   _histRecords.forEach(function(r){
     const s=r.resumen;if(!s)return;
+    // 0) v9.6.6: normaliza espacios de todos los campos de texto — el Sheet trae
+    //    valores con espacio final y duplicaban opciones/filtrado exacto
+    s.file=_textoLimpio(s.file);s.oc=_textoLimpio(s.oc);
+    s.proveedor=_textoLimpio(s.proveedor);s.almacen=_textoLimpio(s.almacen);
+    s.inspector=_textoLimpio(s.inspector);s.contenedor=_textoLimpio(s.contenedor).toUpperCase();
     const antes=JSON.stringify(s);
     const fila=(r.fila&&r.fila.length>=2)?r.fila:null;
     let file=String(s.file||'').trim(),oc=String(s.oc||'').trim();
@@ -5356,16 +5424,23 @@ function _histRepararResumenes(){
     if(feISO)s.fecha=feISO;
     // 5) Contenedor desde la fila si falta o si NO tiene forma de contenedor
     //    (necesario para deduplicar)
-    if(fila&&_pareceCont(fila[5])&&!_pareceCont(String(s.contenedor||'').trim()))s.contenedor=String(fila[5]).trim();
-    // 6) v9.6.5 — PROVEEDOR y ALMACÉN cruzados: los registros importados viejos
-    //    quedaron con la FECHA como proveedor (2026-05-08…) y el N° de contenedor
-    //    como almacén (CAAU…). La fila adjunta del Sheet es la fuente oficial.
+    if(fila&&_pareceCont(fila[5])&&!_pareceCont(s.contenedor))s.contenedor=_textoLimpio(fila[5]).toUpperCase();
+    // 6) v9.6.5/6 — campos CRUZADOS (proveedor=fecha, almacén=contenedor,
+    //    inspector=hora/estado…). La fila adjunta del Sheet es la fuente oficial.
     if(fila){
-      const f2=String(fila[2]||'').trim(),f4=String(fila[4]||'').trim();
-      if((!s.proveedor||_pareceFechaC(s.proveedor)||_pareceFILE(s.proveedor)||_pareceOC(s.proveedor))
-         &&f2&&!_pareceFechaC(f2)&&!_pareceFILE(f2)&&!_pareceOC(f2)&&!_pareceCont(f2))s.proveedor=f2;
-      if((!s.almacen||_pareceCont(s.almacen)||_pareceFechaC(s.almacen))
-         &&f4&&!_pareceCont(f4)&&!_pareceFechaC(f4)&&!_pareceFILE(f4)&&!_pareceOC(f4))s.almacen=f4;
+      const f2=_textoLimpio(fila[2]),f4=_textoLimpio(fila[4]),f18=_textoLimpio(fila[18]);
+      if(_provRaro(s.proveedor)&&f2&&!_provRaro(f2))s.proveedor=f2;
+      if(_almRaro(s.almacen)&&f4&&!_almRaro(f4))s.almacen=f4;
+      if(_inspRaro(s.inspector)&&f18&&!_inspRaro(f18))s.inspector=f18;
+    }
+    // 6c) v9.6.6: basura residual sin fuente sana → se VACÍA (mejor «(sin proveedor)»
+    //     que mostrar fechas/contenedores/horas; la red de seguridad online lo
+    //     rellena con el Sheet). Solo registros IMPORTADOS — los hechos en el app
+    //     (con fotos y datos) JAMÁS se tocan.
+    if(!r.datos){
+      if(_provRaro(s.proveedor))s.proveedor='';
+      if(_almRaro(s.almacen))s.almacen='';
+      if(_inspRaro(s.inspector))s.inspector='';
     }
     // 6b) OC que quedó con un FILE dentro (ej. oc='M26-131') → OC oficial de la fila
     if(fila&&_pareceFILE(String(s.oc||'').trim())&&_pareceOC(String(fila[1]||'').trim()))s.oc=String(fila[1]).trim();
@@ -5378,7 +5453,7 @@ function _histRepararResumenes(){
       idx.forEach(function(m){const rec=tocados.find(function(x){return x.id===m.id;});if(rec&&rec.resumen)m.resumen=rec.resumen;});
       _histWriteIdx(idx);
     }catch(e){}
-    console.info('v9.6.5: '+tocados.length+' registro(s) reparados (FILE/OC/fecha/proveedor/almacén)');
+    console.info('v9.6.6: '+tocados.length+' registro(s) reparados (FILE/OC/fecha/proveedor/almacén/inspector)');
   }
 }
 // v9.6.3: borra duplicados del historial — misma FECHA + mismo CONTENEDOR = misma
@@ -5421,13 +5496,29 @@ function _histDedup(){
 // El Sheet queda cacheado en el teléfono (localStorage) para poder reparar offline.
 function _normKey(v){return String(v||'').toUpperCase().replace(/\s+/g,'');}
 function _pareceCont(v){return /^[A-Z]{3,6}\d{3,8}$/.test(_normKey(v));}
-const SHEETCACHE_KEY='insp_sheetcache_v964';
+const SHEETCACHE_KEY='insp_sheetcache_v966'; // v9.6.6: clave nueva — descarta caches viejos potencialmente cruzados
+// v9.6.6: ¿los encabezados del Sheet configurado son el formato oficial?
+// (A=FILE, B=N° O.C., C=PROVEEDOR, D=FECHA, E=ALMACÉN, F=N° CONTENEDOR).
+// Devuelve true/false; null si no se pudo comprobar (sin red, error).
+async function _sheetLayoutOK(id,key,tab){
+  try{
+    const hres=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+id+'/values/'+encodeURIComponent(tab+'!A1:T1')+'?key='+key);
+    if(!hres.ok)return null;
+    const hd=(((await hres.json()).values)||[])[0]||[];
+    const H=function(i){return String(hd[i]||'').toUpperCase();};
+    return H(0).indexOf('FILE')>=0&&H(1).indexOf('O.C')>=0&&H(2).indexOf('PROVEEDOR')>=0&&H(3).indexOf('FECHA')>=0&&H(4).indexOf('ALMAC')>=0&&H(5).indexOf('CONTENEDOR')>=0;
+  }catch(e){return null;}
+}
 async function _histSheetFetch(){
   const id=localStorage.getItem('gs_id')||GSHEET_ID;
   const key=localStorage.getItem('gs_key')||GSHEET_API_KEY;
   const tab=localStorage.getItem('gs_tab')||'Hoja 1';
   if(navigator.onLine){
     try{
+      // v9.6.6: si el app apunta a un Sheet viejo con OTRO orden de columnas,
+      // se ignora — era la causa de volver a importar campos cruzados
+      const lay=await _sheetLayoutOK(id,key,tab);
+      if(lay===false){console.warn('v9.6.6: el Sheet configurado NO tiene el formato oficial (FILE/OC/PROVEEDOR/FECHA/ALMACÉN/CONTENEDOR) — se ignora');return null;}
       const url='https://sheets.googleapis.com/v4/spreadsheets/'+id+'/values/'+encodeURIComponent(tab+'!A2:T')+'?key='+key;
       const res=await fetch(url);
       if(res.ok){
@@ -5449,11 +5540,13 @@ function _histEligeFila(cands,s){
 let _histSheetFixing=false;
 async function _histSheetFix(){
   if(_histSheetFixing)return 0;
-  // v9.6.5: también considera «malos» los de proveedor=fecha o almacén=contenedor
+  // v9.6.6: también campos cruzados NO vacíos (proveedor/almacén/inspector)
   const malos=_histRecords.filter(function(r){const s=r.resumen||{};
-    return !_pareceFILE(String(s.file||'').trim())
-        || _pareceFechaC(String(s.proveedor||'').trim())
-        || _pareceCont(String(s.almacen||'').trim());});
+    const pr=_textoLimpio(s.proveedor),ar=_textoLimpio(s.almacen),ir=_textoLimpio(s.inspector);
+    if(!_pareceFILE(String(s.file||'').trim()))return true;
+    if(r.datos)return false; // los hechos en el app: solo si su FILE está roto
+    // importados: cruzados O VACÍOS → se rellenan con el Sheet oficial
+    return (pr&&_provRaro(pr))||(ar&&_almRaro(ar))||(ir&&_inspRaro(ir))||!pr||!ar||!ir;});
   if(!malos.length)return 0;
   const vals=await _histSheetFetch();
   if(!vals)return 0;
@@ -5496,9 +5589,10 @@ async function _histSheetFix(){
       s.file=String(fila[0]||'').trim();
       if(String(fila[1]||'').trim())s.oc=String(fila[1]).trim();
       if(!_fechaISO(s.fecha))s.fecha=_fechaISO(fila[3])||_fechaISO(s.fecha)||String(s.fecha||'').trim();
-      // v9.6.5: repara también los CRUZADOS, no solo los vacíos
-      if((!String(s.proveedor||'').trim()||_pareceFechaC(s.proveedor))&&String(fila[2]||'').trim()&&!_pareceFechaC(fila[2]))s.proveedor=String(fila[2]).trim();
-      if((!String(s.almacen||'').trim()||_pareceCont(s.almacen))&&String(fila[4]||'').trim()&&!_pareceCont(fila[4]))s.almacen=String(fila[4]).trim();
+      // v9.6.5/6: repara también los CRUZADOS, no solo los vacíos (incluye inspector)
+      if((!s.proveedor||_provRaro(s.proveedor))&&_textoLimpio(fila[2])&&!_provRaro(fila[2]))s.proveedor=_textoLimpio(fila[2]);
+      if((!s.almacen||_almRaro(s.almacen))&&_textoLimpio(fila[4])&&!_almRaro(fila[4]))s.almacen=_textoLimpio(fila[4]);
+      if((!s.inspector||_inspRaro(s.inspector))&&_textoLimpio(fila[18])&&!_inspRaro(fila[18]))s.inspector=_textoLimpio(fila[18]);
       // Contenedor solo si el actual no tiene forma de contenedor Y la fila es
       // segura: elegida por fecha+cont, o única candidata con esa fecha (la misma
       // OC puede abarcar varios contenedores el mismo día — nunca se adivina)
@@ -5516,10 +5610,20 @@ async function _histSheetFix(){
         idx.forEach(function(m){const rec=_histRecords.find(function(x){return x.id===m.id;});if(rec&&rec.resumen)m.resumen=rec.resumen;});
         _histWriteIdx(idx);
       }catch(e){}
-      console.info('v9.6.5: '+n+' registro(s) reparados con datos del Sheet (incluye proveedor/almacén cruzados)');
+      console.info('v9.6.6: '+n+' registro(s) reparados con datos del Sheet (incluye proveedor/almacén/inspector cruzados)');
     }
     return n;
   }finally{_histSheetFixing=false;}
+}
+// v9.6.6: llena los desplegables del Historial — se llama al cargar Y también tras
+// la red de seguridad, para que los proveedores recién rellenados aparezcan de una
+function fillHistSelects(){
+  const meses=Array.from(new Set(_histRecords.map(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7);}).filter(function(x){return /^\d{4}-\d{2}$/.test(x);}))).sort().reverse();
+  const provs=_optLimpio(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}),_provLimpio); // v9.6.6: limpios y sin duplicados
+  const files=Array.from(new Set(_histRecords.map(function(r){return _textoLimpio((r.resumen&&r.resumen.file)||'');}).filter(Boolean))).sort();
+  fillSelect('hfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
+  fillSelect('hfProv',provs.map(function(p){return {v:p,t:p};}),'Todos los proveedores');
+  fillSelect('hfFile',files.map(function(x){return {v:x,t:x};}),'Todos los FILE');
 }
 async function loadHistorial(){
   const full=await histIdbAll();
@@ -5528,19 +5632,15 @@ async function loadHistorial(){
   _histRecords=Array.from(map.values()).sort(function(a,b){return b.ts-a.ts;});
   _histRepararResumenes(); // v9.6.3 — corrige FILE/OC/fecha antes de pintar
   _histDedup();            // v9.6.3 — borra duplicados (misma fecha + contenedor)
-  const meses=Array.from(new Set(_histRecords.map(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7);}).filter(function(x){return /^\d{4}-\d{2}$/.test(x);}))).sort().reverse();
-  const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(_provLimpio))).sort(); // v9.6.5: sin cruzados
-  fillSelect('hfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
-  fillSelect('hfProv',provs.map(function(p){return {v:p,t:p};}),'Todos los proveedores');
-  const files=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.file)||'';}).filter(Boolean))).sort();
-  fillSelect('hfFile',files.map(function(x){return {v:x,t:x};}),'Todos los FILE');
+  fillHistSelects();       // v9.6.6 — desplegables limpios y sin duplicados
   try{provCatalogRefresh();}catch(e){}
   try{inspCatSeedFromHist();}catch(e){}
+  try{inspCatCleanV966();}catch(e){}
   updateHistBadge();
   renderHistorial();
   if(document.getElementById('panelView'))renderPanel();
   _histSheetFix().then(function(n){ // v9.6.4/5 — red de seguridad con datos del Sheet
-    if(n){_histRepararResumenes();_histDedup();renderHistorial(true);updateHistBadge();if(document.getElementById('panelView'))renderPanel();}
+    if(n){_histRepararResumenes();_histDedup();fillHistSelects();renderHistorial(true);updateHistBadge();if(document.getElementById('panelView'))renderPanel();}
   }).catch(function(){});
 }
 function updateHistBadge(){
