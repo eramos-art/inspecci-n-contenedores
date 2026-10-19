@@ -31,6 +31,14 @@
        y se repara solo: FILE, OC, proveedor, almacén, fecha y contenedor.
        Así ni los registros viejos que perdieron su fila se quedan con la OC
        como identificador.
+     · v9.6.5 — DESCONFIGURO DE FILTROS: los registros importados viejos
+       quedaron con los campos CRUZADOS (la FECHA guardada como proveedor →
+       el filtro «Todos los proveedores» mostraba 2026-05-08, 2026-07-01…;
+       y el N° de contenedor guardado como almacén → el filtro de almacenes
+       mostraba CAAU5234839, EMCU…). La reparación ahora también reconstruye
+       PROVEEDOR, ALMACÉN, CONTENEDOR y la OC desde la fila oficial del
+       Sheet; además los desplegables del Panel/Historial y el catálogo de
+       proveedores del formulario ya no aceptan valores cruzados.
      ══════════════════════════════════════════════════════════════ -->
 <html lang="es">
 <head>
@@ -2397,8 +2405,9 @@ function tbIniciar(){
 function provCatalogRead(){try{return JSON.parse(localStorage.getItem('sole_prov_catalog_v9')||'[]');}catch(e){return [];}}
 function provCatalogWrite(a){try{localStorage.setItem('sole_prov_catalog_v9',JSON.stringify(a));}catch(e){}}
 function provCatalogRefresh(){
-  const set=new Set(provCatalogRead().map(function(p){return String(p).toUpperCase();}));
-  (_histRecords||[]).forEach(function(r){const p=(r.resumen||{}).proveedor;if(p)set.add(String(p).toUpperCase());});
+  // v9.6.5: el catálogo no se alimenta con valores cruzados (fechas/OC/FILE como proveedor)
+  const set=new Set(provCatalogRead().filter(_provLimpio));
+  (_histRecords||[]).forEach(function(r){const p=(r.resumen||{}).proveedor;if(_provLimpio(p))set.add(String(p).toUpperCase());});
   const arr=Array.from(set).filter(Boolean).sort();
   provCatalogWrite(arr);
   const dl=document.getElementById('provList');
@@ -5137,8 +5146,10 @@ function _panelRecs(){
 function renderPanel(){
   if(!_pnlEl('panelView'))return;
   const meses=Array.from(new Set(_histRecords.map(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7);}).filter(function(x){return /^\d{4}-\d{2}$/.test(x);}))).sort().reverse();
-  const alms=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.almacen)||'';}).filter(Boolean))).sort();
-  const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(Boolean))).sort();
+  // v9.6.5: los desplegables jamás muestran valores cruzados (almacén=N° contenedor,
+  // proveedor=fecha/OC/FILE) aunque quede algún registro viejo sin reparar
+  const alms=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.almacen)||'';}).filter(function(a){return a&&!_pareceCont(a)&&!_pareceFechaC(a);}))).sort();
+  const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(_provLimpio))).sort();
   const insps=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.inspector)||'';}).filter(Boolean))).sort();
   fillSelect('pfInsp',insps.map(function(i){return {v:i,t:i};}),'Todos los inspectores');
   fillSelect('pfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
@@ -5297,6 +5308,11 @@ function fillSelect(id,items,allTxt){
 //     primero el hecho en el app (tiene datos/fotos), luego el de FILE válido.
 function _pareceOC(v){return /^\d{5,}(\s*\/\s*\d{5,})*$/.test(String(v||'').trim());}
 function _pareceFILE(v){return /^[A-Za-z]{1,4}\d{1,3}-\d{1,6}/.test(String(v||'').trim());}
+// v9.6.5: ¿tiene pinta de FECHA? (2026-05-08 ó 8/5/2026) — para detectar campos cruzados
+function _pareceFechaC(v){return /^\d{4}-\d{2}-\d{2}/.test(String(v||'').trim())||/^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(String(v||'').trim());}
+// v9.6.5: ¿es un nombre de PROVEEDOR legítimo? Descarta valores cruzados:
+// fechas (2026-05-08), OC (42000…), FILE (M26-…) y N° de contenedor (HAMU…)
+function _provLimpio(p){p=String(p||'').trim();return !!p&&!_pareceFechaC(p)&&!_pareceOC(p)&&!_pareceFILE(p)&&!_pareceCont(p);}
 function _fechaISO(v){
   let fe=String(v||'').trim();
   const mDMY=fe.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -5338,8 +5354,21 @@ function _histRepararResumenes(){
     // 4) Fecha normalizada AAAA-MM-DD (protege el filtro por meses)
     const feISO=_fechaISO(s.fecha)||(fila?(_fechaISO(fila[3])||''):'');
     if(feISO)s.fecha=feISO;
-    // 5) Contenedor desde la fila si falta (necesario para deduplicar)
-    if(!String(s.contenedor||'').trim()&&fila&&String(fila[5]||'').trim())s.contenedor=String(fila[5]).trim();
+    // 5) Contenedor desde la fila si falta o si NO tiene forma de contenedor
+    //    (necesario para deduplicar)
+    if(fila&&_pareceCont(fila[5])&&!_pareceCont(String(s.contenedor||'').trim()))s.contenedor=String(fila[5]).trim();
+    // 6) v9.6.5 — PROVEEDOR y ALMACÉN cruzados: los registros importados viejos
+    //    quedaron con la FECHA como proveedor (2026-05-08…) y el N° de contenedor
+    //    como almacén (CAAU…). La fila adjunta del Sheet es la fuente oficial.
+    if(fila){
+      const f2=String(fila[2]||'').trim(),f4=String(fila[4]||'').trim();
+      if((!s.proveedor||_pareceFechaC(s.proveedor)||_pareceFILE(s.proveedor)||_pareceOC(s.proveedor))
+         &&f2&&!_pareceFechaC(f2)&&!_pareceFILE(f2)&&!_pareceOC(f2)&&!_pareceCont(f2))s.proveedor=f2;
+      if((!s.almacen||_pareceCont(s.almacen)||_pareceFechaC(s.almacen))
+         &&f4&&!_pareceCont(f4)&&!_pareceFechaC(f4)&&!_pareceFILE(f4)&&!_pareceOC(f4))s.almacen=f4;
+    }
+    // 6b) OC que quedó con un FILE dentro (ej. oc='M26-131') → OC oficial de la fila
+    if(fila&&_pareceFILE(String(s.oc||'').trim())&&_pareceOC(String(fila[1]||'').trim()))s.oc=String(fila[1]).trim();
     if(JSON.stringify(s)!==antes)tocados.push(r);
   });
   if(tocados.length){
@@ -5349,7 +5378,7 @@ function _histRepararResumenes(){
       idx.forEach(function(m){const rec=tocados.find(function(x){return x.id===m.id;});if(rec&&rec.resumen)m.resumen=rec.resumen;});
       _histWriteIdx(idx);
     }catch(e){}
-    console.info('v9.6.3: '+tocados.length+' registro(s) reparados (FILE/OC/fecha)');
+    console.info('v9.6.5: '+tocados.length+' registro(s) reparados (FILE/OC/fecha/proveedor/almacén)');
   }
 }
 // v9.6.3: borra duplicados del historial — misma FECHA + mismo CONTENEDOR = misma
@@ -5385,9 +5414,10 @@ function _histDedup(){
   _histWriteIdx(_histReadIdx().filter(function(m){return ids.indexOf(m.id)<0;}));
   console.info('v9.6.3: '+borrar.length+' duplicado(s) eliminados del historial');
 }
-// ═══ v9.6.4 — Red de seguridad GLOBAL: repara registros usando el Sheet aunque
-// el registro no tenga la fila adjunta (importaciones viejas). Solo actúa sobre
-// registros cuyo FILE no tiene forma de FILE (OC 42000… en el FILE, vacío, etc.).
+// ═══ v9.6.4/5 — Red de seguridad GLOBAL: repara registros usando el Sheet aunque
+// el registro no tenga la fila adjunta (importaciones viejas). Actúa sobre
+// registros cuyo FILE no tiene forma de FILE (OC 42000… en el FILE, vacío, etc.)
+// y — v9.6.5 — sobre los de campos cruzados (proveedor=fecha, almacén=contenedor).
 // El Sheet queda cacheado en el teléfono (localStorage) para poder reparar offline.
 function _normKey(v){return String(v||'').toUpperCase().replace(/\s+/g,'');}
 function _pareceCont(v){return /^[A-Z]{3,6}\d{3,8}$/.test(_normKey(v));}
@@ -5419,7 +5449,11 @@ function _histEligeFila(cands,s){
 let _histSheetFixing=false;
 async function _histSheetFix(){
   if(_histSheetFixing)return 0;
-  const malos=_histRecords.filter(function(r){const s=r.resumen||{};return !_pareceFILE(String(s.file||'').trim());});
+  // v9.6.5: también considera «malos» los de proveedor=fecha o almacén=contenedor
+  const malos=_histRecords.filter(function(r){const s=r.resumen||{};
+    return !_pareceFILE(String(s.file||'').trim())
+        || _pareceFechaC(String(s.proveedor||'').trim())
+        || _pareceCont(String(s.almacen||'').trim());});
   if(!malos.length)return 0;
   const vals=await _histSheetFetch();
   if(!vals)return 0;
@@ -5461,9 +5495,10 @@ async function _histSheetFix(){
       const antes=JSON.stringify(s);
       s.file=String(fila[0]||'').trim();
       if(String(fila[1]||'').trim())s.oc=String(fila[1]).trim();
-      if(!_fechaISO(s.fecha))s.fecha=_fechaISO(fila[3])||String(s.fecha||'').trim();
-      if(!String(s.proveedor||'').trim()&&String(fila[2]||'').trim())s.proveedor=String(fila[2]).trim();
-      if(!String(s.almacen||'').trim()&&String(fila[4]||'').trim())s.almacen=String(fila[4]).trim();
+      if(!_fechaISO(s.fecha))s.fecha=_fechaISO(fila[3])||_fechaISO(s.fecha)||String(s.fecha||'').trim();
+      // v9.6.5: repara también los CRUZADOS, no solo los vacíos
+      if((!String(s.proveedor||'').trim()||_pareceFechaC(s.proveedor))&&String(fila[2]||'').trim()&&!_pareceFechaC(fila[2]))s.proveedor=String(fila[2]).trim();
+      if((!String(s.almacen||'').trim()||_pareceCont(s.almacen))&&String(fila[4]||'').trim()&&!_pareceCont(fila[4]))s.almacen=String(fila[4]).trim();
       // Contenedor solo si el actual no tiene forma de contenedor Y la fila es
       // segura: elegida por fecha+cont, o única candidata con esa fecha (la misma
       // OC puede abarcar varios contenedores el mismo día — nunca se adivina)
@@ -5481,7 +5516,7 @@ async function _histSheetFix(){
         idx.forEach(function(m){const rec=_histRecords.find(function(x){return x.id===m.id;});if(rec&&rec.resumen)m.resumen=rec.resumen;});
         _histWriteIdx(idx);
       }catch(e){}
-      console.info('v9.6.4: '+n+' registro(s) reparados con datos del Sheet');
+      console.info('v9.6.5: '+n+' registro(s) reparados con datos del Sheet (incluye proveedor/almacén cruzados)');
     }
     return n;
   }finally{_histSheetFixing=false;}
@@ -5494,7 +5529,7 @@ async function loadHistorial(){
   _histRepararResumenes(); // v9.6.3 — corrige FILE/OC/fecha antes de pintar
   _histDedup();            // v9.6.3 — borra duplicados (misma fecha + contenedor)
   const meses=Array.from(new Set(_histRecords.map(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7);}).filter(function(x){return /^\d{4}-\d{2}$/.test(x);}))).sort().reverse();
-  const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(Boolean))).sort();
+  const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(_provLimpio))).sort(); // v9.6.5: sin cruzados
   fillSelect('hfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
   fillSelect('hfProv',provs.map(function(p){return {v:p,t:p};}),'Todos los proveedores');
   const files=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.file)||'';}).filter(Boolean))).sort();
@@ -5504,8 +5539,8 @@ async function loadHistorial(){
   updateHistBadge();
   renderHistorial();
   if(document.getElementById('panelView'))renderPanel();
-  _histSheetFix().then(function(n){ // v9.6.4 — red de seguridad con datos del Sheet
-    if(n){renderHistorial(true);updateHistBadge();if(document.getElementById('panelView'))renderPanel();}
+  _histSheetFix().then(function(n){ // v9.6.4/5 — red de seguridad con datos del Sheet
+    if(n){_histRepararResumenes();_histDedup();renderHistorial(true);updateHistBadge();if(document.getElementById('panelView'))renderPanel();}
   }).catch(function(){});
 }
 function updateHistBadge(){
