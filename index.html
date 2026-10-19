@@ -10,6 +10,13 @@
      · v9.1 — Fase D: Cola inteligente con confirmación y autosync al reconectar.
      · v9.1 — Fase E: PDF corporativo con bloque de TIEMPOS ARRIBA (normado).
      · v9.1 — Logo oficial Grupo Sole (arte enviado por el usuario).
+     · v9.6.2 — FIX 1: el FILE (M26-…) vuelve a ser el identificador principal —
+       reparación automática de registros viejos que quedaron con la OC en lugar
+       del FILE (se corrigen al abrir el app, también su fecha si estaba mal).
+     · v9.6.2 — FIX 2: las tarjetas de estadísticas del Historial (Total /
+       Concluidos / Pendientes / «Este mes») ahora SÍ responden a los filtros;
+       al elegir un mes, la 4ª tarjeta cambia su título a ese mes y muestra
+       SU cantidad (antes se quedaba con la del mes actual).
      ══════════════════════════════════════════════════════════════ -->
 <html lang="es">
 <head>
@@ -5236,11 +5243,54 @@ function fillSelect(id,items,allTxt){
   el.innerHTML='<option value="">'+allTxt+'</option>'+items.map(function(i){return '<option value="'+i.v+'">'+i.t+'</option>';}).join('');
   if(items.some(function(i){return i.v===cur;}))el.value=cur;
 }
+// ═══ v9.6.2 — FIX 1: reparación automática de registros viejos ═══
+// Algunos registros guardados antes quedaron con la OC (42000…) en el campo
+// FILE y/o con la fecha en otro formato. Aquí se detectan y se corrigen solos:
+//   · Si la fila del Sheet existe → FILE=col A, OC=col B, FECHA=col D (fuente oficial).
+//   · Si no, intercambio heurístico: FILE con puro dígitos + OC con forma M26-… ⇒ se invierten.
+//   · La fecha se normaliza a AAAA-MM-DD para que el filtro por meses cuente bien.
+function _pareceOC(v){return /^\d{5,}(\s*\/\s*\d{5,})*$/.test(String(v||'').trim());}
+function _pareceFILE(v){return /^[A-Za-z]{1,4}\d{1,3}-\d{1,6}/.test(String(v||'').trim());}
+function _histRepararResumenes(){
+  const tocados=[];
+  _histRecords.forEach(function(r){
+    const s=r.resumen;if(!s)return;
+    const antes=JSON.stringify(s);
+    const fila=(r.fila&&r.fila.length>=2)?r.fila:null;
+    let file=String(s.file||'').trim(),oc=String(s.oc||'').trim();
+    // 1) FILE/OC oficiales desde la fila del Sheet (A=FILE, B=N° O.C.)
+    if(fila){
+      const fFila=String(fila[0]||'').trim(),oFila=String(fila[1]||'').trim();
+      if(fFila&&fFila!==file&&(_pareceOC(file)||!file||_pareceFILE(fFila)&&!_pareceFILE(file))){file=fFila;if(oFila)oc=oFila;}
+    }
+    // 2) Intercambio heurístico file↔oc cuando quedaron invertidos
+    if(_pareceOC(file)&&_pareceFILE(oc)){const t=file;file=oc;oc=t;}
+    if(!file&&_pareceFILE(oc)){file=oc;oc='';}
+    s.file=file;s.oc=oc;
+    // 3) Fecha normalizada AAAA-MM-DD (protege el filtro por meses)
+    let fe=String(s.fecha||'').trim();
+    const mDMY=fe.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(mDMY)fe=mDMY[3]+'-'+('0'+mDMY[2]).slice(-2)+'-'+('0'+mDMY[1]).slice(-2);
+    if(fila&&/^\d{4}-\d{2}-\d{2}$/.test(String(fila[3]||'').trim())&&!/^\d{4}-\d{2}-\d{2}$/.test(fe))fe=String(fila[3]).trim();
+    s.fecha=fe;
+    if(JSON.stringify(s)!==antes)tocados.push(r);
+  });
+  if(tocados.length){
+    tocados.forEach(function(r){if(!r.soloMeta){try{histIdbPut(r);}catch(e){}}});
+    try{
+      const idx=_histReadIdx();
+      idx.forEach(function(m){const rec=tocados.find(function(x){return x.id===m.id;});if(rec&&rec.resumen)m.resumen=rec.resumen;});
+      _histWriteIdx(idx);
+    }catch(e){}
+    console.info('v9.6.2: '+tocados.length+' registro(s) reparados (FILE/OC/fecha)');
+  }
+}
 async function loadHistorial(){
   const full=await histIdbAll();
   const map=new Map(full.map(function(r){return [r.id,r];}));
   _histReadIdx().forEach(function(m){if(!map.has(m.id))map.set(m.id,{id:m.id,ts:m.ts,estado:m.estado,resumen:m.resumen||{},fotos:null,datos:null,soloMeta:true});});
   _histRecords=Array.from(map.values()).sort(function(a,b){return b.ts-a.ts;});
+  _histRepararResumenes(); // v9.6.2 — corrige FILE/OC/fecha antes de pintar
   const meses=Array.from(new Set(_histRecords.map(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7);}).filter(function(x){return /^\d{4}-\d{2}$/.test(x);}))).sort().reverse();
   const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(Boolean))).sort();
   fillSelect('hfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
@@ -5265,17 +5315,11 @@ function histEstadoChip(st){
   if(st==='fallo')return '<span class="hchip fal">⚠ Error de envío</span>';
   return '<span class="hchip loc">📱 Solo local</span>';
 }
-function renderHistorial(keep){
-  if(!keep)_histLimit=12;
-  const L=_histRecords;
-  const nowym=new Date().toISOString().slice(0,7);
-  const set=function(id,v){const e=document.getElementById(id);if(e)e.textContent=v;};
-  set('hsTotal',L.length);
-  set('hsEnv',L.filter(function(r){return informeDe(r)==='concluido';}).length);
-  set('hsPen',L.filter(function(r){return informeDe(r)==='pendiente';}).length);
-  set('hsMes',L.filter(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7)===nowym;}).length);
+// v9.6.2: un solo criterio de filtrado — lo usan las TARJETAS y la lista, así
+// las cantidades siempre coinciden con lo que se ve al filtrar por mes, estado, etc.
+function _histAplicaFiltros(L){
   const f=_histFilter;
-  const list=L.filter(function(r){
+  return L.filter(function(r){
     const s=r.resumen||{};
     if(f.mes&&((s.fecha||'').slice(0,7)!==f.mes))return false;
     if(f.estado&&informeDe(r)!==f.estado)return false;
@@ -5288,8 +5332,28 @@ function renderHistorial(keep){
     }
     return true;
   });
+}
+function renderHistorial(keep){
+  if(!keep)_histLimit=12;
+  // v9.6.2: mes actual según la hora LOCAL del teléfono (antes usaba UTC y de
+  // madrugada podía contar el mes anterior en Perú UTC-5)
+  const _hoy=new Date();
+  const nowym=_hoy.getFullYear()+'-'+('0'+(_hoy.getMonth()+1)).slice(-2);
+  const set=function(id,v){const e=document.getElementById(id);if(e)e.textContent=v;};
+  // v9.6.2 — FIX 2: las tarjetas AHORA responden a los filtros.
+  // Al elegir un mes, la 4ª tarjeta cambia su título a ese mes y muestra SU cantidad
+  // (antes quedaba clavada con la del mes actual y por eso "no cambiaba nada").
+  const f=_histFilter;
+  const list=_histAplicaFiltros(_histRecords);
+  set('hsTotal',list.length);
+  set('hsEnv',list.filter(function(r){return informeDe(r)==='concluido';}).length);
+  set('hsPen',list.filter(function(r){return informeDe(r)==='pendiente';}).length);
+  const ymObjetivo=f.mes||nowym;
+  set('hsMes',list.filter(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7)===ymObjetivo;}).length);
+  const statMes=(document.getElementById('hsMes')||{}).parentElement;
+  if(statMes){const sp=statMes.querySelector('span');if(sp)sp.textContent=f.mes?monthLabel(f.mes):'Este mes';}
   const el=document.getElementById('histList');if(!el)return;
-  if(!L.length){
+  if(!_histRecords.length){
     el.innerHTML='<div class="hist-empty">'+(SOLE_LOGO?'<img src="'+SOLE_LOGO+'" style="height:56px;opacity:.95;margin-bottom:10px;background:#4C5F80;border-radius:10px;padding:7px 14px">':'')
       +'<div style="font-size:15px;font-weight:800;color:#262E3D;margin-bottom:5px">Aún no hay inspecciones guardadas</div>'
       +'<div style="font-size:12.5px;color:#707F99;line-height:1.55">Cada reporte que envíes quedará aquí automáticamente,<br>con fotos, series y pausas — disponible incluso sin internet.<br>'
