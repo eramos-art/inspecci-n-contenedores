@@ -17,6 +17,13 @@
        Concluidos / Pendientes / «Este mes») ahora SÍ responden a los filtros;
        al elegir un mes, la 4ª tarjeta cambia su título a ese mes y muestra
        SU cantidad (antes se quedaba con la del mes actual).
+     · v9.6.3 — FIX 1 reforzado: reparación + DEDUPLICACIÓN. Los teléfonos con
+       registros viejos (OC en el FILE, fechas torcidas) y duplicados (574 en
+       vez de ~288) se limpian solos al abrir: el FILE se recupera desde la
+       fila del Sheet (buscándolo en cualquier posición), las fechas se
+       normalizan, la importación empareja por FECHA+CONTENEDOR para reparar
+       en vez de duplicar, y se borran repetidos (misma fecha+contenedor =
+       misma inspección; se conserva el del app con fotos).
      ══════════════════════════════════════════════════════════════ -->
 <html lang="es">
 <head>
@@ -4909,22 +4916,39 @@ async function importarDesdeSheets(silent){
     vals=(await res.json()).values||[];
   }catch(e){if(!silent)toastSync('⚠ No se pudo leer el Sheet ('+e.message+')');else console.warn('Auto-import Sheets:',e.message);return;}
   // v9.5: existentes pasa a Map clave→id — permite REFRESCAR registros importados que fueron corregidos en el Sheet
+  // v9.6.3: emparejamiento REFORZADO — además de la clave exacta FILE|FECHA|CONT,
+  // se empareja por FECHA|CONT y FILE|CONT. Así los registros viejos que quedaron
+  // con la OC en el FILE (o con la fecha torcida) SE REPARAN con la fila del Sheet
+  // en lugar de crearse como duplicados (era la causa del historial duplicado).
   const existentes=new Map();
-  _histRecords.forEach(function(r){const s=r.resumen||{};existentes.set(((s.file||'')+'|'+(s.fecha||'')+'|'+(s.contenedor||'')).toUpperCase(),r.id);});
+  const porFC=new Map();   // fecha|contenedor → id
+  const porKC=new Map();   // file|contenedor   → id
+  _histRecords.forEach(function(r){
+    const s=r.resumen||{};
+    existentes.set(((s.file||'')+'|'+(s.fecha||'')+'|'+(s.contenedor||'')).toUpperCase(),r.id);
+    if(String(s.fecha||'').trim()&&String(s.contenedor||'').trim())porFC.set((String(s.fecha).trim()+'|'+String(s.contenedor).trim()).toUpperCase(),r.id);
+    if(String(s.file||'').trim()&&String(s.contenedor||'').trim())porKC.set((String(s.file).trim()+'|'+String(s.contenedor).trim()).toUpperCase(),r.id);
+  });
   const papelera=new Set(JSON.parse(localStorage.getItem('sole_papelera_v9')||'[]').map(function(p){return ((p.file||'')+'|'+(p.fecha||'')+'|'+(p.contenedor||'')).toUpperCase();}));
   const idx=_histReadIdx();
   let n=0,nUpd=0;
   for(const row of vals){
     if(!row||!row[0])continue;
-    const k=((row[0]||'')+'|'+(row[3]||'')+'|'+(row[5]||'')).toUpperCase();
+    const rFile=String(row[0]||'').trim(),rFecha=String(row[3]||'').trim(),rCont=String(row[5]||'').trim();
+    const k=(rFile+'|'+rFecha+'|'+rCont).toUpperCase();
     if(papelera.has(k))continue;
-    if(existentes.has(k)){
-      // v9.5: la fila ya está en el teléfono. Si es un registro importado (solo resumen),
-      // se actualiza con lo corregido en el Sheet. Los hechos en el app (con fotos/datos) NO se tocan.
-      const rid=existentes.get(k);
+    const kFC=(rFecha+'|'+rCont).toUpperCase();
+    const kKC=(rFile+'|'+rCont).toUpperCase();
+    let rid=null,exacto=existentes.has(k);
+    if(exacto)rid=existentes.get(k);
+    else if(porFC.has(kFC))rid=porFC.get(kFC);
+    else if(porKC.has(kKC))rid=porKC.get(kKC);
+    if(rid!==null){
+      // La fila ya está en el teléfono (por clave exacta o por respaldo).
       if(rid){
         const rec=await histIdbGet(rid);
         if(!rec||!rec.datos){
+          // Registro importado (solo resumen) → se reconstruye completo con la fila oficial del Sheet
           const rs=_sheetResumen(row);
           const cur=(rec&&rec.resumen)||((idx.find(function(x){return x.id===rid;})||{}).resumen)||{};
           if(JSON.stringify(cur)!==JSON.stringify(rs)){ // v9.5.1: solo actualiza/cuenta si la fila realmente cambió
@@ -4933,11 +4957,21 @@ async function importarDesdeSheets(silent){
             if(ii>=0)idx[ii].resumen=rs;
             nUpd++;
           }
+        }else if(!exacto){
+          // v9.6.3: registro hecho en el app emparejado por respaldo → SOLO corrige
+          // FILE/OC/fecha si están rotos (nunca toca fotos, series ni datos)
+          const rs=rec.resumen=rec.resumen||{};let toc=false;
+          if(_pareceOC(String(rs.file||''))||!String(rs.file||'').trim()){rs.file=rFile;toc=true;}
+          if(_pareceOC(String(rs.oc||''))||!String(rs.oc||'').trim()){rs.oc=String(row[1]||'');toc=true;}
+          const feISO=_fechaISO(rs.fecha);
+          if(feISO){if(rs.fecha!==feISO){rs.fecha=feISO;toc=true;}}
+          else if(/^\d{4}-\d{2}-\d{2}$/.test(rFecha)&&String(rs.fecha||'').trim()!==rFecha){rs.fecha=rFecha;toc=true;}
+          if(toc){await histIdbPut(rec);const ii=idx.findIndex(function(x){return x.id===rid;});if(ii>=0)idx[ii].resumen=rs;nUpd++;}
         }
       }
       continue;
     }
-    existentes.set(k,'');
+    existentes.set(k,'');porFC.set(kFC,'');porKC.set(kKC,'');
     const fecha=String(row[3]||'');
     let ts=Date.now();
     if(/^\d{4}-\d{2}-\d{2}$/.test(fecha)){const p=fecha.split('-');ts=new Date(+p[0],+p[1]-1,+p[2],12,0,0).getTime();}
@@ -4947,7 +4981,7 @@ async function importarDesdeSheets(silent){
       resumen:_sheetResumen(row)
     };
     await histIdbPut(rec);
-    existentes.set(k,rec.id);
+    existentes.set(k,rec.id);porFC.set(kFC,rec.id);porKC.set(kKC,rec.id);
     idx.unshift({id:rec.id,ts:rec.ts,estado:rec.estado,resumen:rec.resumen});
     n++;
   }
@@ -5243,14 +5277,25 @@ function fillSelect(id,items,allTxt){
   el.innerHTML='<option value="">'+allTxt+'</option>'+items.map(function(i){return '<option value="'+i.v+'">'+i.t+'</option>';}).join('');
   if(items.some(function(i){return i.v===cur;}))el.value=cur;
 }
-// ═══ v9.6.2 — FIX 1: reparación automática de registros viejos ═══
-// Algunos registros guardados antes quedaron con la OC (42000…) en el campo
-// FILE y/o con la fecha en otro formato. Aquí se detectan y se corrigen solos:
-//   · Si la fila del Sheet existe → FILE=col A, OC=col B, FECHA=col D (fuente oficial).
-//   · Si no, intercambio heurístico: FILE con puro dígitos + OC con forma M26-… ⇒ se invierten.
-//   · La fecha se normaliza a AAAA-MM-DD para que el filtro por meses cuente bien.
+// ═══ v9.6.3 — FIX 1 reforzado: reparación + deduplicación de registros viejos ═══
+// En teléfonos quedaron registros con la OC (42000…) en el campo FILE, con la
+// fecha en otro formato y, además, DUPLICADOS (la importación no los emparejaba
+// con el Sheet y los volvía a crear → 574 en vez de ~288). Aquí se arregla todo:
+//   · FILE/OC: primero la fila del Sheet (A=FILE, B=OC); si la fila también está
+//     vieja, se busca el FILE en CUALQUIER posición de la fila; si no, intercambio
+//     heurístico (FILE con puro dígitos + OC con forma M26-… ⇒ se invierten).
+//   · Fecha: normalizada a AAAA-MM-DD (protege el filtro por meses).
+//   · Duplicados: misma FECHA + mismo CONTENEDOR = misma inspección (misma regla
+//     que usa el app al detectar duplicados). Se conserva el mejor registro:
+//     primero el hecho en el app (tiene datos/fotos), luego el de FILE válido.
 function _pareceOC(v){return /^\d{5,}(\s*\/\s*\d{5,})*$/.test(String(v||'').trim());}
 function _pareceFILE(v){return /^[A-Za-z]{1,4}\d{1,3}-\d{1,6}/.test(String(v||'').trim());}
+function _fechaISO(v){
+  let fe=String(v||'').trim();
+  const mDMY=fe.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(mDMY)fe=mDMY[3]+'-'+('0'+mDMY[2]).slice(-2)+'-'+('0'+mDMY[1]).slice(-2);
+  return /^\d{4}-\d{2}-\d{2}$/.test(fe)?fe:'';
+}
 function _histRepararResumenes(){
   const tocados=[];
   _histRecords.forEach(function(r){
@@ -5259,20 +5304,35 @@ function _histRepararResumenes(){
     const fila=(r.fila&&r.fila.length>=2)?r.fila:null;
     let file=String(s.file||'').trim(),oc=String(s.oc||'').trim();
     // 1) FILE/OC oficiales desde la fila del Sheet (A=FILE, B=N° O.C.)
+    //    Solo se adopta fila[0] si TIENE forma de FILE (las filas viejas traían
+    //    fecha/hora de envío en A/B y el FILE iba en otra posición → paso 2).
     if(fila){
       const fFila=String(fila[0]||'').trim(),oFila=String(fila[1]||'').trim();
-      if(fFila&&fFila!==file&&(_pareceOC(file)||!file||_pareceFILE(fFila)&&!_pareceFILE(file))){file=fFila;if(oFila)oc=oFila;}
+      if(fFila&&fFila!==file&&_pareceFILE(fFila)&&!_pareceFILE(file)){file=fFila;if(oFila&&(!oc||_pareceOC(oc)))oc=oFila;}
     }
-    // 2) Intercambio heurístico file↔oc cuando quedaron invertidos
+    // 2) v9.6.3: si el FILE sigue sin forma de FILE (OC, vacío o texto raro),
+    //    se busca en CUALQUIER posición de la fila (maquetas viejas: A=fecha
+    //    envío, B=hora envío, C=FILE, D=OC …)
+    if(!_pareceFILE(file)&&fila){
+      const cand=[];
+      for(let i=0;i<Math.min(fila.length,8);i++){
+        const v=String(fila[i]||'').trim();
+        if(_pareceFILE(v)&&cand.indexOf(v)<0)cand.push(v);
+      }
+      if(cand.length){
+        file=cand[0];
+        if(!oc||_pareceOC(oc)){const o=String(fila[3]||'').trim();if(o&&_pareceOC(o))oc=o;}
+      }
+    }
+    // 3) Intercambio heurístico file↔oc cuando quedaron invertidos
     if(_pareceOC(file)&&_pareceFILE(oc)){const t=file;file=oc;oc=t;}
     if(!file&&_pareceFILE(oc)){file=oc;oc='';}
     s.file=file;s.oc=oc;
-    // 3) Fecha normalizada AAAA-MM-DD (protege el filtro por meses)
-    let fe=String(s.fecha||'').trim();
-    const mDMY=fe.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if(mDMY)fe=mDMY[3]+'-'+('0'+mDMY[2]).slice(-2)+'-'+('0'+mDMY[1]).slice(-2);
-    if(fila&&/^\d{4}-\d{2}-\d{2}$/.test(String(fila[3]||'').trim())&&!/^\d{4}-\d{2}-\d{2}$/.test(fe))fe=String(fila[3]).trim();
-    s.fecha=fe;
+    // 4) Fecha normalizada AAAA-MM-DD (protege el filtro por meses)
+    const feISO=_fechaISO(s.fecha)||(fila?(_fechaISO(fila[3])||''):'');
+    if(feISO)s.fecha=feISO;
+    // 5) Contenedor desde la fila si falta (necesario para deduplicar)
+    if(!String(s.contenedor||'').trim()&&fila&&String(fila[5]||'').trim())s.contenedor=String(fila[5]).trim();
     if(JSON.stringify(s)!==antes)tocados.push(r);
   });
   if(tocados.length){
@@ -5282,15 +5342,49 @@ function _histRepararResumenes(){
       idx.forEach(function(m){const rec=tocados.find(function(x){return x.id===m.id;});if(rec&&rec.resumen)m.resumen=rec.resumen;});
       _histWriteIdx(idx);
     }catch(e){}
-    console.info('v9.6.2: '+tocados.length+' registro(s) reparados (FILE/OC/fecha)');
+    console.info('v9.6.3: '+tocados.length+' registro(s) reparados (FILE/OC/fecha)');
   }
+}
+// v9.6.3: borra duplicados del historial — misma FECHA + mismo CONTENEDOR = misma
+// inspección. Se conserva el mejor: (1) hecho en el app (datos/fotos) > importado;
+// (2) FILE con formato válido; (3) el más nuevo.
+function _histDedup(){
+  const grupos={};
+  _histRecords.forEach(function(r){
+    const s=r.resumen||{};
+    const fe=_fechaISO(s.fecha),co=String(s.contenedor||'').trim().toUpperCase();
+    if(!fe||!co)return; // sin clave fiable no se toca
+    const k=fe+'|'+co;
+    (grupos[k]=grupos[k]||[]).push(r);
+  });
+  const borrar=[];
+  Object.keys(grupos).forEach(function(k){
+    const g=grupos[k];
+    if(g.length<2)return;
+    g.sort(function(a,b){
+      const sa=a.resumen||{},sb=b.resumen||{};
+      const pa=a.datos?1:0,pb=b.datos?1:0;
+      if(pa!==pb)return pb-pa;
+      const fa=_pareceFILE(sa.file)?1:0,fb=_pareceFILE(sb.file)?1:0;
+      if(fa!==fb)return fb-fa;
+      return (b.ts||0)-(a.ts||0);
+    });
+    for(let i=1;i<g.length;i++)borrar.push(g[i]);
+  });
+  if(!borrar.length)return;
+  const ids=borrar.map(function(r){return r.id;});
+  (async function(){try{const d=await openDB();const tx=d.transaction('historial','readwrite');ids.forEach(function(id){tx.objectStore('historial').delete(id);});}catch(e){}})();
+  _histRecords=_histRecords.filter(function(r){return ids.indexOf(r.id)<0;});
+  _histWriteIdx(_histReadIdx().filter(function(m){return ids.indexOf(m.id)<0;}));
+  console.info('v9.6.3: '+borrar.length+' duplicado(s) eliminados del historial');
 }
 async function loadHistorial(){
   const full=await histIdbAll();
   const map=new Map(full.map(function(r){return [r.id,r];}));
   _histReadIdx().forEach(function(m){if(!map.has(m.id))map.set(m.id,{id:m.id,ts:m.ts,estado:m.estado,resumen:m.resumen||{},fotos:null,datos:null,soloMeta:true});});
   _histRecords=Array.from(map.values()).sort(function(a,b){return b.ts-a.ts;});
-  _histRepararResumenes(); // v9.6.2 — corrige FILE/OC/fecha antes de pintar
+  _histRepararResumenes(); // v9.6.3 — corrige FILE/OC/fecha antes de pintar
+  _histDedup();            // v9.6.3 — borra duplicados (misma fecha + contenedor)
   const meses=Array.from(new Set(_histRecords.map(function(r){return ((r.resumen&&r.resumen.fecha)||'').slice(0,7);}).filter(function(x){return /^\d{4}-\d{2}$/.test(x);}))).sort().reverse();
   const provs=Array.from(new Set(_histRecords.map(function(r){return (r.resumen&&r.resumen.proveedor)||'';}).filter(Boolean))).sort();
   fillSelect('hfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
