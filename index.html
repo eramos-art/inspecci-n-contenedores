@@ -51,6 +51,24 @@
        cruce) y hay botón «♻️ Reconstruir» que borra los importados y los
        vuelve a cargar limpios desde el Sheet (los reportes del app con
        fotos jamás se tocan).
+     · v9.6.10 — PANEL A PEDIDO DEL EQUIPO:
+       1) ARO DE ESTADOS: la barra «Estado de contenedores» ahora es un ARO
+       (donut) con verde=Aceptado, amarillo=Tolerado, rojo=Rechazado y el
+       total al centro. Cada línea de la leyenda filtra al tocarla.
+       2) NUEVO FILTRO «TAMAÑO» de contenedor en el Panel (los registros
+       importados del Sheet no traen tamaño — solo los hechos en el app;
+       esos aparecen como «(sin tamaño)» en el filtro).
+       3) EL «PLOMO» (Sin estado): son contenedores cuyo estado nunca se
+       definió (la mayoría, importados viejos sin esa columna en el Sheet).
+       Ahora se VEN cuáles son (chip «Sin estado» + línea gris del aro) y se
+       ARREGLAN desde el detalle: botones ✅⚠️⛔ que quedan guardados aunque
+       se reimporte el Sheet.
+       4) INSPECTOR FANTASMA «E7» eliminado de los desplegables: textos con
+       menos de 3 letras ya no cuentan como nombre de inspector.
+       5) CHECK DE INFORME ENVIADO: el botón ✉️ de cada tarjeta ahora
+       pregunta «¿Confirmas que YA lo enviaste por correo?» antes de marcar
+       ✓ Informe concluido; una vez concluido muestra ✅ (toca para
+       desmarcar si te equivocaste).
      · v9.6.9 — IMPRESIÓN ARREGLADA (lo que «se rompió» el 19/10 ante la jefa):
        1) Chrome NO imprimía los colores de fondo → el PDF impreso salía
        descolorido y la caja del logo (azul con marca blanca) salía VACÍA.
@@ -1206,7 +1224,9 @@ window.onerror = function(msg, src, line, col, err) {
         <option value="Aceptado">Aceptado</option>
         <option value="Tolerado">Tolerado</option>
         <option value="Rechazado">Rechazado</option>
+        <option value="__sin__">Sin estado</option>
       </select>
+      <select id="pfTam" onchange="_panelFilter.tam=this.value;renderPanel()"><option value="">Todos los tamaños</option></select>
       <select id="pfDef" onchange="_panelFilter.def=this.value;renderPanel()">
         <option value="">Con o sin defectos</option>
         <option value="cual">Con defectos (G1 o G2)</option>
@@ -5062,6 +5082,7 @@ async function importarDesdeSheets(silent){
         if(!rec||!rec.datos){
           // Registro importado (solo resumen) → se reconstruye completo con la fila oficial del Sheet
           const rs=_sheetResumen(row);
+          const ef=_estadoFixAll()[rid];if(ef)rs.estadoCont=ef; // v9.6.10: respeta el estado fijado a mano
           const cur=(rec&&rec.resumen)||((idx.find(function(x){return x.id===rid;})||{}).resumen)||{};
           if(JSON.stringify(cur)!==JSON.stringify(rs)){ // v9.5.1: solo actualiza/cuenta si la fila realmente cambió
             if(rec){rec.fila=row;rec.resumen=rs;await histIdbPut(rec);}
@@ -5223,6 +5244,30 @@ async function informeModalBtn(){
   const ib=document.getElementById('histInfBtn');
   if(ib&&rec)ib.textContent=informeDe(rec)==='concluido'?'↩️ Informe pend.':'✉️ Informe ok';
 }
+// v9.6.10: el check de «informe enviado» SIEMPRE pregunta antes de marcar
+function marcarInformeDlg(id){
+  if(confirm('¿Confirmas que YA enviaste el informe de descarga por correo?\n\nSi aún NO lo enviaste, toca «Cancelar», genera el 📄 PDF y envíalo primero.'))marcarInforme(id,true);
+}
+function desmarcarInformeDlg(id){
+  if(confirm('Este informe ya está marcado como ENVIADO (✓).\n\n¿Quieres volver a ponerlo como «pendiente de envío»?'))marcarInforme(id,false);
+}
+// v9.6.10: fijar a mano el ESTADO del contenedor (registros viejos «Sin estado»).
+// Se guarda en el registro Y en localStorage para sobrevivir a «⬇️ Importar de Sheets».
+function _estadoFixAll(){try{return JSON.parse(localStorage.getItem('sole_estadofix_v1')||'{}');}catch(e){return {};}}
+function _estadoFixSet(id,est){try{const m=_estadoFixAll();if(est)m[id]=est;else delete m[id];localStorage.setItem('sole_estadofix_v1',JSON.stringify(m));}catch(e){}}
+async function fijarEstadoCont(id,est){
+  const rec=await histIdbGet(id);
+  if(rec){rec.resumen=rec.resumen||{};rec.resumen.estadoCont=est;try{await histIdbPut(rec);}catch(e){}}
+  const idx=_histReadIdx();const i=idx.findIndex(function(x){return x.id===id;});
+  if(i>=0){idx[i].resumen=Object.assign({},idx[i].resumen||{},{estadoCont:est});_histWriteIdx(idx);}
+  _estadoFixSet(id,est);
+  const mr=_histRecords.find(function(x){return x.id===id;});
+  if(mr){mr.resumen=mr.resumen||{};mr.resumen.estadoCont=est;}
+  toastSync('📋 Contenedor marcado como '+est.toUpperCase());
+  await loadHistorial();
+  const m=document.getElementById('histDetailModal');
+  if(m&&m.classList.contains('open'))verDetalleHist(id);
+}
 
 // ── Tacho de eliminación con PIN de jefatura (ingresos falsos) ──
 function pedirPinDel(){
@@ -5291,7 +5336,7 @@ async function reconstruirHistorial(){
 }
 
 // ═══ v9.1 — PANEL GERENCIAL (vista jefatura) ═══
-let _panelFilter={q:'',mes:'',alm:'',prov:'',insp:'',estado:'',def:''};
+let _panelFilter={q:'',mes:'',alm:'',prov:'',insp:'',estado:'',tam:'',def:''};
 function _pnlEl(id){return document.getElementById(id);}
 function _kpi(v,l,c){return '<div class="pnl-kpi"'+(c?' style="border-top-color:'+c+'"':'')+'><b>'+v+'</b><span>'+l+'</span></div>';}
 function _pbarRows(elm,rows,n){
@@ -5319,6 +5364,24 @@ function _toggleMore(btn){
   ex.forEach(function(x){x.style.display=open?(x.tagName==='TR'?'table-row':'block'):'none';});
   btn.textContent=open?'▲ Ver menos':'▼ Ver todos ('+btn.dataset.total+')';
 }
+// v9.6.10: aro (donut SVG) de estados — segmentos con separación y total al centro
+function _donutAro(segs,total){
+  const R=52,CX=75,CY=75,SW=24,C=2*Math.PI*R;
+  let arcs='';
+  if(segs.length===1){arcs='<circle cx="'+CX+'" cy="'+CY+'" r="'+R+'" fill="none" stroke="'+segs[0].c+'" stroke-width="'+SW+'"></circle>';}
+  else{
+    let off=0;
+    arcs=segs.map(function(x){
+      const len=Math.max(0.9,(x.v/total)*C-1.6);
+      const a='<circle cx="'+CX+'" cy="'+CY+'" r="'+R+'" fill="none" stroke="'+x.c+'" stroke-width="'+SW+'" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 '+CX+' '+CY+')"></circle>';
+      off+=(x.v/total)*C;
+      return a;
+    }).join('');
+  }
+  return '<svg viewBox="0 0 150 150" style="width:148px;height:148px;display:block;margin:4px auto 10px" role="img" aria-label="Estados de contenedores">'+arcs
+    +'<text x="75" y="72" text-anchor="middle" style="font-size:27px;font-weight:800;fill:#262E3D">'+total+'</text>'
+    +'<text x="75" y="90" text-anchor="middle" style="font-size:9px;font-weight:800;fill:#707F99;letter-spacing:.08em">CONTENEDORES</text></svg>';
+}
 function _panelRecs(){
   return _histRecords.filter(function(r){
     const s=r.resumen||{};if(!s.file&&!s.contenedor)return false;
@@ -5326,7 +5389,10 @@ function _panelRecs(){
     if(_panelFilter.alm&&s.almacen!==_panelFilter.alm)return false;
     if(_panelFilter.prov&&s.proveedor!==_panelFilter.prov)return false;
     if(_panelFilter.insp&&s.inspector!==_panelFilter.insp)return false;
-    if(_panelFilter.estado&&s.estadoCont!==_panelFilter.estado)return false;
+    if(_panelFilter.estado==='__sin__'){if(s.estadoCont)return false;} // v9.6.10: «Sin estado»
+    else if(_panelFilter.estado&&s.estadoCont!==_panelFilter.estado)return false;
+    if(_panelFilter.tam==='__sin__'){if((s.tamano||'').trim())return false;} // v9.6.10: sin tamaño
+    else if(_panelFilter.tam&&(s.tamano||'')!==_panelFilter.tam)return false;
     if(_panelFilter.def){
       const g1=parseFloat(s.g1)||0,g2=parseFloat(s.g2)||0;
       if(_panelFilter.def==='cual'&&!(g1+g2>0))return false;
@@ -5355,6 +5421,12 @@ function renderPanel(){
   fillSelect('pfMes',meses.map(function(m){return {v:m,t:monthLabel(m)};}),'Todos los meses');
   fillSelect('pfAlm',alms.map(function(a){return {v:a,t:a};}),'Todos los almacenes');
   fillSelect('pfProv',provs.map(function(p){return {v:p,t:p};}),'Todos los proveedores');
+  // v9.6.10: filtro por TAMAÑO de contenedor (solo los registros hechos en el app lo traen)
+  const tams=_optLimpio(_histRecords.map(function(r){return (r.resumen&&r.resumen.tamano)||'';}),function(v){return !_malTexto(v);});
+  fillSelect('pfTam',tams.map(function(t){return {v:t,t:t};}),'Todos los tamaños');
+  if(_histRecords.some(function(r){const s2=r.resumen||{};if(!s2.file&&!s2.contenedor)return false;return !((s2.tamano||'')+'').trim();})){
+    const tamEl=_pnlEl('pfTam');if(tamEl)tamEl.insertAdjacentHTML('beforeend','<option value="__sin__">(sin tamaño)</option>');
+  }
   const L=_panelRecs();const n=L.length;
   const compl=L.filter(function(r){return (r.resumen||{}).completo==='SI';}).length;
   const rech=L.filter(function(r){return (r.resumen||{}).estadoCont==='Rechazado';}).length;
@@ -5373,14 +5445,15 @@ function renderPanel(){
   const cA=L.filter(function(r){return (r.resumen||{}).estadoCont==='Aceptado';}).length;
   const cT=L.filter(function(r){return (r.resumen||{}).estadoCont==='Tolerado';}).length;
   const cS=n-cA-cT-rech;
-  // v9.3: estados como barra apilada + leyenda con conteo y %
+  // v9.6.10: estados como ARO (donut) — verde/amarillo/rojo + gris=Sin estado;
+  // cada línea de la leyenda filtra al tocarla
   const stEl=_pnlEl('pnlEstados');
   if(stEl){
     if(!n){stEl.innerHTML='<div class="pnl-nodata">Sin datos con los filtros actuales.</div>';}
     else{
-      const segs=[{v:cA,c:'#1a8f4c',t:'Aceptado'},{v:cT,c:'#c0842a',t:'Tolerado'},{v:rech,c:'#c0392b',t:'Rechazado'},{v:cS,c:'#949FB3',t:'Sin estado'}].filter(function(x){return x.v>0;});
-      stEl.innerHTML='<div class="stack-bar">'+segs.map(function(x){return '<i style="width:'+(x.v/n*100).toFixed(2)+'%;background:'+x.c+'"></i>';}).join('')+'</div>'
-        +'<div class="stack-leg">'+segs.map(function(x){return '<div class="stack-leg-row"><span class="stack-dot" style="background:'+x.c+'"></span>'+x.t+'<b>'+x.v+' · '+Math.round(x.v/n*100)+'%</b></div>';}).join('')+'</div>';
+      const segs=[{v:cA,c:'#1a8f4c',t:'Aceptado',k:'Aceptado'},{v:cT,c:'#D9A400',t:'Tolerado',k:'Tolerado'},{v:rech,c:'#c0392b',t:'Rechazado',k:'Rechazado'},{v:cS,c:'#949FB3',t:'Sin estado',k:'__sin__'}].filter(function(x){return x.v>0;});
+      stEl.innerHTML=_donutAro(segs,n)
+        +'<div class="stack-leg">'+segs.map(function(x){return '<div class="stack-leg-row" onclick="pnlSetEstado(\''+x.k+'\')" style="cursor:pointer" title="Ver solo '+x.t+'"><span class="stack-dot" style="background:'+x.c+'"></span>'+x.t+'<b>'+x.v+' · '+Math.round(x.v/n*100)+'%</b></div>';}).join('')+'</div>';
     }
   }
   const map={};
@@ -5446,15 +5519,17 @@ function renderDetallePanel(){
   const cA=base.filter(function(r){return (r.resumen||{}).estadoCont==='Aceptado';}).length;
   const cT=base.filter(function(r){return (r.resumen||{}).estadoCont==='Tolerado';}).length;
   const cR=base.filter(function(r){return (r.resumen||{}).estadoCont==='Rechazado';}).length;
+  const cSin=base.filter(function(r){return !(r.resumen||{}).estadoCont;}).length; // v9.6.10
   if(chipsEl){
-    const chips=[['','Todos',base.length],['Aceptado','✅ Aceptado',cA],['Tolerado','⚠️ Tolerado',cT],['Rechazado','⛔ Rechazado',cR]];
+    const chips=[['','Todos',base.length],['Aceptado','✅ Aceptado',cA],['Tolerado','⚠️ Tolerado',cT],['Rechazado','⛔ Rechazado',cR],['__sin__','⬜ Sin estado',cSin]];
     chipsEl.innerHTML=chips.map(function(c){
       const on=savedE===c[0];
       return '<button type="button" onclick="pnlSetEstado(\''+c[0]+'\')" style="border:1.5px solid '+(on?'#4C5F80':'#DBDFE6')+';background:'+(on?'#4C5F80':'#fff')+';color:'+(on?'#fff':'#56657E')+';border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;font-family:inherit;cursor:pointer">'+c[1]+' · '+c[2]+'</button>';
     }).join('');
   }
   const cnt=_pnlEl('pnlDetCount');
-  const L=savedE?base.filter(function(r){return (r.resumen||{}).estadoCont===savedE;}):base;
+  // v9.6.10: «__sin__» = ver solo los contenedores SIN estado
+  const L=savedE?(savedE==='__sin__'?base.filter(function(r){return !(r.resumen||{}).estadoCont;}):base.filter(function(r){return (r.resumen||{}).estadoCont===savedE;})):base;
   if(cnt)cnt.textContent=L.length+' contenedor'+(L.length===1?'':'es');
   const el=_pnlEl('pnlDetalle');if(!el)return;
   if(!base.length){el.innerHTML='<div class="pnl-nodata">Sin contenedores con los filtros actuales.</div>';return;}
@@ -5519,7 +5594,7 @@ function _malTexto(v){v=_textoLimpio(v);return !!v&&(/^\d{1,2}:\d{2}/.test(v)||/
 // v9.6.6: ¿el campo quedó cruzado/basura? (vacío cuenta como «raro» = por reparar)
 function _provRaro(v){v=_textoLimpio(v);return !v||_pareceFechaC(v)||_pareceOC(v)||_pareceFILE(v)||_pareceCont(v)||_malTexto(v);}
 function _almRaro(v){v=_textoLimpio(v);return !v||_pareceCont(v)||_pareceFechaC(v)||_pareceFILE(v)||_pareceOC(v)||_malTexto(v);}
-function _inspRaro(v){v=_textoLimpio(v);return !v||_pareceFechaC(v)||_pareceOC(v)||_pareceFILE(v)||_pareceCont(v)||_malTexto(v);}
+function _inspRaro(v){v=_textoLimpio(v);return !v||_pareceFechaC(v)||_pareceOC(v)||_pareceFILE(v)||_pareceCont(v)||_malTexto(v)||v.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g,'').length<3||/^[A-Za-z]{1,4}-\d{1,4}$/.test(v);} // v9.6.10: «E7», placas «ABC-123» y códigos sin ≥3 letras no son inspectores
 function _provLimpio(p){return !_provRaro(p);}
 function _almLimpio(a){return !_almRaro(a);}
 function _inspLimpio(i){return !_inspRaro(i);}
@@ -5858,7 +5933,7 @@ function renderHistorial(keep){
 function histCardHTML(r){
   const s=r.resumen||{};
   const ec=s.estadoCont||'';
-  const border=ec==='Aceptado'?'#1a8f4c':ec==='Tolerado'?'#c0842a':ec==='Rechazado'?'#c0392b':'var(--navy)';
+  const border=ec==='Aceptado'?'#1a8f4c':ec==='Tolerado'?'#D9A400':ec==='Rechazado'?'#c0392b':'var(--navy)'; // v9.6.10: Tolerado amarillo
   const ecChip=ec?'<span class="hchip '+(ec==='Aceptado'?'acc':ec==='Tolerado'?'tol':'rec')+'">'+ec+'</span>':'';
   const fdate=s.fecha?String(s.fecha).split('-').reverse().join('/'):'—';
   const dur=(s.durNeta!=null)?fmtDurMin(s.durNeta):'—';
@@ -5883,7 +5958,8 @@ function histCardHTML(r){
     +'<div class="hc-actions">'
     +'<button class="hc-btn primary" onclick="verDetalleHist(\''+r.id+'\')">👁 Ver</button>'
     +'<button class="hc-btn" onclick="pdfDesdeHist(\''+r.id+'\')" title="Generar el PDF completo de este registro">📄 PDF</button>'
-    +(inf!=='concluido'?'<button class="hc-btn" onclick="marcarInforme(\''+r.id+'\',true)" title="Marcar informe enviado por correo">✉️</button>':'')
+    +(inf!=='concluido'?'<button class="hc-btn" onclick="marcarInformeDlg(\''+r.id+'\')" title="Ya envié el informe por correo">✉️</button>'
+      :'<button class="hc-btn" style="border-color:#B5D6C2;color:#17603A" onclick="desmarcarInformeDlg(\''+r.id+'\')" title="Informe enviado — tocar para desmarcar">✅</button>') // v9.6.10: confirma antes de marcar
     +(r.estado==='fallo'?'<button class="hc-btn" onclick="reenviarHist(\''+r.id+'\')" title="Reintentar envío">🔄</button>':'')
     +'<button class="hc-btn" style="flex:0 0 48px;max-width:48px;border-color:#D9A39B;color:#922B21" onclick="eliminarHist(\''+r.id+'\')" title="Eliminar (PIN jefatura)">🗑</button>'
     +'</div></div>';
@@ -5933,7 +6009,10 @@ async function verDetalleHist(id){
   const intDef=CHECKLIST_INT.filter(function(it,i){return (d.checklistInt||{})[i]==='SI'&&it.es!=='Limpio';}).map(function(it){return it.es;});
   h+='<div class="hd-sec"><div class="hd-t">Condición del contenedor</div><div class="hd-b"><div class="hd-grid">'
     +_hdRow('Estado',s.estadoCont||'—')+_hdRow('Descarga',s.completo||'—')
-    +'</div><div style="margin-top:5px"><b style="color:#56657E">Exterior:</b> '+(extDef.length?_esc(extDef.join(', ')):'Sin defectos')+'<br>'
+    +'</div>'
+    +(s.estadoCont?'':'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="font-size:10px;font-weight:800;color:#949FB3;letter-spacing:.05em">SIN ESTADO — DEFINIR:</span>'
+      +['Aceptado','Tolerado','Rechazado'].map(function(e2){return '<button type="button" class="hc-btn" style="padding:5px 11px;font-size:11.5px" onclick="fijarEstadoCont(\''+r.id+'\',\''+e2+'\')">'+(e2==='Aceptado'?'✅':e2==='Tolerado'?'⚠️':'⛔')+' '+e2+'</button>';}).join('')+'</div>') // v9.6.10
+    +'<div style="margin-top:5px"><b style="color:#56657E">Exterior:</b> '+(extDef.length?_esc(extDef.join(', ')):'Sin defectos')+'<br>'
     +'<b style="color:#56657E">Interior:</b> '+(intDef.length?_esc(intDef.join(', ')):'Sin defectos')+'</div>'
     +(Fg('obsEstadoCont')?'<div style="margin-top:5px"><b>Obs. exterior:</b> '+_esc(Fg('obsEstadoCont'))+'</div>':'')
     +(Fg('obsInterna')?'<div style="margin-top:5px"><b>Obs. interior:</b> '+_esc(Fg('obsInterna'))+'</div>':'')
