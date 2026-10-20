@@ -51,6 +51,15 @@
        cruce) y hay botón «♻️ Reconstruir» que borra los importados y los
        vuelve a cargar limpios desde el Sheet (los reportes del app con
        fotos jamás se tocan).
+     · v9.6.9 — IMPRESIÓN ARREGLADA (lo que «se rompió» el 19/10 ante la jefa):
+       1) Chrome NO imprimía los colores de fondo → el PDF impreso salía
+       descolorido y la caja del logo (azul con marca blanca) salía VACÍA.
+       Ahora se fuerza print-color-adjust:exact → barras azules, logo, badges
+       y celdas coloreadas salen igual que en pantalla.
+       2) Cada bloque de daño (fila + series + fotos de evidencia) ahora es
+       indivisible: ya no queda la fila principal en una hoja y sus series/fotos
+       en la siguiente tras un encabezado huérfano.
+       3) Los títulos de sección nunca quedan solos al final de una hoja.
      · v9.6.8 — CONSOLIDADO DE DEFECTOS (sección 10 del PDF) vuelve a jalar la
        Cant. Lote: si el código del daño no coincide EXACTO con el inventario
        (p.ej. se digitó 3120TURE001 pero el producto escaneado es 3120TURE0001),
@@ -4216,6 +4225,17 @@ tr{page-break-inside:avoid;break-inside:avoid}
   .page{box-shadow:none;padding:0}
   #pdfBtn{display:none!important}
   .section{page-break-inside:avoid}
+  /* v9.6.9: imprimir con los colores EXACTOS — sin esto Chrome sale en blanco y
+     desaparecen las barras azules, el fondo del logo, los badges y las celdas
+     coloreadas del consolidado (causa del reporte «descolorido» del 19/10) */
+  html,body{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  /* v9.6.9: cada bloque de daño (fila + series + fotos) es INDIVISIBLE —
+     ya no queda la fila principal en una hoja y sus series/fotos en la otra */
+  tbody.dmg-block{break-inside:avoid;page-break-inside:avoid}
+  .dmg-table tr{break-inside:avoid;page-break-inside:avoid}
+  /* v9.6.9: el título de una sección nunca queda huérfano al final de hoja */
+  .sec-title,.sub-title{break-after:avoid;page-break-after:avoid}
 }
 </style>
 </head><body><div class="page">
@@ -4336,8 +4356,10 @@ ${(()=>{
   });
   if(!filledBlocks.length) return '';
   let dmgH='<div class="section"><div class="sec-title"><span class="num">9</span> Detalle de Daños Observados / Damage Details</div>';
-  dmgH+='<table class="dmg-table" style="width:100%;border-collapse:collapse"><thead style="display:table-header-group"><tr><th style="width:42px;text-align:center">Grado</th><th>Código / Code</th><th>Tipo de Daño</th><th style="width:42px;text-align:center">Cant.</th><th style="width:52px;text-align:center">Uds/Caja</th><th>Detalle</th></tr></thead><tbody>';
+  dmgH+='<table class="dmg-table" style="width:100%;border-collapse:collapse"><thead style="display:table-header-group"><tr><th style="width:42px;text-align:center">Grado</th><th>Código / Code</th><th>Tipo de Daño</th><th style="width:42px;text-align:center">Cant.</th><th style="width:52px;text-align:center">Uds/Caja</th><th>Detalle</th></tr></thead>';
   filledBlocks.forEach(bl=>{
+    // v9.6.9: un <tbody> propio por bloque → page-break-inside:avoid mantiene fila+series+fotos juntos
+    dmgH+='<tbody class="dmg-block">';
     const isg2=bl.classList.contains('g2-codigo-block');
     const code=bl.querySelector('[class*="code-input"]')?.value||'—';
     const grade=bl.querySelector('[class*="grado-select"]')?.value||'—';
@@ -4365,8 +4387,9 @@ ${(()=>{
     if(blkPhotos.length){
       dmgH+='<tr><td colspan="6" style="padding:5px 8px;background:#fff"><div style="font-size:8pt;font-weight:700;color:#4C5F80;margin-bottom:3px">Fotos de evidencia ('+blkPhotos.length+'):</div>'+photoGridTable(blkPhotos.map(src=>'<div class="ph"><img src="'+src+'"></div>'),'photo-grid-evidence')+'</td></tr>';
     }
+    dmgH+='</tbody>';
   });
-  dmgH+='</tbody></table></div>';
+  dmgH+='</table></div>';
   return dmgH;
 })()}
 
